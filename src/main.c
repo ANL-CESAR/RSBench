@@ -36,22 +36,24 @@ int main(int argc, char * argv[])
 	// =====================================================================
 	// Print-out of Input Summary
 	// =====================================================================
-		
 	logo(version);
 	center_print("INPUT SUMMARY", 79);
 	border_print();
 	
 	
 		
-	border_print();
-	center_print("INITIALIZATION", 79);
-	border_print();
 
 	// =====================================================================
 	// Prepare Resonance Paremeter Grids
 	// =====================================================================
+	printf("\n");
+	border_print();
+	center_print("INITIALIZATION", 79);
+	border_print();
 	
 	// Allocate & fill energy grids
+	int n_resonances = 10;
+	double * egrid = generate_egrid( n_resonances );
 	
 	// Sort grids by energy
 	
@@ -60,8 +62,14 @@ int main(int argc, char * argv[])
 	// =====================================================================
 	// Cross Section (XS) Parallel Lookup Simulation Begins
 	// =====================================================================
+	printf("\n");
+	border_print();
+	center_print("SIMULATION", 79);
+	border_print();
 	
 	// OpenMP compiler directives - declaring variables as shared or private
+
+	/*
 	#pragma omp parallel default(none) \
 	private(i, thread, p_energy, mat, seed) \
 	shared( max_procs, n_isotopes, n_gridpoints, \
@@ -118,10 +126,15 @@ int main(int argc, char * argv[])
 		#endif
 
 	}
+	*/
 	
 	// =====================================================================
 	// Print / Save Results and Exit
 	// =====================================================================
+	printf("\n");
+	border_print();
+	center_print("RESULTS", 79);
+	border_print();
 
 	return 0;
 }

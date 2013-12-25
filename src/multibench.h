@@ -21,3 +21,7 @@ void border_print(void);
 void fancy_int( int a );
 Inputs read_CLI( int argc, char * argv[] );
 void print_CLI_error(void);
+
+// mutlipole.c
+int dbl_cmp( const void * a, const void * b );
+double * generate_egrid( int n_resonances );
