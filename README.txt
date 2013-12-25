@@ -1,10 +1,12 @@
 ==============================================================================
-                    __  __ ____  ____                  _     
-                   |  \/  |  _ \| __ )  ___ _ __   ___| |__  
-                   | |\/| | | | |  _ \ / _ \ '_ \ / __| '_ \ 
-                   | |  | | |_| | |_) |  __/ | | | (__| | | |
-                   |_|  |_|____/|____/ \___|_| |_|\___|_| |_|
-									   
+
+           __  __         _  _    _  ____                      _     
+          |  \/  | _   _ | || |_ (_)| __ )   ___  _ __    ___ | |__  
+          | |\/| || | | || || __|| ||  _ \  / _ \| '_ \  / __|| '_ \ 
+          | |  | || |_| || || |_ | || |_) ||  __/| | | || (__ | | | |
+          |_|  |_| \__,_||_| \__||_||____/  \___||_| |_| \___||_| |_|
+                                   
+                         
                                    Version 0
 
 ==============================================================================
@@ -17,11 +19,11 @@ Organization:     Center for Exascale Simulation of Advanced Reactors (CESAR)
 Development Lead: John Tramm <jtramm@mcs.anl.gov>
 
 ==============================================================================
-What is MDBench?
+What is MultiBench?
 ==============================================================================
 
-A mini-app to represent the multipole resonance representation
-lookup and Doppler broadening cross section algorithm.
+A mini-app to represent the multipole resonance representation lookup and
+Doppler broadening cross section algorithm.
 
 ==============================================================================
 Quick Start Guide
@@ -29,7 +31,7 @@ Quick Start Guide
 
 Download----------------------------------------------------------------------
 
-	For the most up-to-date version of MDBench, we recommend that you
+	For the most up-to-date version of MultiBench, we recommend that you
 	download from our git repository. This can be accomplished via
 	cloning the repository from the command line, or by downloading a zip
 	from our github page. Alternatively, you can download a tar file from
@@ -37,12 +39,12 @@ Download----------------------------------------------------------------------
 
 	Git Repository Clone:
 		
-		Use the following command to clone MDBench to your machine:
+		Use the following command to clone MultiBench to your machine:
 
-		>$ git clone https://github.com/jtramm/MDBench.git
+		>$ git clone https://github.com/jtramm/MultiBench.git
 
 		Once cloned, you can update the code to the newest version
-		using the following command (when in the MDBench directory):
+		using the following command (when in the MultiBench directory):
 
 		>$ git pull
 	
@@ -50,25 +52,25 @@ Download----------------------------------------------------------------------
 
 		Simply use the "zip download" option on our webpage at:
 
-		https://github.com/jtramm/MDBench
+		https://github.com/jtramm/MultiBench
 
 Compilation-------------------------------------------------------------------
 
-	To compile MDBench with default settings, use the following
+	To compile MultiBench with default settings, use the following
 	command:
 
 	>$ make
 
-Running MDBench---------------------------------------------------------------
+Running MultiBench---------------------------------------------------------------
 
-	To run MDBench with default settings, use the following command:
+	To run MultiBench with default settings, use the following command:
 
-	>$ ./MDBench
+	>$ ./MultiBench
 
-	For non-default settings, MDBench supports the following command line
+	For non-default settings, MultiBench supports the following command line
 	options:	
 
-	Usage: ./MDBench <options>
+	Usage: ./MultiBench <options>
 	Options include:
 	  -t <threads>     Number of OpenMP threads to run
 	  -s <size>        Size of H-M Benchmark to run (small, large, XL, XXL)
@@ -77,7 +79,7 @@ Running MDBench---------------------------------------------------------------
 
 	-t <threads>
 
-		Sets the number of OpenMP threads to run. By default, MDBench
+		Sets the number of OpenMP threads to run. By default, MultiBench
 		will run with 1 thread per hardware core. If the architecture
 		supports hyperthreading, multiple threads will be run per
 		core.
@@ -112,7 +114,7 @@ Running MDBench---------------------------------------------------------------
 		Sets the number of cross-section (XS) lookups to perform. By
 		default, this value is set to 15,000,000. Users may want to
 		increase this value if they wish to extend the runtime of
-		MDBench, perhaps to produce more reliable performance counter
+		MultiBench, perhaps to produce more reliable performance counter
 		data - as extending the run will decrease the percentage of
 		runtime spent on initialization.
 
