@@ -1,3 +1,4 @@
+#include"multibench.h"
 
 // Prints program logo
 void logo(int version)
@@ -5,10 +6,10 @@ void logo(int version)
 	border_print();
 	printf(
 "           __  __         _  _    _  ____                      _     \n"
-"          |  \/  | _   _ | || |_ (_)| __ )   ___  _ __    ___ | |__  \n"
-"          | |\/| || | | || || __|| ||  _ \  / _ \| '_ \  / __|| '_ \ \n"
+"          |  \\/  | _   _ | || |_ (_)| __ )   ___  _ __    ___ | |__  \n"
+"          | |\\/| || | | || || __|| ||  _ \\  / _ \\| '_ \\  / __|| '_ \\ \n"
 "          | |  | || |_| || || |_ | || |_) ||  __/| | | || (__ | | | |\n"
-"          |_|  |_| \__,_||_| \__||_||____/  \___||_| |_| \___||_| |_|\n\n"
+"          |_|  |_| \\__,_||_| \\__||_||____/  \\___||_| |_| \\___||_| |_|\n\n"
 	);
 	border_print();
 	center_print("Developed at Argonne National Laboratory", 79);
@@ -67,25 +68,13 @@ Inputs read_CLI( int argc, char * argv[] )
 	input.nthreads = omp_get_num_procs();
 	
 	// defaults to 355 (corresponding to H-M Large benchmark)
-	input.n_isotopes = 355;
-	
-	// defaults to 11303 (corresponding to H-M Large benchmark)
-	input.n_gridpoints = 11303;
+	input.n_nuclides = 355;
 	
 	// defaults to 15,000,000
 	input.lookups = 15000000;
 	
 	// defaults to H-M Large benchmark
-	input.HM = (char *) malloc( 6 * sizeof(char) );
-	input.HM[0] = 'l' ; 
-	input.HM[1] = 'a' ; 
-	input.HM[2] = 'r' ; 
-	input.HM[3] = 'g' ; 
-	input.HM[4] = 'e' ; 
-	input.HM[5] = '\0';
-	
-	// Check if user sets these
-	int user_g = 0;
+	input.HM = LARGE;
 	
 	// Collect Raw Input
 	for( int i = 1; i < argc; i++ )
@@ -100,17 +89,6 @@ Inputs read_CLI( int argc, char * argv[] )
 			else
 				print_CLI_error();
 		}
-		// n_gridpoints (-g)
-		else if( strcmp(arg, "-g") == 0 )
-		{	
-			if( ++i < argc )
-			{
-				user_g = 1;
-				input.n_gridpoints = atoi(argv[i]);
-			}
-			else
-				print_CLI_error();
-		}
 		// lookups (-l)
 		else if( strcmp(arg, "-l") == 0 )
 		{
@@ -119,11 +97,30 @@ Inputs read_CLI( int argc, char * argv[] )
 			else
 				print_CLI_error();
 		}
+		// nuclides (-n)
+		else if( strcmp(arg, "-n") == 0 )
+		{
+			if( ++i < argc )
+				input.n_nuclides = atoi(argv[i]);
+			else
+				print_CLI_error();
+		}
 		// HM (-s)
 		else if( strcmp(arg, "-s") == 0 )
 		{	
 			if( ++i < argc )
-				input.HM = argv[i];
+			{
+				if( strcmp(argv[i], "small") == 0 )
+					input.HM = SMALL;
+				else if ( strcmp(argv[i], "large") == 0 )
+					input.HM = LARGE;
+				else if ( strcmp(argv[i], "XL") == 0 )
+					input.HM = XL;
+				else if ( strcmp(argv[i], "XXL") == 0 )
+					input.HM = XXL;
+				else
+					print_CLI_error();
+			}
 			else
 				print_CLI_error();
 		}
@@ -138,32 +135,15 @@ Inputs read_CLI( int argc, char * argv[] )
 		print_CLI_error();
 	
 	// Validate n_isotopes
-	if( input.n_isotopes < 1 )
+	if( input.n_nuclides < 1 )
 		print_CLI_error();
 	
-	// Validate n_gridpoints
-	if( input.n_gridpoints < 1 )
-		print_CLI_error();
-
 	// Validate lookups
 	if( input.lookups < 1 )
 		print_CLI_error();
 	
-	// Validate HM size
-	if( strcasecmp(input.HM, "small") != 0 &&
-		strcasecmp(input.HM, "large") != 0 &&
-		strcasecmp(input.HM, "XL") != 0 &&
-		strcasecmp(input.HM, "XXL") != 0 )
-		print_CLI_error();
-	
 	// Set HM size specific parameters
 	// (defaults to large)
-	if( strcasecmp(input.HM, "small") == 0 )
-		input.n_isotopes = 68;
-	else if( strcasecmp(input.HM, "XL") == 0 && user_g == 0 )
-		input.n_gridpoints = 238847; // sized to make 120 GB XS data
-	else if( strcasecmp(input.HM, "XXL") == 0 && user_g == 0 )
-		input.n_gridpoints = 238847 * 2.1; // 252 GB XS data
 
 	// Return input struct
 	return input;
@@ -175,7 +155,6 @@ void print_CLI_error(void)
 	printf("Options include:\n");
 	printf("  -t <threads>     Number of OpenMP threads to run\n");
 	printf("  -s <size>        Size of H-M Benchmark to run (small, large, XL, XXL)\n");
-	printf("  -g <gridpoints>  Number of gridpoints per nuclide (overrides -s defaults)\n");
 	printf("  -l <lookups>     Number of Cross-section (XS) lookups\n");
 	printf("Default is equivalent to: -s large -l 15000000\n");
 	printf("See readme for full description of default run values\n");

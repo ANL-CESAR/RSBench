@@ -2,14 +2,17 @@
 #include<omp.h>
 #include<stdlib.h>
 #include<time.h>
+#include<string.h>
 
 // io.c
+
+typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
 
 typedef struct{
 	int nthreads;
 	int n_nuclides;
 	int lookups;
-	int HM_size;
+	HM_size HM;
 } Inputs;
 
 void logo(int version);

@@ -10,7 +10,8 @@ int main(int argc, char * argv[])
 	int max_procs = omp_get_num_procs();
 	int n_nuclides;
 	int nthreads;
-	int HM_size;
+	int lookups;
+	HM_size HM;
 	double p_rrr;
 	double p_UEG;
 	
@@ -23,7 +24,7 @@ int main(int argc, char * argv[])
 	nthreads =     input.nthreads;
 	n_nuclides =   input.n_nuclides;
 	lookups =      input.lookups;
-	HM_size =      input.HM_size;
+	HM =      input.HM;
 
 	// Set number of OpenMP Threads
 	omp_set_num_threads(nthreads); 
