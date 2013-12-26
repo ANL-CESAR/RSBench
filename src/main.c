@@ -8,26 +8,15 @@ int main(int argc, char * argv[])
 
 	int version = 0;
 	int max_procs = omp_get_num_procs();
-	int n_nuclides;
-	int nthreads;
-	int lookups;
-	HM_size HM;
-	double p_rrr;
-	double p_UEG;
+	double start, stop;
 	
 	srand(time(NULL));
 	
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
-	
-	// Set CLI variables
-	nthreads =     input.nthreads;
-	n_nuclides =   input.n_nuclides;
-	lookups =      input.lookups;
-	HM =      input.HM;
 
 	// Set number of OpenMP Threads
-	omp_set_num_threads(nthreads); 
+	omp_set_num_threads(input.nthreads); 
 	
 	// =====================================================================
 	// Calculate Estimate of Memory Usage
@@ -40,8 +29,6 @@ int main(int argc, char * argv[])
 	center_print("INPUT SUMMARY", 79);
 	border_print();
 	
-	
-		
 
 	// =====================================================================
 	// Prepare Resonance Paremeter Grids
@@ -52,9 +39,12 @@ int main(int argc, char * argv[])
 	border_print();
 	
 	// Allocate & fill energy grids
-	input.n_resonances = 10;
-	input.width = 0.05;
+	input.n_resonances = 6000;
+	input.width = 0.00001;
+	start = omp_get_wtime();
 	double ** egrid = generate_egrid( input );
+	stop = omp_get_wtime();
+	printf("Time taken for initialization: %lf seconds\n", stop-start);
 	
 	// Sort grids by energy
 	

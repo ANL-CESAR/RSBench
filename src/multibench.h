@@ -16,6 +16,7 @@ typedef struct{
 	double width;
 } Input;
 
+
 // io.c
 void logo(int version);
 void center_print(const char *s, int width);
