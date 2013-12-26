@@ -18,7 +18,7 @@ int main(int argc, char * argv[])
 	srand(time(NULL));
 	
 	// Process CLI Fields
-	Inputs input = read_CLI( argc, argv );
+	Input input = read_CLI( argc, argv );
 	
 	// Set CLI variables
 	nthreads =     input.nthreads;
@@ -52,8 +52,9 @@ int main(int argc, char * argv[])
 	border_print();
 	
 	// Allocate & fill energy grids
-	int n_resonances = 10;
-	double * egrid = generate_egrid( n_resonances );
+	input.n_resonances = 10;
+	input.width = 0.05;
+	double ** egrid = generate_egrid( input );
 	
 	// Sort grids by energy
 	

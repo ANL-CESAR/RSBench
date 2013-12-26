@@ -4,8 +4,7 @@
 #include<time.h>
 #include<string.h>
 
-// io.c
-
+// typedefs
 typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
 
 typedef struct{
@@ -13,15 +12,19 @@ typedef struct{
 	int n_nuclides;
 	int lookups;
 	HM_size HM;
-} Inputs;
+	int n_resonances;
+	double width;
+} Input;
 
+// io.c
 void logo(int version);
 void center_print(const char *s, int width);
 void border_print(void);
 void fancy_int( int a );
-Inputs read_CLI( int argc, char * argv[] );
+Input read_CLI( int argc, char * argv[] );
 void print_CLI_error(void);
 
 // mutlipole.c
 int dbl_cmp( const void * a, const void * b );
-double * generate_egrid( int n_resonances );
+double * generate_nuclide_energies( Input input );
+double ** generate_egrid( Input input );

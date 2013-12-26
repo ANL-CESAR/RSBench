@@ -60,9 +60,9 @@ void fancy_int( int a )
         printf("%d\n",a);
 }
 
-Inputs read_CLI( int argc, char * argv[] )
+Input read_CLI( int argc, char * argv[] )
 {
-	Inputs input;
+	Input input;
 	
 	// defaults to max threads on the system	
 	input.nthreads = omp_get_num_procs();
