@@ -160,3 +160,14 @@ void print_CLI_error(void)
 	printf("See readme for full description of default run values\n");
 	exit(4);
 }
+
+void print_input_summary(Input input)
+{
+	printf("Threads:      %d\n", input.nthreads);
+	printf("Nuclides:     %d\n", input.n_nuclides);
+	printf("Lookups:      "); fancy_int(input.lookups);
+	printf("HM Size:      %d\n", input.HM);
+	printf("Resonances:   "); fancy_int(input.n_resonances);
+	printf("Width:        %lf\n", input.width);
+	printf("Res x Width:  %lf\n", input.n_resonances * input.width);
+}

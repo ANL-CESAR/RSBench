@@ -30,12 +30,7 @@ int main(int argc, char * argv[])
 	logo(version);
 	center_print("INPUT SUMMARY", 79);
 	border_print();
-	printf("nthreads = %d\n", input.nthreads);
-	printf("n_nuclides = %d\n", input.n_nuclides);
-	printf("lookups = "); fancy_int(input.lookups);
-	printf("HM_size = %d\n", input.HM);
-	printf("n_resonances = "); fancy_int(input.n_resonances);
-	printf("width = %lf\n", input.width);
+	print_input_summary(input);
 
 	// =====================================================================
 	// Prepare Resonance Paremeter Grids

@@ -24,6 +24,7 @@ void border_print(void);
 void fancy_int( int a );
 Input read_CLI( int argc, char * argv[] );
 void print_CLI_error(void);
+void print_input_summary(Input input);
 
 // mutlipole.c
 int dbl_cmp( const void * a, const void * b );
