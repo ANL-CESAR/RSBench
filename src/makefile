@@ -16,7 +16,9 @@ program = multibench
 source = \
 main.c \
 io.c \
-multipole.c
+multipole.c \
+material.c \
+utils.c
 
 obj = $(source:.c=.o)
 

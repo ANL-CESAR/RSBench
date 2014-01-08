@@ -40,16 +40,17 @@ int main(int argc, char * argv[])
 	center_print("INITIALIZATION", 79);
 	border_print();
 	
-	// Allocate & fill energy grids
-
 	start = omp_get_wtime();
+	
+	// Allocate & fill energy grids
 	double ** egrid = generate_egrid( input );
+	
+	// Get material data
+	Materials materials = get_materials( input ); 
+
 	stop = omp_get_wtime();
 	printf("Time taken for initialization: %lf seconds\n", stop-start);
 	
-	// Sort grids by energy
-	
-	// Get material data
 	
 	// =====================================================================
 	// Cross Section (XS) Parallel Lookup Simulation Begins

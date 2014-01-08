@@ -16,6 +16,11 @@ typedef struct{
 	double width;
 } Input;
 
+typedef struct{
+	int * num_nucs;
+	int ** mats;
+	double ** concs;
+} Materials;
 
 // io.c
 void logo(int version);
@@ -30,3 +35,13 @@ void print_input_summary(Input input);
 int dbl_cmp( const void * a, const void * b );
 double * generate_nuclide_energies( Input input );
 double ** generate_egrid( Input input );
+
+// material.c
+int * load_num_nucs(Input input);
+int ** load_mats( Input input, int * num_nucs );
+double ** load_concs( int * num_nucs );
+int pick_mat( unsigned long * seed );
+Materials get_materials(Input input);
+
+// utils.c
+double rn(unsigned long * seed);
