@@ -51,7 +51,6 @@ int main(int argc, char * argv[])
 	stop = omp_get_wtime();
 	printf("Time taken for initialization: %lf seconds\n", stop-start);
 	
-	
 	// =====================================================================
 	// Cross Section (XS) Parallel Lookup Simulation Begins
 	// =====================================================================
