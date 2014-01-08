@@ -14,6 +14,8 @@ int main(int argc, char * argv[])
 	
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
+	input.n_resonances = 6000;
+	input.width = 0.00001;
 
 	// Set number of OpenMP Threads
 	omp_set_num_threads(input.nthreads); 
@@ -28,7 +30,12 @@ int main(int argc, char * argv[])
 	logo(version);
 	center_print("INPUT SUMMARY", 79);
 	border_print();
-	
+	printf("nthreads = %d\n", input.nthreads);
+	printf("n_nuclides = %d\n", input.n_nuclides);
+	printf("lookups = "); fancy_int(input.lookups);
+	printf("HM_size = %d\n", input.HM);
+	printf("n_resonances = "); fancy_int(input.n_resonances);
+	printf("width = %lf\n", input.width);
 
 	// =====================================================================
 	// Prepare Resonance Paremeter Grids
@@ -39,8 +46,7 @@ int main(int argc, char * argv[])
 	border_print();
 	
 	// Allocate & fill energy grids
-	input.n_resonances = 6000;
-	input.width = 0.00001;
+
 	start = omp_get_wtime();
 	double ** egrid = generate_egrid( input );
 	stop = omp_get_wtime();
