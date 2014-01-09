@@ -20,9 +20,6 @@ int main(int argc, char * argv[])
 	// Set number of OpenMP Threads
 	omp_set_num_threads(input.nthreads); 
 	
-	// =====================================================================
-	// Calculate Estimate of Memory Usage
-	// =====================================================================
 	
 	// =====================================================================
 	// Print-out of Input Summary
@@ -65,66 +62,20 @@ int main(int argc, char * argv[])
 	center_print("SIMULATION", 79);
 	border_print();
 	
-	// OpenMP compiler directives - declaring variables as shared or private
+	start = omp_get_wtime();
 
-	/*
-	#pragma omp parallel default(none) \
-	private(i, thread, p_energy, mat, seed) \
-	shared( max_procs, n_isotopes, n_gridpoints, \
-	energy_grid, nuclide_grids, lookups, nthreads, \
-	mats, concs, num_nucs, mype, vhash) 
-	{	
-		#pragma omp critical
-		{
-			counter_init(&eventset, &num_papi_events);
-		}
-		#endif
+	unsigned long seed = time(NULL);
+	for( int i = 0; i < input.lookups; i++ )
+	{
+		double mat = rn(&seed);
+		double E = rn(&seed);
 		
-		double macro_xs_vector[5];
-		thread = omp_get_thread_num();
-		seed   = (thread+1)*19+17;
-
-		#pragma omp for schedule(dynamic)
-		for( i = 0; i < lookups; i++ )
-		{
-			// Status text
-			if( INFO && mype == 0 && thread == 0 && i % 1000 == 0 )
-				printf("\rCalculating XS's... (%.0lf%% completed)",
-						(i / ( (double)lookups / (double) nthreads )) / (double) nthreads * 100.0);
+		double macro_xs[4];
 		
-			// Randomly pick an energy and material for the particle
-			p_energy = rn(&seed);
-			mat      = pick_mat(&seed); 
-			
-			// debugging
-			//printf("E = %lf mat = %d\n", p_energy, mat);
-				
-			// This returns the macro_xs_vector, but we're not going
-			// to do anything with it in this program, so return value
-			// is written over.
-			calculate_macro_xs( p_energy, mat, n_isotopes,
-			                    n_gridpoints, num_nucs, concs,
-			                    energy_grid, nuclide_grids, mats,
-                                macro_xs_vector );
-		}
-
-		#ifdef PAPI
-		if( mype == 0 && thread == 0 )
-		{
-			printf("\n");
-			border_print();
-			center_print("PAPI COUNTER RESULTS", 79);
-			border_print();
-			printf("Count          \tSmybol      \tDescription\n");
-		}
-		{
-		#pragma omp barrier
-		}
-		counter_stop(&eventset, num_papi_events);
-		#endif
-
+		calculate_macro_xs( macro_xs, mat, E, input ); 
 	}
-	*/
+	
+	stop = omp_get_wtime();
 	
 	// =====================================================================
 	// Print / Save Results and Exit
@@ -133,6 +84,8 @@ int main(int argc, char * argv[])
 	border_print();
 	center_print("RESULTS", 79);
 	border_print();
+	
+	printf("Time taken for simulation: %lf seconds\n", stop-start);
 
 	return 0;
 }

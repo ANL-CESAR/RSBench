@@ -53,3 +53,7 @@ Materials get_materials(Input input);
 
 // utils.c
 double rn(unsigned long * seed);
+size_t get_mem_estimate( Input input );
+
+// xs_kernel.c
+void calculate_macro_xs( double * macro_xs, double mat, double E, Input input );

@@ -163,11 +163,15 @@ void print_CLI_error(void)
 
 void print_input_summary(Input input)
 {
-	printf("Threads:      %d\n", input.nthreads);
-	printf("Nuclides:     %d\n", input.n_nuclides);
-	printf("Lookups:      "); fancy_int(input.lookups);
-	printf("HM Size:      %d\n", input.HM);
-	printf("Resonances:   "); fancy_int(input.n_resonances);
-	printf("Width:        %lf\n", input.width);
-	printf("Res x Width:  %lf\n", input.n_resonances * input.width);
+	// Calculate Estimate of Memory Usage
+	size_t mem = get_mem_estimate(input);
+
+	printf("Threads:        %d\n", input.nthreads);
+	printf("Nuclides:       %d\n", input.n_nuclides);
+	printf("Lookups:        "); fancy_int(input.lookups);
+	printf("HM Size:        %d\n", input.HM);
+	printf("Resonances:     "); fancy_int(input.n_resonances);
+	printf("Width:          %lf\n", input.width);
+	printf("Res x Width:    %lf\n", input.n_resonances * input.width);
+	printf("Mem Usage (MB): %.1lf\n", mem / 1024.0 / 1024.0);
 }
