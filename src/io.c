@@ -70,8 +70,8 @@ Input read_CLI( int argc, char * argv[] )
 	// defaults to 355 (corresponding to H-M Large benchmark)
 	input.n_nuclides = 355;
 	
-	// defaults to 15,000,000
-	input.lookups = 15000000;
+	// defaults to 1,500,000
+	input.lookups = 1500000;
 	
 	// defaults to H-M Large benchmark
 	input.HM = LARGE;
@@ -170,8 +170,6 @@ void print_input_summary(Input input)
 	printf("Nuclides:       %d\n", input.n_nuclides);
 	printf("Lookups:        "); fancy_int(input.lookups);
 	printf("HM Size:        %d\n", input.HM);
-	printf("Resonances:     "); fancy_int(input.n_resonances);
-	printf("Width:          %lf\n", input.width);
-	printf("Res x Width:    %lf\n", input.n_resonances * input.width);
+	printf("Ave Resonances: "); fancy_int(input.n_resonances);
 	printf("Mem Usage (MB): %.1lf\n", mem / 1024.0 / 1024.0);
 }

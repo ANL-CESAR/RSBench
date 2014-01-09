@@ -28,6 +28,13 @@ typedef struct{
 	double Tf; // width for fission
 } Resonance;
 
+typedef struct{
+	int * n_resonances;
+	Materials materials;
+	double * nuclide_masses;
+	Resonance ** resonance_params;
+} CalcDataPtrs;
+
 // io.c
 void logo(int version);
 void center_print(const char *s, int width);
@@ -38,7 +45,6 @@ void print_CLI_error(void);
 void print_input_summary(Input input);
 
 // mutlipole.c
-int get_index( double E, int nuc, int * n_resonances );
 int * generate_n_resonances( Input input );
 double * generate_nuclide_masses( Input input );
 Resonance ** generate_resonance_params( Input input, int * n_resonances );
@@ -55,4 +61,5 @@ double rn(unsigned long * seed);
 size_t get_mem_estimate( Input input );
 
 // xs_kernel.c
-void calculate_macro_xs( double * macro_xs, double mat, double E, Input input );
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data ); 
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data);
