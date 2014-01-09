@@ -10,7 +10,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Mate
 	for( int i = 0; i < materials.num_nucs[mat]; i++ )
 	{
 		double micro_xs[4];
-		int nuc = materials.nucs[mat][i];
+		int nuc = materials.mats[mat][i];
 
 		calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Materials materials);
 

@@ -13,7 +13,6 @@ typedef struct{
 	int lookups;
 	HM_size HM;
 	int n_resonances;
-	double width;
 } Input;
 
 typedef struct{
@@ -23,6 +22,7 @@ typedef struct{
 } Materials;
 
 typedef struct{
+	double Eo; // Resonance Center
 	double Tn; // width for neutron emission
 	double Tg; // width for radiative capture
 	double Tf; // width for fission
@@ -38,11 +38,10 @@ void print_CLI_error(void);
 void print_input_summary(Input input);
 
 // mutlipole.c
-int dbl_cmp( const void * a, const void * b );
-double * generate_nuclide_energies( Input input, double * E, int i );
-double ** generate_egrid( Input input );
+int get_index( double E, int nuc, int * n_resonances );
+int * generate_n_resonances( Input input );
 double * generate_nuclide_masses( Input input );
-Resonance ** generate_resonance_params( Input input );
+Resonance ** generate_resonance_params( Input input, int * n_resonances );
 
 // material.c
 int * load_num_nucs(Input input);
