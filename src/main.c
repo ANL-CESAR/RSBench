@@ -15,7 +15,7 @@ int main(int argc, char * argv[])
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
 	input.n_resonances = 6000;
-	input.width = 0.00001;
+	input.width = 0.0001;
 
 	// Set number of OpenMP Threads
 	omp_set_num_threads(input.nthreads); 
@@ -47,6 +47,12 @@ int main(int argc, char * argv[])
 	
 	// Get material data
 	Materials materials = get_materials( input ); 
+
+	// Prepare material resonance grid
+	double * nuclide_resonances = generate_nuclide_resonances( input );
+
+	// Prepare full resonance grid
+	Resonance ** resonance_params = generate_resonance_params( input );
 
 	stop = omp_get_wtime();
 	printf("Time taken for initialization: %lf seconds\n", stop-start);

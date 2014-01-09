@@ -22,6 +22,12 @@ typedef struct{
 	double ** concs;
 } Materials;
 
+typedef struct{
+	double Tn; // width for neutron emission
+	double Tg; // width for radiative capture
+	double Tf; // width for fission
+} Resonance;
+
 // io.c
 void logo(int version);
 void center_print(const char *s, int width);
@@ -35,6 +41,8 @@ void print_input_summary(Input input);
 int dbl_cmp( const void * a, const void * b );
 double * generate_nuclide_energies( Input input, double * E, int i );
 double ** generate_egrid( Input input );
+double * generate_nuclide_resonances( Input input );
+Resonance ** generate_resonance_params( Input input );
 
 // material.c
 int * load_num_nucs(Input input);
