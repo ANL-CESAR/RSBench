@@ -41,7 +41,7 @@ void print_input_summary(Input input);
 int dbl_cmp( const void * a, const void * b );
 double * generate_nuclide_energies( Input input, double * E, int i );
 double ** generate_egrid( Input input );
-double * generate_nuclide_resonances( Input input );
+double * generate_nuclide_masses( Input input );
 Resonance ** generate_resonance_params( Input input );
 
 // material.c

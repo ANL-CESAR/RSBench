@@ -49,7 +49,7 @@ int main(int argc, char * argv[])
 	Materials materials = get_materials( input ); 
 
 	// Prepare material resonance grid
-	double * nuclide_resonances = generate_nuclide_resonances( input );
+	double * nuclide_masses = generate_nuclide_masses( input );
 
 	// Prepare full resonance grid
 	Resonance ** resonance_params = generate_resonance_params( input );
