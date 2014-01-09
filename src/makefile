@@ -15,6 +15,7 @@ program = multibench
 
 source = \
 main.c \
+xs_kernel.c \
 io.c \
 multipole.c \
 material.c \

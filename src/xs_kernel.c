@@ -1,6 +1,6 @@
 #include"multibench.h"
 
-void calculate_macro_xs( double * macro_xs, double mat, double E, Input input, Materials materials )
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Materials materials )
 {
 	// zero out macro vector
 	for( int i = 0; i < 4; i++ )
@@ -9,9 +9,20 @@ void calculate_macro_xs( double * macro_xs, double mat, double E, Input input, M
 	// for nuclide in mat
 	for( int i = 0; i < materials.num_nucs[mat]; i++ )
 	{
-		double macro_xs_vector[4];
+		double micro_xs[4];
+		int nuc = materials.nucs[mat][i];
 
-		calculate_micro_xs( double * macro_xs_vector, double 
+		calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Materials materials);
 
+		for( int j = 0; j < 4; j++ )
+		{
+			macro_xs[j] += micro_xs[j] * materials.concs[mat][i];
+		}
+	}
 	
+}
+calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Materials materials)
+{
+	// need to determine if it's in resonance, or is interpolable
+
 }

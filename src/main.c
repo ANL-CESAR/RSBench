@@ -67,8 +67,8 @@ int main(int argc, char * argv[])
 	unsigned long seed = time(NULL);
 	for( int i = 0; i < input.lookups; i++ )
 	{
-		double mat = rn(&seed);
-		double E = rn(&seed);
+		int mat = pick_mat( &seed );
+		double E = rn( &seed );
 		
 		double macro_xs[4];
 		
