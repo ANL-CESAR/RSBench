@@ -30,6 +30,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 
 	Resonance * r = &R[nuc][idx];
 
+	// PLACEHOLDERS
 	double XS_g = r->Tg * r->Eo;
 	double XS_f = r->Tf * r->Eo;
 	double XS_s = r->Tn * r->Eo;
