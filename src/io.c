@@ -170,6 +170,6 @@ void print_input_summary(Input input)
 	printf("Nuclides:         %d\n", input.n_nuclides);
 	printf("Lookups:          "); fancy_int(input.lookups);
 	printf("HM Size:          %d\n", input.HM);
-	printf("Ave Resonances:   "); fancy_int(input.n_resonances);
+	printf("Avg Resonances:   "); fancy_int(input.n_resonances);
 	printf("Mem Usage (MB):   %.1lf\n", mem / 1024.0 / 1024.0);
 }

@@ -25,8 +25,8 @@ typedef struct{
 } Materials;
 
 typedef struct{
-	double Eo; // Resonance Center
-	double lambda_o; // de broglie wavelength
+	double Eo; // Resonance energy @ center
+	double lambda_o; // de broglie wavelength @ center
 	double Tn; // width for neutron emission
 	double Tg; // width for radiative capture
 	double Tf; // width for fission

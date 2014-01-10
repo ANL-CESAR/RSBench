@@ -14,11 +14,10 @@ int main(int argc, char * argv[])
 	
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
-	input.n_resonances = 6000;
+	input.n_resonances = 3000;
 
 	// Set number of OpenMP Threads
 	omp_set_num_threads(input.nthreads); 
-	
 	
 	// =====================================================================
 	// Print-out of Input Summary
@@ -73,7 +72,8 @@ int main(int argc, char * argv[])
 	
 	start = omp_get_wtime();
 
-	unsigned long seed = time(NULL);
+	unsigned long seed = rand();
+
 	for( int i = 0; i < input.lookups; i++ )
 	{
 		int mat = pick_mat( &seed );

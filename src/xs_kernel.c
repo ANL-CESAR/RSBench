@@ -1,5 +1,6 @@
 #include"multibench.h"
 
+// Reviewed
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data ) 
 {
 	// zero out macro vector
@@ -19,9 +20,15 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 			macro_xs[j] += micro_xs[j] * data.materials.concs[mat][i];
 		}
 	}
+
+	/* Debug
+	printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
+	E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
+	*/
 	
 }
 
+// Reviewed
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data)
 {
 	int idx = (int) (E * data.n_resonances[nuc] );
@@ -50,4 +57,8 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	micro_xs[1] = XS_f;
 	micro_xs[2] = XS_s;
 	micro_xs[3] = XS_t;
+
+	/* Debug
+	printf("nuc = %d, E = %.2lf :: idx = %d, T = %.2lf, radius = %.2lf, theta_o = %.2lf, term1 = %.2lf, XS_g = %.2lf, XS_f = %.2lf, XS_s = %.2lf, XS_t = %.2lf\n", nuc, E, idx, T, radius, theta_o, term1, XS_g, XS_f, XS_s, XS_t);
+	*/
 }
