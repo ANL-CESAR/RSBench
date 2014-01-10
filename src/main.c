@@ -46,8 +46,8 @@ int main(int argc, char * argv[])
 	Materials materials = get_materials( input ); 
 
 	// Prepare material resonance grid
-	printf("Generating nuclide masses...\n");
-	double * nuclide_masses = generate_nuclide_masses( input );
+	printf("Generating nuclide data...\n");
+	double * nuclide_radii = generate_nuclide_radii( input );
 
 	// Prepare full resonance grid
 	printf("Generating resonance parameter grid...\n");
@@ -56,7 +56,7 @@ int main(int argc, char * argv[])
 	CalcDataPtrs data;
 	data.n_resonances = n_resonances;
 	data.materials = materials;
-	data.nuclide_masses = nuclide_masses;
+	data.nuclide_radii = nuclide_radii;
 	data.resonance_params = resonance_params;
 
 	stop = omp_get_wtime();

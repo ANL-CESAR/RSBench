@@ -30,10 +30,20 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 
 	Resonance * r = &R[nuc][idx];
 
-	// PLACEHOLDERS
-	double XS_g = r->Tg * r->Eo;
-	double XS_f = r->Tf * r->Eo;
-	double XS_s = r->Tn * r->Eo;
+	double T = 1.0 / data.n_resonances[nuc];
+	double radius = data.nuclide_radii[nuc];
+
+	// Reaction Cross Sections
+	double theta_o = 4 * PI * r->lambda_o * r->Tn * r->Eo / T; 
+	double term1 = theta_o * T * T * sqrt(r->Eo / E) / ( 4.0 * (E - r->Eo) * (E - r->Eo) + T * T);
+
+	double XS_g = ( r->Tg / T ) * term1;
+	double XS_f = ( r->Tf / T ) * term1;
+
+	// Scattering Cross Section
+	double XS_s = theta_o * term1 * ( r->Tn / T + ( 4.0*(E - r->Eo) * radius ) / ( T * theta_o * sqrt( r->Eo / E ) ) ) + 4.0 * PI * radius * radius;
+
+	// Total Cross Section
 	double XS_t = XS_g + XS_f + XS_s;
 
 	micro_xs[0] = XS_g;

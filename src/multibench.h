@@ -3,6 +3,9 @@
 #include<stdlib.h>
 #include<time.h>
 #include<string.h>
+#include<math.h>
+
+#define PI 3.14159265359
 
 // typedefs
 typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
@@ -23,6 +26,7 @@ typedef struct{
 
 typedef struct{
 	double Eo; // Resonance Center
+	double lambda_o; // de broglie wavelength
 	double Tn; // width for neutron emission
 	double Tg; // width for radiative capture
 	double Tf; // width for fission
@@ -31,9 +35,10 @@ typedef struct{
 typedef struct{
 	int * n_resonances;
 	Materials materials;
-	double * nuclide_masses;
+	double * nuclide_radii;
 	Resonance ** resonance_params;
 } CalcDataPtrs;
+
 
 // io.c
 void logo(int version);
@@ -46,7 +51,7 @@ void print_input_summary(Input input);
 
 // mutlipole.c
 int * generate_n_resonances( Input input );
-double * generate_nuclide_masses( Input input );
+double * generate_nuclide_radii( Input input );
 Resonance ** generate_resonance_params( Input input, int * n_resonances );
 
 // material.c
