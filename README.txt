@@ -73,9 +73,10 @@ Running MultiBench--------------------------------------------------------------
 	Usage: ./MultiBench <options>
 	Options include:
 	  -t <threads>     Number of OpenMP threads to run
-	  -s <size>        Size of H-M Benchmark to run (small, large, XL, XXL)
+	  -s <size>        Size of H-M Benchmark to run (small, large)
 	  -l <lookups>     Number of Cross-section (XS) lookups
-	Default (no arguments given) is equivalent to: -s large -l 15000000
+	  -r <resonances>  Average Number of Resonances per Nuclide
+	Default is equivalent to: -s large -l 5000000 -r 3000
 
 	-t <threads>
 
@@ -90,7 +91,7 @@ Running MultiBench--------------------------------------------------------------
 	-s <size>
 		
 		Sets the size of the Hoogenboom-Martin reactor model. There
-		are four options: 'small', 'large', 'XL', and 'XXL'. By default,
+		are two options: 'small' and 'large'. By default,
 		the 'large' option is selected. 
 
 		The H-M size corresponds to the number of nuclides present
@@ -101,22 +102,27 @@ Running MultiBench--------------------------------------------------------------
 		whenever a lookup occurs in a fuel material.  Note that the
 		program defaults to "Large" if no specification is made.
 
-		The additional size options, "XL" and "XXL", do not directly correspond
-		to any particular physical model. They are similar to the H-M
-		"large" option, except the number of gridpoints per nuclide
-		has been increased greatly. This creates an extremely
-		large energy grid data structure (XL: 120GB, XXL: 252GB), which is
-		unlikely to fit on a single node, but is useful for experimentation
-		purposes on novel architectures.
-
 	-l <lookups>
 		
 		Sets the number of cross-section (XS) lookups to perform. By
-		default, this value is set to 15,000,000. Users may want to
+		default, this value is set to 5,000,000. Users may want to
 		increase this value if they wish to extend the runtime of
 		MultiBench, perhaps to produce more reliable performance counter
 		data - as extending the run will decrease the percentage of
 		runtime spent on initialization.
+
+	-r <resonances>
+
+		Sets the average number of resonances per nuclide. It is
+		assumed that each nuclide has a different number of resonances
+		evenly spaced through energy space, where -r sets the average
+		number of resonances per nuclide. The variance between nuclides is
+		farirly small ( < 20% usually). The total number of resonances is
+		guaranteed to be equal to the number of nuclides multiplied by the
+		average number of resonances per nuclide.
+
+		This value, along with the H-M benchmark size, is responsible for
+		the total size of the multibench data structures.
 
 ==============================================================================
 Debugging, Optimization & Profiling

@@ -70,11 +70,14 @@ Input read_CLI( int argc, char * argv[] )
 	// defaults to 355 (corresponding to H-M Large benchmark)
 	input.n_nuclides = 355;
 	
-	// defaults to 1,500,000
-	input.lookups = 1500000;
+	// defaults to 5,000,000
+	input.lookups = 5000000;
 	
 	// defaults to H-M Large benchmark
 	input.HM = LARGE;
+
+	// defaults to 3000 resonancs (avg) per nuclide
+	input.n_resonances = 3000;
 	
 	// Collect Raw Input
 	for( int i = 1; i < argc; i++ )
@@ -114,13 +117,17 @@ Input read_CLI( int argc, char * argv[] )
 					input.HM = SMALL;
 				else if ( strcmp(argv[i], "large") == 0 )
 					input.HM = LARGE;
-				else if ( strcmp(argv[i], "XL") == 0 )
-					input.HM = XL;
-				else if ( strcmp(argv[i], "XXL") == 0 )
-					input.HM = XXL;
 				else
 					print_CLI_error();
 			}
+			else
+				print_CLI_error();
+		}
+		// Avg number of resonances / nuclide (-r)
+		else if( strcmp(arg, "-r") == 0 )
+		{
+			if( ++i < argc )
+				input.n_resonances = atoi(argv[i]);
 			else
 				print_CLI_error();
 		}
@@ -142,6 +149,10 @@ Input read_CLI( int argc, char * argv[] )
 	if( input.lookups < 1 )
 		print_CLI_error();
 	
+	// Validate lookups
+	if( input.n_resonances < 1 )
+		print_CLI_error();
+	
 	// Set HM size specific parameters
 	// (defaults to large)
 
@@ -151,12 +162,13 @@ Input read_CLI( int argc, char * argv[] )
 
 void print_CLI_error(void)
 {
-	printf("Usage: ./XSBench <options>\n");
+	printf("Usage: ./multibench <options>\n");
 	printf("Options include:\n");
 	printf("  -t <threads>     Number of OpenMP threads to run\n");
-	printf("  -s <size>        Size of H-M Benchmark to run (small, large, XL, XXL)\n");
+	printf("  -s <size>        Size of H-M Benchmark to run (small, large)\n");
 	printf("  -l <lookups>     Number of Cross-section (XS) lookups\n");
-	printf("Default is equivalent to: -s large -l 15000000\n");
+	printf("  -r <resonances>  Average Number of Resonances per Nuclide\n");
+	printf("Default is equivalent to: -s large -l 5000000 -r 3000\n");
 	printf("See readme for full description of default run values\n");
 	exit(4);
 }

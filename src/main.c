@@ -15,7 +15,6 @@ int main(int argc, char * argv[])
 	
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
-	input.n_resonances = 3000;
 
 	// Set number of OpenMP Threads
 	omp_set_num_threads(input.nthreads); 
