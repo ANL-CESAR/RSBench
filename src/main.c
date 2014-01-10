@@ -75,19 +75,29 @@ int main(int argc, char * argv[])
 
 	unsigned long seed = rand();
 
-	for( int i = 0; i < input.lookups; i++ )
+	int mat;
+	double E;
+	int i;
+
+	#pragma omp parallel default(none) \
+	private(seed, mat, E, i) \
+	shared(input, data) 
 	{
-		int mat = pick_mat( &seed );
-		double E = rn( &seed );
-		
 		double macro_xs[4];
-		
-		calculate_macro_xs( macro_xs, mat, E, input, data ); 
+		seed += omp_get_thread_num();
+
+		#pragma omp for schedule(dynamic)
+		for( i = 0; i < input.lookups; i++ )
+		{
+			mat = pick_mat( &seed );
+			E = rn( &seed );
+			calculate_macro_xs( macro_xs, mat, E, input, data ); 
+		}
 	}
-	
+
 	stop = omp_get_wtime();
 	printf("Simulation Complete.\n");
-	
+
 	// =====================================================================
 	// Print / Save Results and Exit
 	// =====================================================================
@@ -99,7 +109,7 @@ int main(int argc, char * argv[])
 	printf("Runtime:     %.3lf seconds\n", stop-start);
 	printf("Lookups:     "); fancy_int(input.lookups);
 	printf("Lookups/s:   "); fancy_int((double) input.lookups / (stop-start));
-	
+
 	border_print();
 
 	return 0;
