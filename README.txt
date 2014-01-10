@@ -22,8 +22,8 @@ Development Lead: John Tramm <jtramm@mcs.anl.gov>
 What is MultiBench?
 ==============================================================================
 
-A mini-app to represent the multipole resonance representation lookup and
-Doppler broadening cross section algorithm.
+A mini-app to represent the multipole resonance representation lookup
+cross section algorithm.
 
 ==============================================================================
 Quick Start Guide
