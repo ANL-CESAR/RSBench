@@ -5,6 +5,10 @@
 #include<string.h>
 #include<math.h>
 
+#ifdef PAPI
+#include "papi.h"
+#endif
+
 #define PI 3.14159265359
 
 // typedefs
@@ -49,7 +53,7 @@ Input read_CLI( int argc, char * argv[] );
 void print_CLI_error(void);
 void print_input_summary(Input input);
 
-// mutlipole.c
+// init.c
 int * generate_n_resonances( Input input );
 double * generate_nuclide_radii( Input input );
 Resonance ** generate_resonance_params( Input input, int * n_resonances );
@@ -68,3 +72,7 @@ size_t get_mem_estimate( Input input );
 // xs_kernel.c
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data ); 
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data);
+
+// papi.c
+void counter_init( int *eventset, int *num_papi_events );
+void counter_stop( int * eventset, int num_papi_events );

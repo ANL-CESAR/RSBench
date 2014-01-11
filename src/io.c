@@ -190,4 +190,7 @@ void print_input_summary(Input input)
 	printf("XS Lookups:                  "); fancy_int(input.lookups);
 	printf("Threads:                     %d\n", input.nthreads);
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);
+	#ifdef PAPI
+	printf("PAPI Performance Counters:   ON\n");
+	#endif
 }

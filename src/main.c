@@ -71,6 +71,14 @@ int main(int argc, char * argv[])
 	#ifndef STATUS
 	printf("Calculating XS's...\n");
 	#endif
+	
+	#ifdef PAPI
+	/* initialize papi with one thread here  */
+	if ( PAPI_library_init(PAPI_VER_CURRENT) != PAPI_VER_CURRENT){
+		fprintf(stderr, "PAPI library init error!\n");
+		exit(1);
+	}
+	#endif	
 
 	start = omp_get_wtime();
 
@@ -87,6 +95,15 @@ int main(int argc, char * argv[])
 		double macro_xs[4];
 		int thread = omp_get_thread_num();
 		seed += thread;
+		
+		#ifdef PAPI
+		int eventset = PAPI_NULL; 
+		int num_papi_events;
+		#pragma omp critical
+		{
+			counter_init(&eventset, &num_papi_events);
+		}
+		#endif
 
 		#pragma omp for schedule(dynamic)
 		for( i = 0; i < input.lookups; i++ )
@@ -102,10 +119,27 @@ int main(int argc, char * argv[])
 			E = rn( &seed );
 			calculate_macro_xs( macro_xs, mat, E, input, data ); 
 		}
+		
+		#ifdef PAPI
+		if( thread == 0 )
+		{
+			printf("\n");
+			border_print();
+			center_print("PAPI COUNTER RESULTS", 79);
+			border_print();
+			printf("Count          \tSmybol      \tDescription\n");
+		}
+		{
+		#pragma omp barrier
+		}
+		counter_stop(&eventset, num_papi_events);
+		#endif
 	}
 
 	stop = omp_get_wtime();
+	#ifndef PAPI
 	printf("\nSimulation Complete.\n");
+	#endif
 
 	// =====================================================================
 	// Print / Save Results and Exit

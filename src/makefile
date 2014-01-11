@@ -7,6 +7,7 @@ OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
 STATUS    = yes
+PAPI      = yes
 
 #===============================================================================
 # Program name & source code list
@@ -59,6 +60,13 @@ endif
 # Calculation Status % Complete Indicator
 ifeq ($(STATUS),yes)
   CFLAGS += -DSTATUS
+endif
+
+# PAPI Performance Counters
+ifeq ($(PAPI),yes)
+  CFLAGS += -DPAPI
+  source += papi.c
+  LDFLAGS += -lpapi
 endif
 
 #===============================================================================
