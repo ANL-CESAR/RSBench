@@ -1,4 +1,4 @@
-#include "multibench.h"
+#include "resobench.h"
 
 // Park & Miller Multiplicative Conguential Algorithm
 // From "Numerical Recipes" Second Edition

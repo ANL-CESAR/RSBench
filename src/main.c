@@ -1,4 +1,4 @@
-#include "multibench.h"
+#include "resobench.h"
 
 int main(int argc, char * argv[])
 {

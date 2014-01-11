@@ -12,7 +12,7 @@ STATUS    = yes
 # Program name & source code list
 #===============================================================================
 
-program = multibench
+program = resobench
 
 source = \
 main.c \
@@ -65,17 +65,17 @@ endif
 # Targets to Build
 #===============================================================================
 
-$(program): $(obj) multibench.h
+$(program): $(obj) resobench.h
 	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf multibench $(obj)
+	rm -rf resobench $(obj)
 
 edit:
-	vim -p $(source) multibench.h
+	vim -p $(source) resobench.h
 
 run:
-	./multibench
+	./resobench

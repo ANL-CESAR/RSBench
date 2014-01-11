@@ -1,11 +1,10 @@
 ==============================================================================
-
-           __  __         _  _    _  ____                      _     
-          |  \/  | _   _ | || |_ (_)| __ )   ___  _ __    ___ | |__  
-          | |\/| || | | || || __|| ||  _ \  / _ \| '_ \  / __|| '_ \ 
-          | |  | || |_| || || |_ | || |_) ||  __/| | | || (__ | | | |
-          |_|  |_| \__,_||_| \__||_||____/  \___||_| |_| \___||_| |_|
-                                   
+                _____                 ____                  _      
+               |  __ \               |  _ \                | |     
+               | |__) |___  ___  ___ | |_) | ___ _ __   ___| |__   
+               |  _  // _ \/ __|/ _ \|  _ < / _ \ '_ \ / __| '_ \  
+               | | \ \  __/\__ \ (_) | |_) |  __/ | | | (__| | | | 
+               |_|  \_\___||___/\___/|____/ \___|_| |_|\___|_| |_| 
                          
                                    Version 0
 
@@ -19,7 +18,7 @@ Organization:     Center for Exascale Simulation of Advanced Reactors (CESAR)
 Development Lead: John Tramm <jtramm@mcs.anl.gov>
 
 ==============================================================================
-What is MultiBench?
+What is ResoBench?
 ==============================================================================
 
 A mini-app to represent the multipole resonance representation lookup
@@ -31,7 +30,7 @@ Quick Start Guide
 
 Download----------------------------------------------------------------------
 
-	For the most up-to-date version of MultiBench, we recommend that you
+	For the most up-to-date version of ResoBench, we recommend that you
 	download from our git repository. This can be accomplished via
 	cloning the repository from the command line, or by downloading a zip
 	from our github page. Alternatively, you can download a tar file from
@@ -39,12 +38,12 @@ Download----------------------------------------------------------------------
 
 	Git Repository Clone:
 		
-		Use the following command to clone MultiBench to your machine:
+		Use the following command to clone ResoBench to your machine:
 
-		>$ git clone https://github.com/jtramm/MultiBench.git
+		>$ git clone https://github.com/jtramm/ResoBench.git
 
 		Once cloned, you can update the code to the newest version
-		using the following command (when in the MultiBench directory):
+		using the following command (when in the ResoBench directory):
 
 		>$ git pull
 	
@@ -52,25 +51,25 @@ Download----------------------------------------------------------------------
 
 		Simply use the "zip download" option on our webpage at:
 
-		https://github.com/jtramm/MultiBench
+		https://github.com/jtramm/ResoBench
 
 Compilation-------------------------------------------------------------------
 
-	To compile MultiBench with default settings, use the following
+	To compile ResoBench with default settings, use the following
 	command:
 
 	>$ make
 
-Running MultiBench---------------------------------------------------------------
+Running ResoBench---------------------------------------------------------------
 
-	To run MultiBench with default settings, use the following command:
+	To run ResoBench with default settings, use the following command:
 
-	>$ ./MultiBench
+	>$ ./ResoBench
 
-	For non-default settings, MultiBench supports the following command line
+	For non-default settings, ResoBench supports the following command line
 	options:	
 
-	Usage: ./MultiBench <options>
+	Usage: ./ResoBench <options>
 	Options include:
 	  -t <threads>     Number of OpenMP threads to run
 	  -s <size>        Size of H-M Benchmark to run (small, large)
@@ -80,7 +79,7 @@ Running MultiBench--------------------------------------------------------------
 
 	-t <threads>
 
-		Sets the number of OpenMP threads to run. By default, MultiBench
+		Sets the number of OpenMP threads to run. By default, ResoBench
 		will run with 1 thread per hardware core. If the architecture
 		supports hyperthreading, multiple threads will be run per
 		core.
@@ -107,7 +106,7 @@ Running MultiBench--------------------------------------------------------------
 		Sets the number of cross-section (XS) lookups to perform. By
 		default, this value is set to 5,000,000. Users may want to
 		increase this value if they wish to extend the runtime of
-		MultiBench, perhaps to produce more reliable performance counter
+		ResoBench, perhaps to produce more reliable performance counter
 		data - as extending the run will decrease the percentage of
 		runtime spent on initialization.
 
@@ -122,7 +121,7 @@ Running MultiBench--------------------------------------------------------------
 		average number of resonances per nuclide.
 
 		This value, along with the H-M benchmark size, is responsible for
-		the total size of the multibench data structures.
+		the total size of the ResoBench data structures.
 
 ==============================================================================
 Debugging, Optimization & Profiling
@@ -136,11 +135,16 @@ COMPILER  = gnu
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
+STATUS    = yes
 
 -> Optimization enables the -O3 optimization flag.
 
 -> Debugging enables the -g flag.
 
 -> Profiling enables the -pg flag.
+
+-> STATUS enables calculation completion % printout status text.
+   You may want to disable this if doing batch or scripted runs.
+   Does not affect performance.
 
 ==============================================================================
