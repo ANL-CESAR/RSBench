@@ -18,7 +18,7 @@ source = \
 main.c \
 xs_kernel.c \
 io.c \
-multipole.c \
+init.c \
 material.c \
 utils.c
 
