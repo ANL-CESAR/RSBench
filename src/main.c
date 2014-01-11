@@ -2,7 +2,6 @@
 
 int main(int argc, char * argv[])
 {
-
 	// =====================================================================
 	// Initialization & Command Line Read-In
 	// =====================================================================
@@ -67,9 +66,12 @@ int main(int argc, char * argv[])
 	border_print();
 	center_print("SIMULATION", 79);
 	border_print();
-
-	printf("Calculating XS's...\n");
 	
+	printf("Beginning Simulation.\n");
+	#ifndef STATUS
+	printf("Calculating XS's...\n");
+	#endif
+
 	start = omp_get_wtime();
 
 	unsigned long seed = rand();
@@ -83,11 +85,19 @@ int main(int argc, char * argv[])
 	shared(input, data) 
 	{
 		double macro_xs[4];
-		seed += omp_get_thread_num();
+		int thread = omp_get_thread_num();
+		seed += thread;
 
 		#pragma omp for schedule(dynamic)
 		for( i = 0; i < input.lookups; i++ )
 		{
+			#ifdef STATUS
+			if( thread == 0 && i % 1000 == 0 )
+				printf("\rCalculating XS's... (%.0lf%% completed)",
+						(i / ( (double)input.lookups /
+						(double) input.nthreads )) /
+						(double) input.nthreads * 100.0);
+			#endif
 			mat = pick_mat( &seed );
 			E = rn( &seed );
 			calculate_macro_xs( macro_xs, mat, E, input, data ); 
@@ -95,7 +105,7 @@ int main(int argc, char * argv[])
 	}
 
 	stop = omp_get_wtime();
-	printf("Simulation Complete.\n");
+	printf("\nSimulation Complete.\n");
 
 	// =====================================================================
 	// Print / Save Results and Exit

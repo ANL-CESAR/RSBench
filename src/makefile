@@ -6,6 +6,7 @@ COMPILER  = gnu
 OPTIMIZE  = yes
 DEBUG     = yes
 PROFILE   = no
+STATUS    = yes
 
 #===============================================================================
 # Program name & source code list
@@ -53,6 +54,11 @@ endif
 # Optimization Flags
 ifeq ($(OPTIMIZE),yes)
   CFLAGS += -O3
+endif
+
+# Calculation Status % Complete Indicator
+ifeq ($(STATUS),yes)
+  CFLAGS += -DSTATUS
 endif
 
 #===============================================================================
