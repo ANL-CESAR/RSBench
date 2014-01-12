@@ -15,7 +15,7 @@ void counter_init( int *eventset, int *num_papi_events )
 	
 	// Bandwidth Used
 	// ((PAPI_Lx_TCM * Lx_linesize) / PAPI_TOT_CYC) * Clock(MHz)
-	int events[] = {PAPI_L3_TCM, PAPI_TOT_CYC};
+	//int events[] = {PAPI_L3_TCM, PAPI_TOT_CYC};
 
 	// L3 Total Cache Miss Ratio
 	// PAPI_L3_TCM / PAPI_L3_TCA
@@ -36,6 +36,10 @@ void counter_init( int *eventset, int *num_papi_events )
 	// MFlops
 	// (PAPI_FP_INS/PAPI_TOT_CYC) * Clock(MHz)
 	//int events[] = { PAPI_FP_INS, PAPI_TOT_CYC };
+	
+	// MFlops (Alternate?)
+	// (PAPI_FP_INS/PAPI_TOT_CYC) * Clock(MHz)
+	int events[] = { PAPI_DP_OPS, PAPI_TOT_CYC };
 
 	
 	// TLB misses (Using native counters)
@@ -106,12 +110,12 @@ void counter_init( int *eventset, int *num_papi_events )
 	int events[2];
 	int EventCode;
 	char * event1 = "RESOURCE_STALLS:ANY";
-	char * event2 = "perf::PERF_COUNT_HW_CPU_CYCLES";
+	char * event2 = "PAPI_TOT_CYC";
 	PAPI_event_name_to_code( event1, &EventCode );
 	events[0] = EventCode;	
 	PAPI_event_name_to_code( event2, &EventCode );
 	events[1] = EventCode;	
-	*/	
+	*/
 
 	/*
 	// CPU Stalls at Reservation Station (Using native counters)
@@ -124,12 +128,11 @@ void counter_init( int *eventset, int *num_papi_events )
 	PAPI_event_name_to_code( event2, &EventCode );
 	events[1] = EventCode;	
 	*/
-
-	// CPU Stall Reason Breakdown (Using native counters)
+	
 	/*
+	// CPU Stall Reason Breakdown (Using native counters)
 	int events[4];
 	int EventCode;
-	// Set 1
 	char * event1 = "RESOURCE_STALLS:ANY";
 	char * event2 = "RESOURCE_STALLS:LB";
 	char * event3 = "RESOURCE_STALLS:RS";
@@ -147,6 +150,7 @@ void counter_init( int *eventset, int *num_papi_events )
 	char * event3 = "RESOURCE_STALLS2:ANY_PRF_CONTROL"; // duplicate
 	char * event4 = "RESOURCE_STALLS2:OOO_RSRC";
 	// Set 3
+	
 
 	// Events that don't need to be counted
 	// Don't bother measuring these
@@ -154,6 +158,7 @@ void counter_init( int *eventset, int *num_papi_events )
 	//char * event1 = "RESOURCE_STALLS:MXCSR"; // Always 0, don't measure
 	//char * event3 = "RESOURCE_STALLS2:BOB_FULL"; // Always trivial
 	//char * event3 = "RESOURCE_STALLS2:ANY_PRF_CONTROL"; // duplicate
+	
 	
 	PAPI_event_name_to_code( event1, &EventCode );
 	events[0] = EventCode;	
