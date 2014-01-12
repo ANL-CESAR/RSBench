@@ -6,7 +6,7 @@ COMPILER  = gnu
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
-STATUS    = yes
+STATUS    = no
 PAPI      = yes
 
 #===============================================================================
