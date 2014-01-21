@@ -1,4 +1,4 @@
-#include "resobench.h"
+#include "rsbench.h"
 
 // Reviewed 
 int * generate_n_resonances( Input input )

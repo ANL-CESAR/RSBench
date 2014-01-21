@@ -13,7 +13,7 @@ PAPI      = no
 # Program name & source code list
 #===============================================================================
 
-program = resobench
+program = rsbench
 
 source = \
 main.c \
@@ -73,17 +73,17 @@ endif
 # Targets to Build
 #===============================================================================
 
-$(program): $(obj) resobench.h
+$(program): $(obj) rsbench.h
 	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf resobench $(obj)
+	rm -rf rsbench $(obj)
 
 edit:
-	vim -p $(source) resobench.h
+	vim -p $(source) rsbench.h
 
 run:
-	./resobench
+	./rsbench

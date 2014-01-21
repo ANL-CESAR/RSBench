@@ -1,4 +1,4 @@
-#include "resobench.h"
+#include "rsbench.h"
 
 // Reviewed
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data ) 

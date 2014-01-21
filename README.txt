@@ -1,10 +1,10 @@
 ==============================================================================
-                _____                 ____                  _      
-               |  __ \               |  _ \                | |     
-               | |__) |___  ___  ___ | |_) | ___ _ __   ___| |__   
-               |  _  // _ \/ __|/ _ \|  _ < / _ \ '_ \ / __| '_ \  
-               | | \ \  __/\__ \ (_) | |_) |  __/ | | | (__| | | | 
-               |_|  \_\___||___/\___/|____/ \___|_| |_|\___|_| |_| 
+                    _____   _____ ____                  _     
+                   |  __ \ / ____|  _ \                | |    
+                   | |__) | (___ | |_) | ___ _ __   ___| |__  
+                   |  _  / \___ \|  _ < / _ \ '_ \ / __| '_ \ 
+                   | | \ \ ____) | |_) |  __/ | | | (__| | | |
+                   |_|  \_\_____/|____/ \___|_| |_|\___|_| |_|
                          
                                    Version 0
 
@@ -18,7 +18,7 @@ Organization:     Center for Exascale Simulation of Advanced Reactors (CESAR)
 Development Lead: John Tramm <jtramm@mcs.anl.gov>
 
 ==============================================================================
-What is ResoBench?
+What is RSBench?
 ==============================================================================
 
 A mini-app to represent the multipole resonance representation lookup
@@ -30,7 +30,7 @@ Quick Start Guide
 
 Download----------------------------------------------------------------------
 
-	For the most up-to-date version of ResoBench, we recommend that you
+	For the most up-to-date version of RSBench, we recommend that you
 	download from our git repository. This can be accomplished via
 	cloning the repository from the command line, or by downloading a zip
 	from our github page. Alternatively, you can download a tar file from
@@ -38,12 +38,12 @@ Download----------------------------------------------------------------------
 
 	Git Repository Clone:
 		
-		Use the following command to clone ResoBench to your machine:
+		Use the following command to clone RSBench to your machine:
 
-		>$ git clone https://github.com/jtramm/ResoBench.git
+		>$ git clone https://github.com/jtramm/RSBench.git
 
 		Once cloned, you can update the code to the newest version
-		using the following command (when in the ResoBench directory):
+		using the following command (when in the RSBench directory):
 
 		>$ git pull
 	
@@ -51,25 +51,25 @@ Download----------------------------------------------------------------------
 
 		Simply use the "zip download" option on our webpage at:
 
-		https://github.com/jtramm/ResoBench
+		https://github.com/jtramm/RSBench
 
 Compilation-------------------------------------------------------------------
 
-	To compile ResoBench with default settings, use the following
+	To compile RSBench with default settings, use the following
 	command:
 
 	>$ make
 
-Running ResoBench---------------------------------------------------------------
+Running RSBench---------------------------------------------------------------
 
-	To run ResoBench with default settings, use the following command:
+	To run RSBench with default settings, use the following command:
 
-	>$ ./ResoBench
+	>$ ./RSBench
 
-	For non-default settings, ResoBench supports the following command line
+	For non-default settings, RSBench supports the following command line
 	options:	
 
-	Usage: ./ResoBench <options>
+	Usage: ./RSBench <options>
 	Options include:
 	  -t <threads>     Number of OpenMP threads to run
 	  -s <size>        Size of H-M Benchmark to run (small, large)
@@ -79,7 +79,7 @@ Running ResoBench---------------------------------------------------------------
 
 	-t <threads>
 
-		Sets the number of OpenMP threads to run. By default, ResoBench
+		Sets the number of OpenMP threads to run. By default, RSBench
 		will run with 1 thread per hardware core. If the architecture
 		supports hyperthreading, multiple threads will be run per
 		core.
@@ -106,7 +106,7 @@ Running ResoBench---------------------------------------------------------------
 		Sets the number of cross-section (XS) lookups to perform. By
 		default, this value is set to 5,000,000. Users may want to
 		increase this value if they wish to extend the runtime of
-		ResoBench, perhaps to produce more reliable performance counter
+		RSBench, perhaps to produce more reliable performance counter
 		data - as extending the run will decrease the percentage of
 		runtime spent on initialization.
 
@@ -121,7 +121,7 @@ Running ResoBench---------------------------------------------------------------
 		average number of resonances per nuclide.
 
 		This value, along with the H-M benchmark size, is responsible for
-		the total size of the ResoBench data structures.
+		the total size of the RSBench data structures.
 
 ==============================================================================
 Debugging, Optimization & Profiling

@@ -1,4 +1,4 @@
-#include "resobench.h"
+#include "rsbench.h"
 
 // Handles all material creation tasks - returns Material struct
 Materials get_materials(Input input)
