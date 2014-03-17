@@ -1,4 +1,4 @@
-#include "resobench.h"
+#include "rsbench.h"
 
 void counter_init( int *eventset, int *num_papi_events )
 {
