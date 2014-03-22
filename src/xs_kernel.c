@@ -30,27 +30,56 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data)
 {
+	// MicroScopic XS's to Calculate
+	double sigT;
+	double sigA;
+	double sigF;
+	double sigE;
 
-	int idx = (int) (E * data.n_poles[nuc] );
+	// Calculate Window Index
+	double spacing = 1.0 / input.n_windows;
+	int window = (int) ( E / spacing );
+	if( window == input.n_windows )
+		window--;
 
 	// Calculate sigTfactors
-	Complex * sigTfactors = calculate_sig_T( E, input, data );
+	_Complex double * sigTfactors = calculate_sig_T( E, input, data );
 
-	double sigT = 0;
-	double sigA = 0;
-	double sigF = 0;
+	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
+	sigT = E * CalcDataPtrs.fitting[window].T;
+	sigA = E * CalcDataPtrs.fitting[window].A;
+	sigF = E * CalcDataPtrs.fitting[window].F;
 
-	// Evaluate line fit of "background" poles for window we are in.
+	// Loop over Poles within window, add contributions
+	int start = data.win_boundaries[window].start;
+	int end = data.win_boundaries[window].end;
+	for( int i = start; i < end; i++ )
+	{
+		_Complex double PSIIKI;
+		_Complex double CDUM;
+		_Complex double pole = data.mpdata[i];
+		PSIIKI = -(0.0 - 1.0 * _Complex_I ) / ( pole.MP_EA - sqrt(E) );
+		CDUM = PSIIKI / E;
+		sigT += creal( pole.MP_RT * CDUM * sigTfactors[i] );
+		sigA += creal( pole.MP_RA * CDUM);
+		sigF += creal( pole.MP_RF * CDUM);
+	}
 
+	sigE = sigT - sigA;
 
-
+	micro_xs[0] = sigT;
+	micro_xs[1] = sigA;
+	micro_xs[2] = sigF;
+	micro_xs[3] = sigE;
 	
-Complex * calculate_sig_T( double E, Input input, CalcDataPtrs data )
+}
+
+_Complex double * calculate_sig_T( double E, Input input, CalcDataPtrs data )
 {
 	double phi;
 	int num_L = input.num_L;
-	Complex * sigTfactors = (Complex *) malloc( num_L * sizeof(Complex) );
-	
+	_Complex double * sigTfactors = (_Complex double *) malloc( num_L * sizeof(_Complex double) );
+
 	for( int i = 0; i < num_L; i++ )
 	{
 		phi = data.pseudo_K0RS[i] * sqrt(E);
@@ -64,13 +93,12 @@ Complex * calculate_sig_T( double E, Input input, CalcDataPtrs data )
 
 		phi *= 2.0;
 
-		sigTfactors[i].r = cos(phi);
-		sigTfactors[i].i = -sin(phi);
+		sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
 	}
 
 	return sigTfactors;
 }
-
+/*
 // Reviewed
 void old_calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data)
 {
@@ -98,7 +126,5 @@ void old_calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, 
 	micro_xs[2] = XS_s;
 	micro_xs[3] = XS_t;
 
-	/* Debug
-	printf("nuc = %d, E = %.2lf :: idx = %d, T = %.2lf, radius = %.2lf, theta_o = %.2lf, term1 = %.2lf, XS_g = %.2lf, XS_f = %.2lf, XS_s = %.2lf, XS_t = %.2lf\n", nuc, E, idx, T, radius, theta_o, term1, XS_g, XS_f, XS_s, XS_t);
-	*/
 }
+*/
