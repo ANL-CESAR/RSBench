@@ -69,12 +69,12 @@ Input read_CLI( int argc, char * argv[] )
 	input.nthreads = omp_get_num_procs();
 	// defaults to 355 (corresponding to H-M Large benchmark)
 	input.n_nuclides = 355;
-	// defaults to 5,000,000
-	input.lookups = 5000000;
+	// defaults to 10,000,000
+	input.lookups = 10000000;
 	// defaults to H-M Large benchmark
 	input.HM = LARGE;
 	// defaults to 3000 resonancs (avg) per nuclide
-	input.avg_n_poles = 3000;
+	input.avg_n_poles = 1000;
 	// defaults to 250
 	input.avg_n_windows = 250;
 	// defaults to 4;
@@ -182,7 +182,7 @@ void print_CLI_error(void)
 	printf("  -l <lookups>     Number of Cross-section (XS) lookups\n");
 	printf("  -p <poles>       Average Number of Poles per Nuclide\n");
 	printf("  -w <poles>       Average Number of Windows per Nuclide\n");
-	printf("Default is equivalent to: -s large -l 5000000 -p 3000 -w 250\n");
+	printf("Default is equivalent to: -s large -l 10000000 -p 1000 -w 250\n");
 	printf("See readme for full description of default run values\n");
 	exit(4);
 }

@@ -6,7 +6,7 @@
                    | | \ \ ____) | |_) |  __/ | | | (__| | | |
                    |_|  \_\_____/|____/ \___|_| |_|\___|_| |_|
                          
-                                   Version 0
+                                   Version 1
 
 ==============================================================================
 Contact Information
@@ -74,8 +74,9 @@ Running RSBench---------------------------------------------------------------
 	  -t <threads>     Number of OpenMP threads to run
 	  -s <size>        Size of H-M Benchmark to run (small, large)
 	  -l <lookups>     Number of Cross-section (XS) lookups
-	  -r <resonances>  Average Number of Resonances per Nuclide
-	Default is equivalent to: -s large -l 5000000 -r 3000
+	  -p <poles>       Average Number of Poles per Nuclide
+	  -w <windows>     Average Number of Windows per Nuclide
+	Default is equivalent to: -s large -l 10000000 -p 1000 -w 250
 
 	-t <threads>
 
