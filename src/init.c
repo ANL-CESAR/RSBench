@@ -24,27 +24,11 @@ int * generate_n_poles( Input input )
 }
 
 // Reviewed
-double * generate_nuclide_radii( Input input )
-{
-	double * A = (double *) malloc( input.n_nuclides * sizeof(double) );
-
-	for( int i = 0; i < input.n_nuclides; i++ )
-		A[i] = (double) rand() / RAND_MAX;
-	
-	/* Debug
-	for( int i = 0; i < input.n_nuclides; i++ )
-		printf("R[%d] = %.2lf\n", i, A[i]);
-	*/
-	
-	return A;
-}
-
-// Reviewed
-Resonance ** generate_resonance_params( Input input, int * n_poles )
+Pole ** generate_resonance_params( Input input, int * n_poles )
 {
 	// Allocating 2D contiguous matrix
-	Resonance ** R = (Resonance **) malloc( input.n_nuclides * sizeof( Resonance *));
-	Resonance * contiguous = (Resonance *) malloc( input.n_nuclides * input.n_poles * sizeof(Resonance));
+	Pole ** R = (Pole **) malloc( input.n_nuclides * sizeof( Pole *));
+	Pole * contiguous = (Pole *) malloc( input.n_nuclides * input.n_poles * sizeof(Pole));
 
 	int k = 0;
 	for( int i = 0; i < input.n_nuclides; i++ )

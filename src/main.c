@@ -27,7 +27,7 @@ int main(int argc, char * argv[])
 	print_input_summary(input);
 
 	// =====================================================================
-	// Prepare Resonance Paremeter Grids
+	// Prepare Pole Paremeter Grids
 	// =====================================================================
 	border_print();
 	center_print("INITIALIZATION", 79);
@@ -49,7 +49,7 @@ int main(int argc, char * argv[])
 
 	// Prepare full resonance grid
 	printf("Generating resonance parameter grid...\n");
-	Resonance ** resonance_params = generate_resonance_params( input, n_poles );
+	Pole ** resonance_params = generate_resonance_params( input, n_poles );
 	
 	CalcDataPtrs data;
 	data.n_poles = n_poles;

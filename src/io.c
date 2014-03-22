@@ -168,7 +168,7 @@ void print_CLI_error(void)
 	printf("  -t <threads>     Number of OpenMP threads to run\n");
 	printf("  -s <size>        Size of H-M Benchmark to run (small, large)\n");
 	printf("  -l <lookups>     Number of Cross-section (XS) lookups\n");
-	printf("  -r <resonances>  Average Number of Resonances per Nuclide\n");
+	printf("  -r <resonances>  Average Number of Poles per Nuclide\n");
 	printf("Default is equivalent to: -s large -l 5000000 -r 3000\n");
 	printf("See readme for full description of default run values\n");
 	exit(4);
@@ -186,7 +186,7 @@ void print_input_summary(Input input)
 	else
 		printf("Large\n");
 	printf("Total Nuclides:              %d\n", input.n_nuclides);
-	printf("Avg Resonances per Nuclide:  "); fancy_int(input.n_poles);
+	printf("Avg Poles per Nuclide:  "); fancy_int(input.n_poles);
 	printf("XS Lookups:                  "); fancy_int(input.lookups);
 	printf("Threads:                     %d\n", input.nthreads);
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);

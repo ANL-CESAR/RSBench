@@ -20,6 +20,7 @@ typedef struct{
 	int lookups;
 	HM_size HM;
 	int n_poles;
+	int n_windows;
 } Input;
 
 typedef struct{
@@ -29,24 +30,21 @@ typedef struct{
 } Materials;
 
 typedef struct{
-	double Eo; // Resonance energy @ center
-	double lambda_o; // de broglie wavelength @ center
-	double Tn; // width for neutron emission
-	double Tg; // width for radiative capture
-	double Tf; // width for fission
-} Resonance;
+	complex double MP_EA;
+	complex double MP_RT;
+	complex double MP_RA;
+	complex double MP_RF;
+	short int l_value;
+} Pole;
 
 typedef struct{
 	int * n_poles;
 	Materials materials;
 	double * nuclide_radii;
-	Resonance ** resonance_params;
+	Pole ** resonance_params;
+	Window ** win_boundaries;
+	double ** pseudo_K0RS;
 } CalcDataPtrs;
-
-typedef struct{
-	double r;
-	double i;
-} Complex;
 
 typedef struct{
 	double T;
@@ -71,7 +69,7 @@ void print_input_summary(Input input);
 // init.c
 int * generate_n_poles( Input input );
 double * generate_nuclide_radii( Input input );
-Resonance ** generate_resonance_params( Input input, int * n_poles );
+Pole ** generate_resonance_params( Input input, int * n_poles );
 
 // material.c
 int * load_num_nucs(Input input);

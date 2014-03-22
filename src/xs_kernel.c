@@ -51,16 +51,16 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	sigF = E * CalcDataPtrs.fitting[window].F;
 
 	// Loop over Poles within window, add contributions
-	int start = data.win_boundaries[window].start;
-	int end = data.win_boundaries[window].end;
+	int start = data.win_boundaries[nuc][window].start;
+	int end = data.win_boundaries[nuc][window].end;
 	for( int i = start; i < end; i++ )
 	{
 		complex double PSIIKI;
 		complex double CDUM;
-		complex double pole = data.mpdata[i];
+		Pole pole = data.poles[nuc][i];
 		PSIIKI = -(0.0 - 1.0 * complex_I ) / ( pole.MP_EA - sqrt(E) );
 		CDUM = PSIIKI / E;
-		sigT += creal( pole.MP_RT * CDUM * sigTfactors[i] );
+		sigT += creal( pole.MP_RT * CDUM * sigTfactors[pole.l_value] );
 		sigA += creal( pole.MP_RA * CDUM);
 		sigF += creal( pole.MP_RF * CDUM);
 	}
@@ -82,7 +82,7 @@ complex double * calculate_sig_T( double E, Input input, CalcDataPtrs data )
 
 	for( int i = 0; i < num_L; i++ )
 	{
-		phi = data.pseudo_K0RS[i] * sqrt(E);
+		phi = data.pseudo_K0RS[nuc][i] * sqrt(E);
 
 		if( i == 1 )
 			phi -= - atan( phi );
@@ -103,8 +103,8 @@ complex double * calculate_sig_T( double E, Input input, CalcDataPtrs data )
 void old_calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data)
 {
 	int idx = (int) (E * data.n_poles[nuc] );
-	Resonance ** R = data.resonance_params;
-	Resonance * r = &R[nuc][idx];
+	Pole ** R = data.resonance_params;
+	Pole * r = &R[nuc][idx];
 	double T = 1.0 / data.n_poles[nuc];
 	double radius = data.nuclide_radii[nuc];
 
