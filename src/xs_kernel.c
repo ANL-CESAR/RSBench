@@ -77,10 +77,9 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 complex double * calculate_sig_T( double E, Input input, CalcDataPtrs data )
 {
 	double phi;
-	int num_L = input.num_L;
-	complex double * sigTfactors = (complex double *) malloc( num_L * sizeof(complex double) );
+	complex double * sigTfactors = (complex double *) malloc( input.num_L * sizeof(complex double) );
 
-	for( int i = 0; i < num_L; i++ )
+	for( int i = 0; i < input.num_L; i++ )
 	{
 		phi = data.pseudo_K0RS[nuc][i] * sqrt(E);
 
@@ -98,33 +97,3 @@ complex double * calculate_sig_T( double E, Input input, CalcDataPtrs data )
 
 	return sigTfactors;
 }
-/*
-// Reviewed
-void old_calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data)
-{
-	int idx = (int) (E * data.n_poles[nuc] );
-	Pole ** R = data.resonance_params;
-	Pole * r = &R[nuc][idx];
-	double T = 1.0 / data.n_poles[nuc];
-	double radius = data.nuclide_radii[nuc];
-
-	// Reaction Cross Sections
-	double theta_o = 4 * PI * r->lambda_o * r->Tn * r->Eo / T; 
-	double term1 = theta_o * T * T * sqrt(r->Eo / E) / ( 4.0 * (E - r->Eo) * (E - r->Eo) + T * T);
-	double XS_g = ( r->Tg / T ) * term1;
-	double XS_f = ( r->Tf / T ) * term1;
-
-	// Scattering Cross Section
-	double XS_s = theta_o * term1 * ( r->Tn / T + ( 4.0*(E - r->Eo) * radius ) / ( T * theta_o * sqrt( r->Eo / E ) ) ) + 4.0 * PI * radius * radius;
-
-	// Total Cross Section
-	double XS_t = XS_g + XS_f + XS_s;
-
-	// Store in output array
-	micro_xs[0] = XS_g;
-	micro_xs[1] = XS_f;
-	micro_xs[2] = XS_s;
-	micro_xs[3] = XS_t;
-
-}
-*/

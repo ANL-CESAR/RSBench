@@ -38,24 +38,34 @@ int main(int argc, char * argv[])
 	// Allocate & fill energy grids
 	printf("Generating resonance distributions...\n");
 	int * n_poles = generate_n_poles( input );
+
+	// Allocate & fill Window grids
+	printf("Generating window distributions...\n");
+	int * n_windows( input );
 	
 	// Get material data
 	printf("Loading Hoogenboom-Martin material data...\n");
 	Materials materials = get_materials( input ); 
 
-	// Prepare material resonance grid
-	printf("Generating nuclide data...\n");
-	double * nuclide_radii = generate_nuclide_radii( input );
-
 	// Prepare full resonance grid
 	printf("Generating resonance parameter grid...\n");
 	Pole ** resonance_params = generate_resonance_params( input, n_poles );
-	
+
+	// Prepare full Window grid
+	printf("Generating window parameter grid...\n");
+	Window ** windows = generate_window_params( input, n_windows, n_poles);
+
+	// Prepare 0K Resonances
+	printf("Generating 0K l_value data...\n");
+	double ** pseudo_K0RS = generate_pseudo_K0RS( input );
+
 	CalcDataPtrs data;
 	data.n_poles = n_poles;
+	data.n_windows = n_windows
 	data.materials = materials;
-	data.nuclide_radii = nuclide_radii;
 	data.resonance_params = resonance_params;
+	data.windows = windows;
+	data.pseudo_K0RS = pseudo_K0RS;
 
 	stop = omp_get_wtime();
 	printf("Initialization Complete. (%.2lf seconds)\n", stop-start);
