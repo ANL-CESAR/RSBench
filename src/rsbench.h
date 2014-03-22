@@ -43,6 +43,10 @@ typedef struct{
 	Resonance ** resonance_params;
 } CalcDataPtrs;
 
+typedef struct{
+	double r;
+	double i;
+} Complex;
 
 // io.c
 void logo(int version);

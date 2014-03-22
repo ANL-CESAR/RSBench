@@ -28,8 +28,57 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	
 }
 
-// Reviewed
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data)
+{
+	int idx = (int) (E * data.n_resonances[nuc] );
+
+	// Calculate sigTfactors
+	Complex * sigTfactors = calculate_sig_T( E, input, data );
+
+
+	
+Complex * calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data )
+{
+	int max_L = input.num_L;
+	Complex * sigTfactors = (Complex *) malloc( num_L * sizeof(Complex) );
+	double phi;
+	
+	for( int i = 0; i < num_L; i++ )
+	{
+		phi = data.pseudo_K0RS[i] * sqrt(E);
+		if( i == 1 )
+			phi -= - atan( phi );
+		else if( i == 2 )
+			phi -= atan( 3.0 * phi / (3.0 - phi*phi));
+		else if( i == 3 )
+			phi -= atan(phi*(15.0-phi*phi)/(15.0-6.0*phi*phi));
+
+		phi *= 2.0;
+
+		sigTfactors[i].r = cos(phi);
+		sigTfactors[i].i = -sin(phi);
+	}
+	return sigTfactors;
+}
+
+ do iL = 1, multipoles % numL
+      twophi(iL) = multipoles%pseudo_k0RS(iL)*sqrtE
+      if(iL == 2) then
+        twophi(iL) = twophi(iL) - atan(twophi(iL))
+      else if (iL == 3) then
+        arg = 3.0_8*twophi(iL)/(3.0_8-twophi(iL)**2)
+        twophi(iL) = twophi(iL) - atan(arg)
+      else if (iL == 4) then
+        arg = twophi(iL)*(15.0_8-twophi(iL)**2)/(15.0_8-6.0_8*twophi(iL)**2)
+        twophi(iL) = twophi(iL) - atan(arg)
+      end if
+
+      twophi(iL) = 2.0_8 * twophi(iL)
+      sigT_factor(iL) = cmplx(cos(twophi(iL)),-sin(twophi(iL)), KIND=8)
+    end do
+
+// Reviewed
+void old_calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data)
 {
 	int idx = (int) (E * data.n_resonances[nuc] );
 	Resonance ** R = data.resonance_params;
