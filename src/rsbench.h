@@ -4,6 +4,7 @@
 #include<time.h>
 #include<string.h>
 #include<math.h>
+#include<complex.h>
 
 #ifdef PAPI
 #include "papi.h"
