@@ -49,7 +49,7 @@ int main(int argc, char * argv[])
 
 	// Prepare full resonance grid
 	printf("Generating resonance parameter grid...\n");
-	Pole ** resonance_params = generate_resonance_params( input, n_poles );
+	Pole ** poles = generate_poles( input, n_poles );
 
 	// Prepare full Window grid
 	printf("Generating window parameter grid...\n");
@@ -63,7 +63,7 @@ int main(int argc, char * argv[])
 	data.n_poles = n_poles;
 	data.n_windows = n_windows;
 	data.materials = materials;
-	data.resonance_params = resonance_params;
+	data.poles = poles;
 	data.windows = windows;
 	data.pseudo_K0RS = pseudo_K0RS;
 

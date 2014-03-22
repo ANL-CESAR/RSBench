@@ -16,9 +16,12 @@ double rn(unsigned long * seed)
 
 size_t get_mem_estimate( Input input )
 {
-	size_t radii = input.n_nuclides * sizeof(double);
-	size_t resonances = input.n_nuclides * input.n_poles * sizeof(Pole) + input.n_nuclides * sizeof(Pole *);
-	size_t total = radii + resonances;
+	size_t poles = input.n_nuclides * input.avg_n_poles * sizeof(Pole) + input.n_nuclides * sizeof(Pole *);
+	size_t windows = input.n_nuclides * input.avg_n_windows * sizeof(Window) + input.n_nuclides * sizeof(Window *);
+	size_t pseudo_K0RS = input.n_nuclides * input.numL * sizeof( double ) + input.n_nuclides * sizeof(double);
+	size_t other = input.n_nuclides * 2 * sizeof(int);
+
+	size_t total = poles + windows + pseudo_K0RS + other;
 	
 	return total;
 }

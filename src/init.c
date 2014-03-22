@@ -46,7 +46,7 @@ int * generate_n_windows( Input input )
 }
 
 // 
-Pole ** generate_resonance_params( Input input, int * n_poles )
+Pole ** generate_poles( Input input, int * n_poles )
 {
 	// Allocating 2D contiguous matrix
 	Pole ** R = (Pole **) malloc( input.n_nuclides * sizeof( Pole *));
@@ -63,10 +63,10 @@ Pole ** generate_resonance_params( Input input, int * n_poles )
 	for( int i = 0; i < input.n_nuclides; i++ )
 		for( int j = 0; j < n_poles[i]; j++ )
 		{
-			R[i][j].EA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
-			R[i][j].RT = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
-			R[i][j].RA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
-			R[i][j].RF = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
+			R[i][j].MP_EA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
+			R[i][j].MP_RT = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
+			R[i][j].MP_RA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
+			R[i][j].MP_RF = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
 			R[i][j].l_value = rand() % input.numL;
 		}
 	
@@ -82,8 +82,8 @@ Pole ** generate_resonance_params( Input input, int * n_poles )
 Window ** generate_window_params( Input input, int * n_windows, int * n_poles )
 {
 	// Allocating 2D contiguous matrix
-	Pole ** R = (Pole **) malloc( input.n_nuclides * sizeof( Pole *));
-	Pole * contiguous = (Pole *) malloc( input.n_nuclides * input.avg_n_windows * sizeof(Pole));
+	Window ** R = (Window **) malloc( input.n_nuclides * sizeof( Window *));
+	Window * contiguous = (Window *) malloc( input.n_nuclides * input.avg_n_windows * sizeof(Window));
 
 	int k = 0;
 	for( int i = 0; i < input.n_nuclides; i++ )

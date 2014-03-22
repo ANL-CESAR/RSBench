@@ -51,7 +51,7 @@ typedef struct{
 	int * n_poles;
 	int * n_windows;
 	Materials materials;
-	Pole ** resonance_params;
+	Pole ** poles;
 	Window ** windows;
 	double ** pseudo_K0RS;
 } CalcDataPtrs;
@@ -69,7 +69,7 @@ void print_input_summary(Input input);
 // init.c
 int * generate_n_poles( Input input );
 int * generate_n_windows( Input input );
-Pole ** generate_resonance_params( Input input, int * n_poles );
+Pole ** generate_poles( Input input, int * n_poles );
 Window ** generate_window_params( Input input, int * n_windows, int * n_poles );
 double ** generate_pseudo_K0RS( Input input );
 
@@ -87,7 +87,7 @@ size_t get_mem_estimate( Input input );
 // xs_kernel.c
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data ); 
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data);
-complex double * calculate_sig_T( double E, Input input, CalcDataPtrs data );
+complex double * calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data );
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );

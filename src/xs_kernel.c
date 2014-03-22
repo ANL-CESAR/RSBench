@@ -37,13 +37,13 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	double sigE;
 
 	// Calculate Window Index
-	double spacing = 1.0 / input.n_windows;
+	double spacing = 1.0 / data.n_windows[nuc];
 	int window = (int) ( E / spacing );
-	if( window == input.n_windows )
+	if( window == data.n_windows[nuc] )
 		window--;
 
 	// Calculate sigTfactors
-	complex double * sigTfactors = calculate_sig_T( E, input, data );
+	complex double * sigTfactors = calculate_sig_T(nuc, E, input, data );
 
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = data.windows[nuc][window];
@@ -57,7 +57,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 		complex double PSIIKI;
 		complex double CDUM;
 		Pole pole = data.poles[nuc][i];
-		PSIIKI = -(0.0 - 1.0 * complex_I ) / ( pole.MP_EA - sqrt(E) );
+		PSIIKI = -(0.0 - 1.0 * _Complex_I ) / ( pole.MP_EA - sqrt(E) );
 		CDUM = PSIIKI / E;
 		sigT += creal( pole.MP_RT * CDUM * sigTfactors[pole.l_value] );
 		sigA += creal( pole.MP_RA * CDUM);
@@ -74,12 +74,12 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	free( sigTfactors );
 }
 
-complex double * calculate_sig_T( double E, Input input, CalcDataPtrs data )
+complex double * calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data )
 {
 	double phi;
-	complex double * sigTfactors = (complex double *) malloc( input.num_L * sizeof(complex double) );
+	complex double * sigTfactors = (complex double *) malloc( input.numL * sizeof(complex double) );
 
-	for( int i = 0; i < input.num_L; i++ )
+	for( int i = 0; i < input.numL; i++ )
 	{
 		phi = data.pseudo_K0RS[nuc][i] * sqrt(E);
 
@@ -92,7 +92,7 @@ complex double * calculate_sig_T( double E, Input input, CalcDataPtrs data )
 
 		phi *= 2.0;
 
-		sigTfactors[i] = cos(phi) - sin(phi) * complex_I;
+		sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
 	}
 
 	return sigTfactors;
