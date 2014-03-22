@@ -78,7 +78,7 @@ Input read_CLI( int argc, char * argv[] )
 	input.HM = LARGE;
 
 	// defaults to 3000 resonancs (avg) per nuclide
-	input.n_resonances = 3000;
+	input.n_poles = 3000;
 	
 	// Collect Raw Input
 	for( int i = 1; i < argc; i++ )
@@ -128,7 +128,7 @@ Input read_CLI( int argc, char * argv[] )
 		else if( strcmp(arg, "-r") == 0 )
 		{
 			if( ++i < argc )
-				input.n_resonances = atoi(argv[i]);
+				input.n_poles = atoi(argv[i]);
 			else
 				print_CLI_error();
 		}
@@ -151,7 +151,7 @@ Input read_CLI( int argc, char * argv[] )
 		print_CLI_error();
 	
 	// Validate lookups
-	if( input.n_resonances < 1 )
+	if( input.n_poles < 1 )
 		print_CLI_error();
 	
 	// Set HM size specific parameters
@@ -186,7 +186,7 @@ void print_input_summary(Input input)
 	else
 		printf("Large\n");
 	printf("Total Nuclides:              %d\n", input.n_nuclides);
-	printf("Avg Resonances per Nuclide:  "); fancy_int(input.n_resonances);
+	printf("Avg Resonances per Nuclide:  "); fancy_int(input.n_poles);
 	printf("XS Lookups:                  "); fancy_int(input.lookups);
 	printf("Threads:                     %d\n", input.nthreads);
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);

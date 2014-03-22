@@ -19,7 +19,7 @@ typedef struct{
 	int n_nuclides;
 	int lookups;
 	HM_size HM;
-	int n_resonances;
+	int n_poles;
 } Input;
 
 typedef struct{
@@ -37,7 +37,7 @@ typedef struct{
 } Resonance;
 
 typedef struct{
-	int * n_resonances;
+	int * n_poles;
 	Materials materials;
 	double * nuclide_radii;
 	Resonance ** resonance_params;
@@ -58,9 +58,9 @@ void print_CLI_error(void);
 void print_input_summary(Input input);
 
 // init.c
-int * generate_n_resonances( Input input );
+int * generate_n_poles( Input input );
 double * generate_nuclide_radii( Input input );
-Resonance ** generate_resonance_params( Input input, int * n_resonances );
+Resonance ** generate_resonance_params( Input input, int * n_poles );
 
 // material.c
 int * load_num_nucs(Input input);
@@ -76,6 +76,7 @@ size_t get_mem_estimate( Input input );
 // xs_kernel.c
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data ); 
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data);
+Complex * calculate_sig_T( double E, Input input, CalcDataPtrs data );
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );

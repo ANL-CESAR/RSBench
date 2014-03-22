@@ -37,7 +37,7 @@ int main(int argc, char * argv[])
 	
 	// Allocate & fill energy grids
 	printf("Generating resonance distributions...\n");
-	int * n_resonances = generate_n_resonances( input );
+	int * n_poles = generate_n_poles( input );
 	
 	// Get material data
 	printf("Loading Hoogenboom-Martin material data...\n");
@@ -49,10 +49,10 @@ int main(int argc, char * argv[])
 
 	// Prepare full resonance grid
 	printf("Generating resonance parameter grid...\n");
-	Resonance ** resonance_params = generate_resonance_params( input, n_resonances );
+	Resonance ** resonance_params = generate_resonance_params( input, n_poles );
 	
 	CalcDataPtrs data;
-	data.n_resonances = n_resonances;
+	data.n_poles = n_poles;
 	data.materials = materials;
 	data.nuclide_radii = nuclide_radii;
 	data.resonance_params = resonance_params;

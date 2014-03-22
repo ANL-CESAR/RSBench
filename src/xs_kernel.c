@@ -30,22 +30,31 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data)
 {
-	int idx = (int) (E * data.n_resonances[nuc] );
+
+	int idx = (int) (E * data.n_poles[nuc] );
 
 	// Calculate sigTfactors
 	Complex * sigTfactors = calculate_sig_T( E, input, data );
 
+	double sigT = 0;
+	double sigA = 0;
+	double sigF = 0;
+
+	// Evaluate line fit of "background" poles for window we are in.
+
+
 
 	
-Complex * calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data )
+Complex * calculate_sig_T( double E, Input input, CalcDataPtrs data )
 {
-	int max_L = input.num_L;
-	Complex * sigTfactors = (Complex *) malloc( num_L * sizeof(Complex) );
 	double phi;
+	int num_L = input.num_L;
+	Complex * sigTfactors = (Complex *) malloc( num_L * sizeof(Complex) );
 	
 	for( int i = 0; i < num_L; i++ )
 	{
 		phi = data.pseudo_K0RS[i] * sqrt(E);
+
 		if( i == 1 )
 			phi -= - atan( phi );
 		else if( i == 2 )
@@ -58,32 +67,17 @@ Complex * calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data )
 		sigTfactors[i].r = cos(phi);
 		sigTfactors[i].i = -sin(phi);
 	}
+
 	return sigTfactors;
 }
-
- do iL = 1, multipoles % numL
-      twophi(iL) = multipoles%pseudo_k0RS(iL)*sqrtE
-      if(iL == 2) then
-        twophi(iL) = twophi(iL) - atan(twophi(iL))
-      else if (iL == 3) then
-        arg = 3.0_8*twophi(iL)/(3.0_8-twophi(iL)**2)
-        twophi(iL) = twophi(iL) - atan(arg)
-      else if (iL == 4) then
-        arg = twophi(iL)*(15.0_8-twophi(iL)**2)/(15.0_8-6.0_8*twophi(iL)**2)
-        twophi(iL) = twophi(iL) - atan(arg)
-      end if
-
-      twophi(iL) = 2.0_8 * twophi(iL)
-      sigT_factor(iL) = cmplx(cos(twophi(iL)),-sin(twophi(iL)), KIND=8)
-    end do
 
 // Reviewed
 void old_calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data)
 {
-	int idx = (int) (E * data.n_resonances[nuc] );
+	int idx = (int) (E * data.n_poles[nuc] );
 	Resonance ** R = data.resonance_params;
 	Resonance * r = &R[nuc][idx];
-	double T = 1.0 / data.n_resonances[nuc];
+	double T = 1.0 / data.n_poles[nuc];
 	double radius = data.nuclide_radii[nuc];
 
 	// Reaction Cross Sections
