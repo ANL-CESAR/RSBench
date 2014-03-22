@@ -87,7 +87,7 @@ size_t get_mem_estimate( Input input );
 // xs_kernel.c
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data ); 
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data);
-_Complex double * calculate_sig_T( double E, Input input, CalcDataPtrs data );
+complex double * calculate_sig_T( double E, Input input, CalcDataPtrs data );
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );
