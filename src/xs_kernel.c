@@ -46,14 +46,13 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	complex double * sigTfactors = calculate_sig_T( E, input, data );
 
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
-	sigT = E * CalcDataPtrs.fitting[window].T;
-	sigA = E * CalcDataPtrs.fitting[window].A;
-	sigF = E * CalcDataPtrs.fitting[window].F;
+	Window w = data.windows[nuc][window];
+	sigT = E * w.T;
+	sigA = E * w.A;
+	sigF = E * w.F;
 
 	// Loop over Poles within window, add contributions
-	int start = data.win_boundaries[nuc][window].start;
-	int end = data.win_boundaries[nuc][window].end;
-	for( int i = start; i < end; i++ )
+	for( int i = w.start; i < w.end; i++ )
 	{
 		complex double PSIIKI;
 		complex double CDUM;
@@ -71,7 +70,8 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	micro_xs[1] = sigA;
 	micro_xs[2] = sigF;
 	micro_xs[3] = sigE;
-	
+
+	free( sigTfactors );
 }
 
 complex double * calculate_sig_T( double E, Input input, CalcDataPtrs data )

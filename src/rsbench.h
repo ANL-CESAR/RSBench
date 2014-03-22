@@ -19,8 +19,9 @@ typedef struct{
 	int n_nuclides;
 	int lookups;
 	HM_size HM;
-	int n_poles;
-	int n_windows;
+	int avg_n_poles;
+	int avg_n_windows;
+	int numL;
 } Input;
 
 typedef struct{
@@ -39,10 +40,10 @@ typedef struct{
 
 typedef struct{
 	int * n_poles;
+	int * n_windows;
 	Materials materials;
-	double * nuclide_radii;
 	Pole ** resonance_params;
-	Window ** win_boundaries;
+	Window ** windows;
 	double ** pseudo_K0RS;
 } CalcDataPtrs;
 
@@ -50,9 +51,6 @@ typedef struct{
 	double T;
 	double A;
 	double F;
-} FitParams;
-
-typedef struct{
 	int start;
 	int end;
 } Window;
@@ -68,8 +66,10 @@ void print_input_summary(Input input);
 
 // init.c
 int * generate_n_poles( Input input );
-double * generate_nuclide_radii( Input input );
+int * generate_n_windows( Input input );
 Pole ** generate_resonance_params( Input input, int * n_poles );
+Window ** generate_window_params( Input input, int * n_windows );
+double ** generate_pseudo_K0RS( Input input );
 
 // material.c
 int * load_num_nucs(Input input);
