@@ -35,7 +35,7 @@ ifeq ($(COMPILER),gnu)
 endif
 
 # Standard Flags
-CFLAGS := -fopenmp -std=gnu99
+CFLAGS := -fopenmp -std=gnu99 -ffast-math
 
 # Linker Flags
 LDFLAGS = -lm
