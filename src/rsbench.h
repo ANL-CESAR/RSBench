@@ -40,6 +40,14 @@ typedef struct{
 } Pole;
 
 typedef struct{
+	double T;
+	double A;
+	double F;
+	int start;
+	int end;
+} Window;
+
+typedef struct{
 	int * n_poles;
 	int * n_windows;
 	Materials materials;
@@ -48,13 +56,6 @@ typedef struct{
 	double ** pseudo_K0RS;
 } CalcDataPtrs;
 
-typedef struct{
-	double T;
-	double A;
-	double F;
-	int start;
-	int end;
-} Window;
 
 // io.c
 void logo(int version);

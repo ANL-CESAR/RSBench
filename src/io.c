@@ -67,18 +67,18 @@ Input read_CLI( int argc, char * argv[] )
 	
 	// defaults to max threads on the system	
 	input.nthreads = omp_get_num_procs();
-	
 	// defaults to 355 (corresponding to H-M Large benchmark)
 	input.n_nuclides = 355;
-	
 	// defaults to 5,000,000
 	input.lookups = 5000000;
-	
 	// defaults to H-M Large benchmark
 	input.HM = LARGE;
-
 	// defaults to 3000 resonancs (avg) per nuclide
-	input.n_poles = 3000;
+	input.avg_n_poles = 3000;
+	// defaults to 250
+	input.avg_n_windows = 250;
+	// defaults to 4;
+	input.numL = 4;
 	
 	// Collect Raw Input
 	for( int i = 1; i < argc; i++ )
@@ -124,11 +124,19 @@ Input read_CLI( int argc, char * argv[] )
 			else
 				print_CLI_error();
 		}
-		// Avg number of resonances / nuclide (-r)
-		else if( strcmp(arg, "-r") == 0 )
+		// Avg number of windows per nuclide (-w)
+		else if( strcmp(arg, "-w") == 0 )
 		{
 			if( ++i < argc )
-				input.n_poles = atoi(argv[i]);
+				input.avg_n_windows = atoi(argv[i]);
+			else
+				print_CLI_error();
+		}
+		// Avg number of poles per nuclide (-p)
+		else if( strcmp(arg, "-p") == 0 )
+		{
+			if( ++i < argc )
+				input.avg_n_poles = atoi(argv[i]);
 			else
 				print_CLI_error();
 		}
@@ -151,7 +159,11 @@ Input read_CLI( int argc, char * argv[] )
 		print_CLI_error();
 	
 	// Validate lookups
-	if( input.n_poles < 1 )
+	if( input.avg_n_poles < 1 )
+		print_CLI_error();
+	
+	// Validate lookups
+	if( input.avg_n_windows < 1 )
 		print_CLI_error();
 	
 	// Set HM size specific parameters
@@ -168,8 +180,9 @@ void print_CLI_error(void)
 	printf("  -t <threads>     Number of OpenMP threads to run\n");
 	printf("  -s <size>        Size of H-M Benchmark to run (small, large)\n");
 	printf("  -l <lookups>     Number of Cross-section (XS) lookups\n");
-	printf("  -r <resonances>  Average Number of Poles per Nuclide\n");
-	printf("Default is equivalent to: -s large -l 5000000 -r 3000\n");
+	printf("  -p <poles>       Average Number of Poles per Nuclide\n");
+	printf("  -w <poles>       Average Number of Windows per Nuclide\n");
+	printf("Default is equivalent to: -s large -l 5000000 -p 3000 -w 250\n");
 	printf("See readme for full description of default run values\n");
 	exit(4);
 }
@@ -186,7 +199,8 @@ void print_input_summary(Input input)
 	else
 		printf("Large\n");
 	printf("Total Nuclides:              %d\n", input.n_nuclides);
-	printf("Avg Poles per Nuclide:  "); fancy_int(input.n_poles);
+	printf("Avg Poles per Nuclide:       "); fancy_int(input.avg_n_poles);
+	printf("Avg Windows per Nuclide:     "); fancy_int(input.avg_n_windows);
 	printf("XS Lookups:                  "); fancy_int(input.lookups);
 	printf("Threads:                     %d\n", input.nthreads);
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);

@@ -41,7 +41,7 @@ int main(int argc, char * argv[])
 
 	// Allocate & fill Window grids
 	printf("Generating window distributions...\n");
-	int * n_windows( input );
+	int * n_windows = generate_n_windows( input );
 	
 	// Get material data
 	printf("Loading Hoogenboom-Martin material data...\n");
@@ -61,7 +61,7 @@ int main(int argc, char * argv[])
 
 	CalcDataPtrs data;
 	data.n_poles = n_poles;
-	data.n_windows = n_windows
+	data.n_windows = n_windows;
 	data.materials = materials;
 	data.resonance_params = resonance_params;
 	data.windows = windows;
