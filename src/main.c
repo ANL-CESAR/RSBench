@@ -93,7 +93,6 @@ int main(int argc, char * argv[])
 	start = omp_get_wtime();
 
 	unsigned long seed = rand();
-
 	int mat;
 	double E;
 	int i;

@@ -6,3 +6,4 @@ NEW IN VERSION 2
   allocs/free's are saved. This appears to increase performance
   significantly (~33%) when compared to v1.
 =====================================================================
+
