@@ -1,7 +1,7 @@
 #include "rsbench.h"
 
 // Reviewed
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data ) 
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ) 
 {
 	// zero out macro vector
 	for( int i = 0; i < 4; i++ )
@@ -13,7 +13,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 		double micro_xs[4];
 		int nuc = (data.materials).mats[mat][i];
 
-		calculate_micro_xs( micro_xs, nuc, E, input, data);
+		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors);
 
 		for( int j = 0; j < 4; j++ )
 		{
@@ -28,7 +28,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	
 }
 
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data)
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors)
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -43,7 +43,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 		window--;
 
 	// Calculate sigTfactors
-	complex double * sigTfactors = calculate_sig_T(nuc, E, input, data );
+	calculate_sig_T(nuc, E, input, data, sigTfactors );
 
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = data.windows[nuc][window];
@@ -70,14 +70,11 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	micro_xs[1] = sigA;
 	micro_xs[2] = sigF;
 	micro_xs[3] = sigE;
-
-	free( sigTfactors );
 }
 
-complex double * calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data )
+void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors )
 {
 	double phi;
-	complex double * sigTfactors = (complex double *) malloc( input.numL * sizeof(complex double) );
 
 	for( int i = 0; i < input.numL; i++ )
 	{
@@ -94,6 +91,4 @@ complex double * calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs d
 
 		sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
 	}
-
-	return sigTfactors;
 }

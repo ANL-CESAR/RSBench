@@ -83,7 +83,7 @@ clean:
 	rm -rf rsbench $(obj)
 
 edit:
-	vim -p $(source) rsbench.h
+	vim -p $(source) papi.c rsbench.h
 
 run:
 	./rsbench

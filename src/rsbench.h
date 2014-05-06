@@ -85,9 +85,9 @@ double rn(unsigned long * seed);
 size_t get_mem_estimate( Input input );
 
 // xs_kernel.c
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data ); 
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data);
-complex double * calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data );
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ); 
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors);
+void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors );
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );

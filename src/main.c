@@ -6,7 +6,7 @@ int main(int argc, char * argv[])
 	// Initialization & Command Line Read-In
 	// =====================================================================
 
-	int version = 1;
+	int version = 2;
 	int max_procs = omp_get_num_procs();
 	double start, stop;
 	
@@ -114,6 +114,8 @@ int main(int argc, char * argv[])
 			counter_init(&eventset, &num_papi_events);
 		}
 		#endif
+		complex double * sigTfactors =
+			(complex double *) malloc( input.numL * sizeof(complex double) );
 
 		#pragma omp for schedule(dynamic)
 		for( i = 0; i < input.lookups; i++ )
@@ -127,8 +129,10 @@ int main(int argc, char * argv[])
 			#endif
 			mat = pick_mat( &seed );
 			E = rn( &seed );
-			calculate_macro_xs( macro_xs, mat, E, input, data ); 
+			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors ); 
 		}
+
+		free(sigTfactors);
 		
 		#ifdef PAPI
 		if( thread == 0 )
