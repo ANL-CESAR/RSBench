@@ -132,7 +132,6 @@ int main(int argc, char * argv[])
 		}
 
 		free(sigTfactors);
-		
 		#ifdef PAPI
 		if( thread == 0 )
 		{
@@ -145,6 +144,7 @@ int main(int argc, char * argv[])
 		{
 		#pragma omp barrier
 		}
+		
 		counter_stop(&eventset, num_papi_events);
 		#endif
 	}

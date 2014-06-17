@@ -139,8 +139,22 @@ int pick_mat( unsigned long * seed )
 	// Also could be argued that doing fractions by weight would be 
 	// a better approximation, but volume does a good enough job for now.
 
+	// Updated distribution built from actual OpenMC look-ups 
 	double dist[12];
-	dist[0]  = 0.140;	// fuel
+	dist[0]  = 0.207834;	// fuel
+	dist[1]  = 0.381401;	// cladding
+	dist[2]  = 0.207763;	// cold, borated water
+	dist[3]  = 0.198185;	// hot, borated water
+	dist[4]  = 0.000036;	// RPV
+	dist[5]  = 0.000032;	// Lower, radial reflector
+	dist[6]  = 0.000039;	// Upper reflector / top plate
+	dist[7]  = 0.000231;	// bottom plate
+	dist[8]  = 0.000406;	// bottom nozzle
+	dist[9]  = 0.000140;	// top nozzle
+	dist[10] = 0.002414;	// top of fuel assemblies
+	dist[11] = 0.001519;	// bottom of fuel assemblies
+
+/*	dist[0]  = 0.140;	// fuel
 	dist[1]  = 0.052;	// cladding
 	dist[2]  = 0.275;	// cold, borated water
 	dist[3]  = 0.134;	// hot, borated water
@@ -151,8 +165,8 @@ int pick_mat( unsigned long * seed )
 	dist[8]  = 0.008;	// bottom nozzle
 	dist[9]  = 0.015;	// top nozzle
 	dist[10] = 0.025;	// top of fuel assemblies
-	dist[11] = 0.013;	// bottom of fuel assemblies
-	
+	dist[11] = 0.013;*/	// bottom of fuel assemblies
+
 	double roll = rn(seed);
 
 	// makes a pick based on the distro

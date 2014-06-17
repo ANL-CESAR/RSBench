@@ -7,7 +7,7 @@ OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
 STATUS    = yes
-PAPI      = no
+PAPI      = yes
 
 #===============================================================================
 # Program name & source code list
