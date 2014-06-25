@@ -129,7 +129,7 @@ int main(int argc, char * argv[])
 			#endif
 			mat = pick_mat( &seed );
 			E = rn( &seed );
-			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors ); 
+			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors );
 		}
 
 		free(sigTfactors);

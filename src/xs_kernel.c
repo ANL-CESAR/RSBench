@@ -13,7 +13,8 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 		double micro_xs[4];
 		int nuc = (data.materials).mats[mat][i];
 
-		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors);
+//		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors);
+		calculate_micro_xs_driver( micro_xs, nuc, E, input, data, sigTfactors);
 
 		for( int j = 0; j < 4; j++ )
 		{

@@ -111,6 +111,7 @@ void calculate_sig_T_sim ( double E, int num_iter, const double* data, complex d
 
 //CUDA_Driver.c
 int dotp_driver(int NTPB);
+void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors);
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );
