@@ -1,3 +1,6 @@
+#ifndef __RSBENCH_HEADER_H__
+#define __RSBENCH_HEADER_H__
+
 #include<stdio.h>
 #include<omp.h>
 #include<stdlib.h>
@@ -5,6 +8,9 @@
 #include<string.h>
 #include<math.h>
 #include<complex.h>
+#include<cuda.h>
+#include<cuda_runtime.h>
+#include<assert.h>
 
 #ifdef PAPI
 #include "papi.h"
@@ -56,7 +62,19 @@ typedef struct{
 	double ** pseudo_K0RS;
 } CalcDataPtrs;
 
+static int numL = 0;
 
+#ifdef __cplusplus
+  #define RESTRICT __restrict
+  #define C_LINKAGE extern "C" 
+#else
+  #define RESTRICT 
+  #define C_LINKAGE 
+#endif
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
 // io.c
 void logo(int version);
 void center_print(const char *s, int width);
@@ -88,7 +106,16 @@ size_t get_mem_estimate( Input input );
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ); 
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors);
 void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors );
+void calculate_sig_T_sim ( double E, int num_iter, const double* data, complex double * sigTfactors );
+
+//CUDA_Driver.c
+int dotp_driver(int NTPB);
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );
 void counter_stop( int * eventset, int num_papi_events );
+#ifdef  __cplusplus
+  }
+#endif
+
+#endif

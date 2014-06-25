@@ -7,7 +7,7 @@ OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
 STATUS    = yes
-PAPI      = yes
+PAPI      = no
 
 #===============================================================================
 # Program name & source code list
@@ -21,7 +21,21 @@ xs_kernel.c \
 io.c \
 init.c \
 material.c \
-utils.c
+utils.c \
+CUDA_Driver.cu
+
+OBJS = \
+main.o \
+xs_kernel.o\
+io.o \
+init.o \
+material.o\
+utils.o\
+CUDA_Driver.o
+
+HEADERS = \
+rsbench.h #\
+#cudaHeader.h 
 
 obj = $(source:.c=.o)
 
@@ -34,37 +48,45 @@ ifeq ($(COMPILER),gnu)
   CC = gcc
 endif
 
-# Standard Flags
-CFLAGS := -fopenmp -std=gnu99 -ffast-math
+# BG/Q gcc Cross-Compiler
+ifeq ($(MACHINE),bluegene)
+  CC = /bgsys/drivers/toolchain/V1R1M2/gnu-linux/bin/powerpc64-bgq-linux-gcc
+endif
 
+# Standard Flags
+CFLAGS := -fopenmp -std=gnu99 -I/usr/local/cuda/include/ -ffast-math -I.
+CPPFLAGS := -fopenmp -I/usr/local/cuda/include/ -ffast-math -I.
+GCC_O_FLAGS =
+NVCC_FLAGS = -gencode arch=compute_30,code=sm_30 -O3  -Xptxas=-v -DDERIVED_ATOMIC_FUNCTIONS_H
 # Linker Flags
-LDFLAGS = -lm
+LDFLAGS = -L/usr/local/cuda/lib64/ -lm -lcudart 
 
 # Debug Flags
 ifeq ($(DEBUG),yes)
-  CFLAGS += -g
+  GCC_O_FLAGS += -g
   LDFLAGS += -g
+  NVCC_FLAGS += -g -G -lineinfo 
 endif
 
 # Profiling Flags
 ifeq ($(PROFILE),yes)
-  CFLAGS += -pg
+  GCC_O_FLAGS += -pg
   LDFLAGS  += -pg
 endif
 
 # Optimization Flags
 ifeq ($(OPTIMIZE),yes)
-  CFLAGS += -O3
+  GCC_O_FLAGS += -O3
 endif
 
 # Calculation Status % Complete Indicator
 ifeq ($(STATUS),yes)
-  CFLAGS += -DSTATUS
+  GCC_O_FLAGS += -DSTATUS
 endif
 
 # PAPI Performance Counters
 ifeq ($(PAPI),yes)
-  CFLAGS += -DPAPI
+  GCC_O_FLAGS += -DPAPI
   source += papi.c
   LDFLAGS += -lpapi
 endif
@@ -73,17 +95,22 @@ endif
 # Targets to Build
 #===============================================================================
 
-$(program): $(obj) rsbench.h
-	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
+$(program): $(OBJS) rsbench.h
+	nvcc -Xcompiler "$(CFLAGS)" $(GCC_O_FLAGS)  $(OBJS) -o $@ $(LDFLAGS)
+
+CUDA_Driver.o: CUDA_Driver.cu $(HEADERS)
+	nvcc  $(NVCC_FLAGS) -Xcompiler="$(CPPFLAGS)" -c CUDA_Driver.cu -o CUDA_Driver.o -I.
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(GCC_O_FLAGS) -c $< -o $@
 
 clean:
-	rm -rf rsbench $(obj)
+	rm -rf rsbench rsbench.dSYM $(OBJS)
 
 edit:
 	vim -p $(source) papi.c rsbench.h
 
 run:
 	./rsbench
+bgqrun:
+	qsub -t 10 -n 1 -O test rsbench

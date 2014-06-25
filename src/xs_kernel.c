@@ -50,7 +50,9 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	sigT = E * w.T;
 	sigA = E * w.A;
 	sigF = E * w.F;
-
+//	printf ("w.size: %i\n", w.end-w.start+1);
+	if ( numL < w.end-w.start+1)
+		numL = w.end-w.start+1;
 	// Loop over Poles within window, add contributions
 	for( int i = w.start; i < w.end; i++ )
 	{
@@ -75,10 +77,29 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors )
 {
 	double phi;
-
 	for( int i = 0; i < input.numL; i++ )
 	{
 		phi = data.pseudo_K0RS[nuc][i] * sqrt(E);
+
+		if( i == 1 )
+			phi -= - atan( phi );
+		else if( i == 2 )
+			phi -= atan( 3.0 * phi / (3.0 - phi*phi));
+		else if( i == 3 )
+			phi -= atan(phi*(15.0-phi*phi)/(15.0-6.0*phi*phi));
+
+		phi *= 2.0;
+
+		sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
+	}
+}
+
+void calculate_sig_T_sim ( double E, int num_iter, const double* data, complex double * sigTfactors )
+{
+	double phi;
+	for( int i = 0; i < num_iter; i++ )
+	{
+		phi = data[i] * sqrt(E);
 
 		if( i == 1 )
 			phi -= - atan( phi );

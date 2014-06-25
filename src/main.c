@@ -2,6 +2,7 @@
 
 int main(int argc, char * argv[])
 {
+	dotp_driver(8);
 	// =====================================================================
 	// Initialization & Command Line Read-In
 	// =====================================================================
@@ -99,7 +100,7 @@ int main(int argc, char * argv[])
 
 	#pragma omp parallel default(none) \
 	private(seed, mat, E, i) \
-	shared(input, data) 
+	shared(input, data, numL) 
 	{
 		double macro_xs[4];
 		int thread = omp_get_thread_num();
@@ -152,6 +153,7 @@ int main(int argc, char * argv[])
 	stop = omp_get_wtime();
 	#ifndef PAPI
 	printf("\nSimulation Complete.\n");
+	printf("\nnumL: %i\n", numL);
 	#endif
 
 	// =====================================================================
