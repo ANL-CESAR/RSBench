@@ -4,12 +4,25 @@
 const unsigned int NUM_ITER = 100;
 /* vector lengths */
 unsigned int sizes[] = {16384, 65536, 262144, 1048576, 4194304, 16777216, 33554432, 50331648, 67108864, 268435456};
-//10000, 100000, 1000000, 5000000, 10000000, 50000000, 80000000, 100000000};//, 500000000, 1000000000};
 
-/* performs the dot product of the vectors a and b
-   on the gpu and returns the result in global memory
-   location indicated by c. n is vector length
- */
+__device__  void calc_sig_T ( int i, double phi, cuDoubleComplex* rslt) {
+	if ( i == 1 )
+		phi -= atan ( phi );
+	else if( i == 2 )
+		phi -= atan ( 3.0 * phi / (3.0 - phi*phi));
+	else if( i == 3 )
+		phi -= atan (phi*(15.0-phi*phi)/(15.0-6.0*phi*phi));
+
+	phi += phi;
+
+	rslt -> x = cos(phi); 
+	rslt -> y = sin(phi);
+}
+
+__global__ void calc_sig_T_sim_kernel ( double E, int num_iter, const double* data, cuDoubleComplex* gTfactors) {
+	calc_sig_T ( threadIdx.x, data[threadIdx.x] * sqrt(E), &gTfactors[threadIdx.x]);	
+}
+
 __global__ void dotp(int *a, int *b, int *c, int n){
 	int i;
 	int iglob = threadIdx.x + blockIdx.x*blockDim.x; 
@@ -28,17 +41,12 @@ __global__ void dotp(int *a, int *b, int *c, int n){
 
 	__syncthreads();
 
-	/* on the "master thread" of each block" sum the pairwise products
-	   on that block into the block's portion of the global sum */
 	if (iloc == 0){
 		int sum = 0;
-		//		for (i=0;i<NTPB;++i)
 		for (i=0;i< blockDim.x;++i)
 			sum += block_cache[i];
 		atomicAdd(c,sum);  /* now write safely to global memory */
-		// *c += sum;         // don't do this -- not safe! 
 	}
-
 }
 
 int dotp_driver(int NTPB){
@@ -50,7 +58,7 @@ int dotp_driver(int NTPB){
 	cudaEvent_t start, stop;  /* timers */
 	float time;
 
-  	double trials [NUM_ITER];
+	double trials [NUM_ITER];
 	double* stats=NULL;
 
 	int nDevices;
@@ -121,8 +129,8 @@ int dotp_driver(int NTPB){
 		}
 		my_stats ( trials, &NUM_ITER, &stats);
 		printf ("%u,%i,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", sizes[j], *c, stats[0], stats[1], 
-			stats[2], stats[3], stats[4], stats[5], stats[6], stats[7]);
-//		printf("size of vectors: %u\tvalue on device:%d\ttime elapsed: %f(ms)\n", sizes[j], *c, time);
+				stats[2], stats[3], stats[4], stats[5], stats[6], stats[7]);
+		//		printf("size of vectors: %u\tvalue on device:%d\ttime elapsed: %f(ms)\n", sizes[j], *c, time);
 
 		cudaFree(a_d);  cudaFree(b_d);  cudaFree(c_d);
 		cudaFreeHost(a);  cudaFreeHost(b);  cudaFreeHost(c);

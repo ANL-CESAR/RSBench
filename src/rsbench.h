@@ -10,13 +10,14 @@
 #include<complex.h>
 #include<cuda.h>
 #include<cuda_runtime.h>
+#include <cuComplex.h>
 #include<assert.h>
 
 #ifdef PAPI
 #include "papi.h"
 #endif
 
-#define PI 3.14159265359
+#define PI 3.1415926535897932384626433832795
 
 // typedefs
 typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
