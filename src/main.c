@@ -2,7 +2,7 @@
 
 int main(int argc, char * argv[])
 {
-	dotp_driver(8);
+	//dotp_driver(8);
 	// =====================================================================
 	// Initialization & Command Line Read-In
 	// =====================================================================
@@ -115,8 +115,8 @@ int main(int argc, char * argv[])
 			counter_init(&eventset, &num_papi_events);
 		}
 		#endif
-		complex double * sigTfactors =
-			(complex double *) malloc( input.numL * sizeof(complex double) );
+		cuDoubleComplex * sigTfactors =
+			(cuDoubleComplex *) malloc( input.numL * sizeof(cuDoubleComplex) );
 		int counter = 0, counter2=0;
 		#pragma omp for schedule(dynamic)
 		for( i = 0; i < input.lookups; i++ )
@@ -132,8 +132,8 @@ int main(int argc, char * argv[])
 			E = rn( &seed );
 			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors, &counter, &counter2 );
 		}
-		printf ("counter: %i\n", counter);
-		printf ("counter2: %i\n", counter2);
+//		printf ("counter: %i\n", counter);
+//		printf ("counter2: %i\n", counter2);
 		free(sigTfactors);
 		#ifdef PAPI
 		if( thread == 0 )

@@ -39,10 +39,14 @@ typedef struct{
 } Materials;
 
 typedef struct{
-	complex double MP_EA;
+/*	complex double MP_EA;
 	complex double MP_RT;
 	complex double MP_RA;
-	complex double MP_RF;
+	complex double MP_RF;*/
+	cuDoubleComplex MP_EA;
+	cuDoubleComplex MP_RT;
+	cuDoubleComplex MP_RA;
+	cuDoubleComplex MP_RF;
 	short int l_value;
 } Pole;
 
@@ -112,15 +116,15 @@ double rn(unsigned long * seed);
 size_t get_mem_estimate( Input input );
 
 // xs_kernel.c
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, int* counter, int* counter2 ); 
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, int* counter );
-void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors );
-void calculate_sig_T_sim ( double E, int num_iter, const double* data, complex double * sigTfactors );
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter, int* counter2 ); 
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter );
+void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors );
+void calculate_sig_T_sim ( double E, int num_iter, const double* data, cuDoubleComplex * sigTfactors );
 
 //CUDA_Driver.c
 int dotp_driver(int NTPB);
-void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors);
-void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors );
+void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors);
+void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors );
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );

@@ -29,7 +29,7 @@ __global__ void calc_sig_kernel ( double E, int num_iter,
 	sigF += creal( pole.MP_RF * CDUM);*/
 }
 
-void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ) {
+void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors ) {
 	// MicroScopic XS's to Calculate
 	double sigT, sigA, sigF, sigE;
 
@@ -48,13 +48,14 @@ void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDa
 	sigA = E * w.A;
 	sigF = E * w.F;
 	// Loop over Poles within window, add contributions
-	for( int i = w.start; i < w.end; i++ ){
-		complex double CDUM;
+	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt(E), 0);
+	for( int i = w.start; i < w.end; i++ )
+	{
 		Pole pole = data.poles[nuc][i];
-		CDUM = -(0.0 - 1.0 * _Complex_I ) / ( pole.MP_EA - sqrt(E) ) / E;
-		sigT += creal( pole.MP_RT * CDUM * sigTfactors[pole.l_value] );
-		sigA += creal( pole.MP_RA * CDUM);
-		sigF += creal( pole.MP_RF * CDUM);
+		cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
+		sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
+		sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
+		sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
 	}
 
 	sigE = sigT - sigA;
@@ -65,7 +66,7 @@ void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDa
 	micro_xs[3] = sigE;
 }
 
-void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors)
+void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors)
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -91,7 +92,7 @@ void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input inpu
 	calc_sig_T_sim_kernel<<<1, input.numL>>> ( E, input.numL, data_d, cudcomp_d);
 	assert(cudaMemcpy( cudcomp_h, cudcomp_d, input.numL*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
 	for ( int i = 0; i < input.numL; i ++) {
-		sigTfactors[i] = cudcomp_h->x + cudcomp_h->y * _Complex_I;
+		sigTfactors[i] =  cudcomp_h[i];
 	}
 	cudaFree( cudcomp_d );  
 	cudaFreeHost( cudcomp_h );  
@@ -104,14 +105,11 @@ void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input inpu
 	// Loop over Poles within window, add contributions
 	for( int i = w.start; i < w.end; i++ )
 	{
-		complex double PSIIKI;
-		complex double CDUM;
 		Pole pole = data.poles[nuc][i];
-		PSIIKI = -(0.0 - 1.0 * _Complex_I ) / ( pole.MP_EA - sqrt(E) );
-		CDUM = PSIIKI / E;
-		sigT += creal( pole.MP_RT * CDUM * sigTfactors[pole.l_value] );
-		sigA += creal( pole.MP_RA * CDUM);
-		sigF += creal( pole.MP_RF * CDUM);
+		cuDoubleComplex CDUM = cuCdiv( make_cuDoubleComplex(0, 1/E), cuCsub( pole.MP_EA, make_cuDoubleComplex( sqrt(E), 0)) );
+		sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
+		sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
+		sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
 	}
 
 	sigE = sigT - sigA;

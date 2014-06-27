@@ -1,22 +1,22 @@
 #include "rsbench.h"
 
 // Reviewed
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, int* counter, int* counter2 ) 
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter, int* counter2 ) 
 {
 	// zero out macro vector
 	for( int i = 0; i < 4; i++ )
 		macro_xs[i] = 0;
 
-	if ( *counter2 < (data.materials).num_nucs[mat] )
-		*counter2 = (data.materials).num_nucs[mat];
+//	if ( *counter2 < (data.materials).num_nucs[mat] )
+//		*counter2 = (data.materials).num_nucs[mat];
 	// for nuclide in mat
 	for( int i = 0; i < (data.materials).num_nucs[mat]; i++ )
 	{
 		double micro_xs[4];
 		int nuc = (data.materials).mats[mat][i];
 
-		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors, counter);
-//		calculate_micro_xs_driver( micro_xs, nuc, E, input, data, sigTfactors);
+//		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors, counter);
+		calculate_micro_xs_driver( micro_xs, nuc, E, input, data, sigTfactors);
 
 		for( int j = 0; j < 4; j++ )
 		{
@@ -31,7 +31,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	
 }
 
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, int* counter)
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter)
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -46,27 +46,24 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 		window--;
 
 	// Calculate sigTfactors
-	calculate_sig_T(nuc, E, input, data, sigTfactors );
-//	calculate_sig_T_sim ( E, input.numL, data.pseudo_K0RS[nuc], sigTfactors );
-
+//	calculate_sig_T(nuc, E, input, data, sigTfactors );
+	calculate_sig_T_sim ( E, input.numL, data.pseudo_K0RS[nuc], sigTfactors );
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = data.windows[nuc][window];
 	sigT = E * w.T;
 	sigA = E * w.A;
 	sigF = E * w.F;
 	// Loop over Poles within window, add contributions
-	if ( *counter < ( w.end - w.start + 1) )
-		*counter = w.end - w.start + 1;
+//	if ( *counter < ( w.end - w.start + 1) )
+//		*counter = w.end - w.start + 1;
+	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt(E), 0);
 	for( int i = w.start; i < w.end; i++ )
 	{
-		complex double PSIIKI;
-		complex double CDUM;
 		Pole pole = data.poles[nuc][i];
-		PSIIKI = -(0.0 - 1.0 * _Complex_I ) / ( pole.MP_EA - sqrt(E) );
-		CDUM = PSIIKI / E;
-		sigT += creal( pole.MP_RT * CDUM * sigTfactors[pole.l_value] );
-		sigA += creal( pole.MP_RA * CDUM);
-		sigF += creal( pole.MP_RF * CDUM);
+		cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
+		sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
+		sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
+		sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
 	}
 
 	sigE = sigT - sigA;
@@ -77,7 +74,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	micro_xs[3] = sigE;
 }
 
-void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors )
+void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors )
 {
 	double phi;
 	for( int i = 0; i < input.numL; i++ )
@@ -93,11 +90,12 @@ void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex
 
 		phi *= 2.0;
 
-		sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
+		sigTfactors[i].x= cos(phi);
+		sigTfactors[i].y= - sin(phi) ;
 	}
 }
 
-void calculate_sig_T_sim ( double E, int num_iter, const double* data, complex double * sigTfactors )
+void calculate_sig_T_sim ( double E, int num_iter, const double* data, cuDoubleComplex * sigTfactors )
 {
 	double phi;
 	double sqrt_E = sqrt(E);
@@ -114,6 +112,7 @@ void calculate_sig_T_sim ( double E, int num_iter, const double* data, complex d
 
 		phi += phi;
 
-		sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
+		sigTfactors[i].x= cos(phi);
+		sigTfactors[i].y= - sin(phi);
 	}
 }
