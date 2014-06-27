@@ -69,12 +69,9 @@ void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDa
 void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors)
 {
 	// MicroScopic XS's to Calculate
-	double sigT;
-	double sigA;
-	double sigF;
-	double sigE;
+	double sigT, sigA, sigF, sigE;
 	double* data_d;
-	cuDoubleComplex* cudcomp_d, *cudcomp_h;
+	cuDoubleComplex* cudcomp_d;//, *cudcomp_h;
 
 	// Calculate Window Index
 	double spacing = 1.0 / data.n_windows[nuc];
@@ -85,17 +82,18 @@ void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input inpu
 	/* allocate memory on device */
 	assert (cudaMalloc((void **) &data_d, input.numL*sizeof(double)) == cudaSuccess);
 	assert (cudaMalloc((void **) &cudcomp_d, input.numL*sizeof(cuDoubleComplex)) == cudaSuccess);
-	assert (cudaMallocHost((void **) &cudcomp_h, input.numL*sizeof(cuDoubleComplex)) == cudaSuccess);
+	//assert (cudaMallocHost((void **) &cudcomp_h, input.numL*sizeof(cuDoubleComplex)) == cudaSuccess);
 	/* copy host data to device pointers */
 	assert(cudaMemcpy(data_d, data.pseudo_K0RS[nuc], input.numL*sizeof(double),cudaMemcpyHostToDevice) == cudaSuccess);
 	// Calculate sigTfactors
 	calc_sig_T_sim_kernel<<<1, input.numL>>> ( E, input.numL, data_d, cudcomp_d);
-	assert(cudaMemcpy( cudcomp_h, cudcomp_d, input.numL*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
-	for ( int i = 0; i < input.numL; i ++) {
-		sigTfactors[i] =  cudcomp_h[i];
-	}
+	assert(cudaMemcpy( sigTfactors, cudcomp_d, input.numL*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
+//	for ( int i = 0; i < input.numL; i ++) {
+//		sigTfactors[i] =  cudcomp_h[i];
+//	}
 	cudaFree( cudcomp_d );  
-	cudaFreeHost( cudcomp_h );  
+	cudaFree( data_d );  
+//	cudaFreeHost( cudcomp_h );  
 	//printf ("Chicago!\n");
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = data.windows[nuc][window];

@@ -105,7 +105,7 @@ int main(int argc, char * argv[])
 		double macro_xs[4];
 		int thread = omp_get_thread_num();
 		seed += thread;
-		printf ("input.lookups: %i\n", input.lookups);
+//		printf ("input.lookups: %i\n", input.lookups);
 		
 		#ifdef PAPI
 		int eventset = PAPI_NULL; 
