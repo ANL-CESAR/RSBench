@@ -71,7 +71,7 @@ void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input inpu
 	// MicroScopic XS's to Calculate
 	double sigT, sigA, sigF, sigE;
 	double* data_d;
-	cuDoubleComplex* cudcomp_d;//, *cudcomp_h;
+	cuDoubleComplex* cudcomp_d;
 
 	// Calculate Window Index
 	double spacing = 1.0 / data.n_windows[nuc];
@@ -82,29 +82,24 @@ void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input inpu
 	/* allocate memory on device */
 	assert (cudaMalloc((void **) &data_d, input.numL*sizeof(double)) == cudaSuccess);
 	assert (cudaMalloc((void **) &cudcomp_d, input.numL*sizeof(cuDoubleComplex)) == cudaSuccess);
-	//assert (cudaMallocHost((void **) &cudcomp_h, input.numL*sizeof(cuDoubleComplex)) == cudaSuccess);
 	/* copy host data to device pointers */
 	assert(cudaMemcpy(data_d, data.pseudo_K0RS[nuc], input.numL*sizeof(double),cudaMemcpyHostToDevice) == cudaSuccess);
 	// Calculate sigTfactors
 	calc_sig_T_sim_kernel<<<1, input.numL>>> ( E, input.numL, data_d, cudcomp_d);
 	assert(cudaMemcpy( sigTfactors, cudcomp_d, input.numL*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
-//	for ( int i = 0; i < input.numL; i ++) {
-//		sigTfactors[i] =  cudcomp_h[i];
-//	}
 	cudaFree( cudcomp_d );  
 	cudaFree( data_d );  
-//	cudaFreeHost( cudcomp_h );  
-	//printf ("Chicago!\n");
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = data.windows[nuc][window];
 	sigT = E * w.T;
 	sigA = E * w.A;
 	sigF = E * w.F;
 	// Loop over Poles within window, add contributions
+	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt(E), 0);
 	for( int i = w.start; i < w.end; i++ )
 	{
 		Pole pole = data.poles[nuc][i];
-		cuDoubleComplex CDUM = cuCdiv( make_cuDoubleComplex(0, 1/E), cuCsub( pole.MP_EA, make_cuDoubleComplex( sqrt(E), 0)) );
+		cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
 		sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
 		sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
 		sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
