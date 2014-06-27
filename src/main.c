@@ -105,6 +105,7 @@ int main(int argc, char * argv[])
 		double macro_xs[4];
 		int thread = omp_get_thread_num();
 		seed += thread;
+		printf ("input.lookups: %i\n", input.lookups);
 		
 		#ifdef PAPI
 		int eventset = PAPI_NULL; 
@@ -116,7 +117,7 @@ int main(int argc, char * argv[])
 		#endif
 		complex double * sigTfactors =
 			(complex double *) malloc( input.numL * sizeof(complex double) );
-
+		int counter = 0, counter2=0;
 		#pragma omp for schedule(dynamic)
 		for( i = 0; i < input.lookups; i++ )
 		{
@@ -129,9 +130,10 @@ int main(int argc, char * argv[])
 			#endif
 			mat = pick_mat( &seed );
 			E = rn( &seed );
-			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors );
+			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors, &counter, &counter2 );
 		}
-
+		printf ("counter: %i\n", counter);
+		printf ("counter2: %i\n", counter2);
 		free(sigTfactors);
 		#ifdef PAPI
 		if( thread == 0 )
@@ -153,7 +155,7 @@ int main(int argc, char * argv[])
 	stop = omp_get_wtime();
 	#ifndef PAPI
 	printf("\nSimulation Complete.\n");
-	printf("\nnumL: %i\n", numL);
+	//printf("\nnumL: %i\n", numL);
 	#endif
 
 	// =====================================================================

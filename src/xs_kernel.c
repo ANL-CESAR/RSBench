@@ -1,20 +1,22 @@
 #include "rsbench.h"
 
 // Reviewed
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ) 
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, int* counter, int* counter2 ) 
 {
 	// zero out macro vector
 	for( int i = 0; i < 4; i++ )
 		macro_xs[i] = 0;
 
+	if ( *counter2 < (data.materials).num_nucs[mat] )
+		*counter2 = (data.materials).num_nucs[mat];
 	// for nuclide in mat
 	for( int i = 0; i < (data.materials).num_nucs[mat]; i++ )
 	{
 		double micro_xs[4];
 		int nuc = (data.materials).mats[mat][i];
 
-//		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors);
-		calculate_micro_xs_driver( micro_xs, nuc, E, input, data, sigTfactors);
+		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors, counter);
+//		calculate_micro_xs_driver( micro_xs, nuc, E, input, data, sigTfactors);
 
 		for( int j = 0; j < 4; j++ )
 		{
@@ -29,7 +31,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	
 }
 
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors)
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, int* counter)
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -45,16 +47,16 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 
 	// Calculate sigTfactors
 	calculate_sig_T(nuc, E, input, data, sigTfactors );
+//	calculate_sig_T_sim ( E, input.numL, data.pseudo_K0RS[nuc], sigTfactors );
 
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = data.windows[nuc][window];
 	sigT = E * w.T;
 	sigA = E * w.A;
 	sigF = E * w.F;
-//	printf ("w.size: %i\n", w.end-w.start+1);
-	if ( numL < w.end-w.start+1)
-		numL = w.end-w.start+1;
 	// Loop over Poles within window, add contributions
+	if ( *counter < ( w.end - w.start + 1) )
+		*counter = w.end - w.start + 1;
 	for( int i = w.start; i < w.end; i++ )
 	{
 		complex double PSIIKI;
@@ -98,9 +100,10 @@ void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex
 void calculate_sig_T_sim ( double E, int num_iter, const double* data, complex double * sigTfactors )
 {
 	double phi;
+	double sqrt_E = sqrt(E);
 	for( int i = 0; i < num_iter; i++ )
 	{
-		phi = data[i] * sqrt(E);
+		phi = data[i] * sqrt_E;
 
 		if( i == 1 )
 			phi -= - atan( phi );
@@ -109,7 +112,7 @@ void calculate_sig_T_sim ( double E, int num_iter, const double* data, complex d
 		else if( i == 3 )
 			phi -= atan(phi*(15.0-phi*phi)/(15.0-6.0*phi*phi));
 
-		phi *= 2.0;
+		phi += phi;
 
 		sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
 	}

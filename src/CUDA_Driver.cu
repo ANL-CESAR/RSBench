@@ -20,6 +20,51 @@ __global__ void calc_sig_T_sim_kernel ( double E, int num_iter,
 	calc_sig_T (threadIdx.x, data[threadIdx.x] * sqrt(E), &gTfactors[threadIdx.x]);	
 }
 
+__global__ void calc_sig_kernel ( double E, int num_iter, 
+		const double* data, cuDoubleComplex* gTfactors) {
+/*	Pole pole = data.poles[nuc][i];
+	cuDoubleComplex CDUM = -(0.0 - 1.0 * _Complex_I ) / ( pole.MP_EA - sqrt(E) ) / E;
+	sigT += creal( pole.MP_RT * CDUM * sigTfactors[pole.l_value] );
+	sigA += creal( pole.MP_RA * CDUM);
+	sigF += creal( pole.MP_RF * CDUM);*/
+}
+
+void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ) {
+	// MicroScopic XS's to Calculate
+	double sigT, sigA, sigF, sigE;
+
+	// Calculate Window Index
+	double spacing = 1.0 / data.n_windows[nuc];
+	int window = (int) ( E / spacing );
+	if( window == data.n_windows[nuc] )
+		window--;
+
+	// Calculate sigTfactors
+	calculate_sig_T_sim ( E, input.numL, data.pseudo_K0RS[nuc], sigTfactors );
+
+	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
+	Window w = data.windows[nuc][window];
+	sigT = E * w.T;
+	sigA = E * w.A;
+	sigF = E * w.F;
+	// Loop over Poles within window, add contributions
+	for( int i = w.start; i < w.end; i++ ){
+		complex double CDUM;
+		Pole pole = data.poles[nuc][i];
+		CDUM = -(0.0 - 1.0 * _Complex_I ) / ( pole.MP_EA - sqrt(E) ) / E;
+		sigT += creal( pole.MP_RT * CDUM * sigTfactors[pole.l_value] );
+		sigA += creal( pole.MP_RA * CDUM);
+		sigF += creal( pole.MP_RF * CDUM);
+	}
+
+	sigE = sigT - sigA;
+
+	micro_xs[0] = sigT;
+	micro_xs[1] = sigA;
+	micro_xs[2] = sigF;
+	micro_xs[3] = sigE;
+}
+
 void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors)
 {
 	// MicroScopic XS's to Calculate
