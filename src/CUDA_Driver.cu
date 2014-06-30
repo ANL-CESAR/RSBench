@@ -1,6 +1,19 @@
 #include "rsbench.h"
 #include "My_Stats.h"
 
+__device__ double atomicAdd(double* address, double val) {
+	unsigned long long int* address_as_ull =
+		(unsigned long long int*)address;
+	unsigned long long int old = *address_as_ull, assumed;
+	do {
+		assumed = old;
+		old = atomicCAS(address_as_ull, assumed,
+				__double_as_longlong(val +
+					__longlong_as_double(assumed)));
+	} while (assumed != old);
+	return __longlong_as_double(old);
+}
+
 __device__  void calc_sig_T ( int i, double phi, cuDoubleComplex* rslt) {
 	if ( i == 1 )
 		phi -= atan ( phi );
@@ -20,15 +33,29 @@ __global__ void calc_sig_T_sim_kernel ( double E, int num_iter,
 	calc_sig_T (threadIdx.x, data[threadIdx.x] * sqrt(E), &gTfactors[threadIdx.x]);	
 }
 
-__global__ void calc_sig_kernel ( double E, int num_iter, 
-		const double* data, cuDoubleComplex* gTfactors) {
-/*	Pole pole = data.poles[nuc][i];
-	cuDoubleComplex CDUM = -(0.0 - 1.0 * _Complex_I ) / ( pole.MP_EA - sqrt(E) ) / E;
-	sigT += creal( pole.MP_RT * CDUM * sigTfactors[pole.l_value] );
-	sigA += creal( pole.MP_RA * CDUM);
-	sigF += creal( pole.MP_RF * CDUM);*/
+__global__ void calc_sig_kernel ( cuDoubleComplex const1, cuDoubleComplex const2, Pole* poles, 
+		int base, double* sigT, double* sigA, double* sigF, cuDoubleComplex* sigTfactors) {
+	Pole pole = poles[blockIdx.x + base ];
+	cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
+	sigT[blockIdx.x + base] = cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
+	sigA[blockIdx.x + base] = cuCreal( cuCmul( pole.MP_RA, CDUM) );
+	sigF[blockIdx.x + base] = cuCreal( cuCmul( pole.MP_RF, CDUM) );
 }
 
+__global__ void sum_sigs ( double* sigTs, double* sigAs, double* sigFs, double* sigT, double* sigA, double* sigF, 
+	int tpb, int len ) {
+	*sigA = *sigF = *sigT = 0;
+	int i, j;
+	for ( i = 0; i < len; i += tpb ) {
+		if ( ( j = i + threadIdx.x ) < len ) {
+			atomicAdd(sigA, sigAs[j]);
+			atomicAdd(sigT, sigTs[j]);
+			atomicAdd(sigF, sigFs[j]);
+		}
+	}
+}
+
+//	CUDA adaptation of 
 void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors ) {
 	// MicroScopic XS's to Calculate
 	double sigT, sigA, sigF, sigE;
@@ -44,26 +71,37 @@ void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDa
 
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = data.windows[nuc][window];
-	sigT = E * w.T;
-	sigA = E * w.A;
-	sigF = E * w.F;
+	sigT = E * w.T;	sigA = E * w.A;	sigF = E * w.F;
 	// Loop over Poles within window, add contributions
 	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt(E), 0);
-	for( int i = w.start; i < w.end; i++ )
-	{
-		Pole pole = data.poles[nuc][i];
-		cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
-		sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
-		sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
-		sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
-	}
+	int num = w.end - w.start + 1;
+	double* sigTs, *sigAs, *sigFs, *sigT_d, *sigA_d, *sigF_d; 
+	Pole* poles_d; 
+	cuDoubleComplex* sigTfactors_d;
+	/* allocate memory on device */
+	assert (cudaMalloc((void **) &sigTs, num*sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigAs, num*sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigFs, num*sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigT_d, sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigA_d, sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigF_d, sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &poles_d, num*sizeof(Pole)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigTfactors_d, num*sizeof(cuDoubleComplex)) == cudaSuccess);
+	assert(cudaMemcpy( sigTfactors_d, sigTfactors, input.numL*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice) == cudaSuccess);
+	assert(cudaMemcpy( poles_d, data.poles[nuc], sizeof(Pole),cudaMemcpyHostToDevice) == cudaSuccess);
+	calc_sig_kernel<<<num, 1>>> ( const1, const2, poles_d, 
+		w.start, sigTs, sigAs, sigFs, sigTfactors_d );
+	sum_sigs<<<1, 512>>> ( sigTs, sigAs, sigFs, sigT_d, sigA_d, sigF_d, 512, num );
+	assert(cudaMemcpy( &sigT, sigT_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+	assert(cudaMemcpy( &sigA, sigA_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+	assert(cudaMemcpy( &sigF, sigF_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+	
+	cudaFree( sigTs );  cudaFree( sigAs );  cudaFree( sigFs );  cudaFree( poles_d); cudaFree( sigTfactors_d);
+	cudaFree( sigT_d );  cudaFree( sigA_d );  cudaFree( sigF_d );  
 
 	sigE = sigT - sigA;
 
-	micro_xs[0] = sigT;
-	micro_xs[1] = sigA;
-	micro_xs[2] = sigF;
-	micro_xs[3] = sigE;
+	micro_xs[0] = sigT;	micro_xs[1] = sigA;	micro_xs[2] = sigF;	micro_xs[3] = sigE;
 }
 
 void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors)
@@ -96,8 +134,7 @@ void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input inpu
 	sigF = E * w.F;
 	// Loop over Poles within window, add contributions
 	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt(E), 0);
-	for( int i = w.start; i < w.end; i++ )
-	{
+	for( int i = w.start; i < w.end; i++ ) {
 		Pole pole = data.poles[nuc][i];
 		cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
 		sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
