@@ -24,12 +24,6 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 			macro_xs[j] += micro_xs[j] * data.materials.concs[mat][i];
 		}
 	}
-
-	/* Debug
-	printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
-	E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
-	*/
-	
 }
 
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter)

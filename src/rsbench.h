@@ -39,16 +39,12 @@ typedef struct{
 } Materials;
 
 typedef struct{
-/*	complex double MP_EA;
-	complex double MP_RT;
-	complex double MP_RA;
-	complex double MP_RF;*/
-	cuDoubleComplex MP_EA;
-	cuDoubleComplex MP_RT;
-	cuDoubleComplex MP_RA;
-	cuDoubleComplex MP_RF;
-	short int l_value;
-} Pole;
+	int * num_nucs;
+	int * mats_2d;
+	size_t pitch_mat;
+	double * concs_2d;
+	size_t pitch_concs;
+} Materials_d;
 
 typedef struct{
 	cuDoubleComplex MP_EA;
@@ -56,7 +52,7 @@ typedef struct{
 	cuDoubleComplex MP_RA;
 	cuDoubleComplex MP_RF;
 	short int l_value;
-} Pole_CUDA;
+} Pole;
 
 typedef struct{
 	double T;
@@ -74,6 +70,17 @@ typedef struct{
 	Window ** windows;
 	double ** pseudo_K0RS;
 } CalcDataPtrs;
+
+typedef struct{
+	int * n_poles;
+	int * n_windows;
+	Materials materials;
+	Pole * poles_2d;
+	Window * windows_2d;
+	size_t pitch_windowns;
+	double * pseudo_K0RS_2d;
+	size_t pitch_pseudo_K0RS;
+} CalcDataPtrs_d;
 
 static int numL = 0;
 
