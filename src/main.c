@@ -67,7 +67,8 @@ int main(int argc, char * argv[])
 	data.poles = poles;
 	data.windows = windows;
 	data.pseudo_K0RS = pseudo_K0RS;
-
+	CalcDataPtrs_d* data_d = init_data ( input, &data );
+//	free_CalcDataPtrs_d ( data_d );
 	stop = omp_get_wtime();
 	printf("Initialization Complete. (%.2lf seconds)\n", stop-start);
 	
@@ -157,7 +158,8 @@ int main(int argc, char * argv[])
 	printf("\nSimulation Complete.\n");
 	//printf("\nnumL: %i\n", numL);
 	#endif
-
+	// free device memeory
+	free_CalcDataPtrs_d ( data_d );
 	// =====================================================================
 	// Print / Save Results and Exit
 	// =====================================================================

@@ -41,9 +41,9 @@ typedef struct{
 typedef struct{
 	int * num_nucs;
 	int * mats_2d;
-	size_t pitch_mat;
+	size_t pitch;
 	double * concs_2d;
-	size_t pitch_concs;
+//	size_t pitch_concs;
 } Materials_d;
 
 typedef struct{
@@ -74,12 +74,13 @@ typedef struct{
 typedef struct{
 	int * n_poles;
 	int * n_windows;
-	Materials materials;
+	Materials_d materials;
 	Pole * poles_2d;
+	size_t pitch_poles;
 	Window * windows_2d;
-	size_t pitch_windowns;
+	size_t pitch_windows;
 	double * pseudo_K0RS_2d;
-	size_t pitch_pseudo_K0RS;
+//	size_t pitch_pseudo_K0RS;
 } CalcDataPtrs_d;
 
 static int numL = 0;
@@ -111,6 +112,10 @@ Pole ** generate_poles( Input input, int * n_poles );
 Window ** generate_window_params( Input input, int * n_windows, int * n_poles );
 double ** generate_pseudo_K0RS( Input input );
 
+// CUDA_init.c
+CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data );
+void free_CalcDataPtrs_d ( CalcDataPtrs_d* data_d );
+
 // material.c
 int * load_num_nucs(Input input);
 int ** load_mats( Input input, int * num_nucs );
@@ -123,15 +128,21 @@ double rn(unsigned long * seed);
 size_t get_mem_estimate( Input input );
 
 // xs_kernel.c
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter, int* counter2 ); 
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter );
-void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors );
-void calculate_sig_T_sim ( double E, int num_iter, const double* data, cuDoubleComplex * sigTfactors );
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input,
+	CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter, int* counter2 ); 
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input,
+	CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter );
+void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data,
+	cuDoubleComplex * sigTfactors );
+void calculate_sig_T_sim ( double E, int num_iter,
+	const double* data, cuDoubleComplex * sigTfactors );
 
 //CUDA_Driver.c
 int dotp_driver(int NTPB);
-void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors);
-void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors );
+void calculate_micro_xs_driver( double * micro_xs, int nuc, double E,
+	Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors);
+void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input,
+	CalcDataPtrs data, cuDoubleComplex * sigTfactors );
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );

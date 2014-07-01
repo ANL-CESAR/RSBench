@@ -20,6 +20,7 @@ main.c \
 xs_kernel.c \
 io.c \
 init.c \
+CUDA_init.c\
 material.c \
 utils.c \
 CUDA_Driver.cu
@@ -29,6 +30,7 @@ main.o \
 xs_kernel.o\
 io.o \
 init.o \
+CUDA_init.o\
 material.o\
 utils.o\
 CUDA_Driver.o
