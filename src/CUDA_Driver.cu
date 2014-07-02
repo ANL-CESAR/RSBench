@@ -1,6 +1,7 @@
 #include "rsbench.h"
 #include "My_Stats.h"
 
+//	add val to the vlaue stored at address
 __device__ double atomicAdd(double* address, double val) {
 	unsigned long long int* address_as_ull =
 		(unsigned long long int*)address;
@@ -14,6 +15,7 @@ __device__ double atomicAdd(double* address, double val) {
 	return __longlong_as_double(old);
 }
 
+//	compute SigT (the finest)
 __device__  void calc_sig_T ( int i, double phi, cuDoubleComplex* rslt) {
 	if ( i == 1 )
 		phi -= atan ( phi );
@@ -33,10 +35,34 @@ __global__ void calc_sig_T_sim_kernel ( double E, int num_iter,
 	calc_sig_T (threadIdx.x, data[threadIdx.x] * sqrt(E), &gTfactors[threadIdx.x]);	
 }
 
-/*
-__global__ void (CalcDataPtrs_d* data) {
-	double micro_xs[4];
-	int nuc = data->materials.mats_2d[mat* data->materials.pitch + i ];
+__global__ void calc_sig_T_sim_dd_kernel ( double E, int num_iter, 
+		const CalcDataPtrs_d* data, int drift, cuDoubleComplex* gTfactors) {
+	calc_sig_T (threadIdx.x, data->pseudo_K0RS_2d[drift+threadIdx.x] * sqrt(E), &gTfactors[threadIdx.x]);	
+}
+
+//	come after the third kernel macro_kernel
+__global__ void add_macro_xs (double* macro_xs_d, double* macro_xs_result ) {
+	for ( int i = 0;i < 4; i ++)
+		atomicAdd( &(macro_xs_d[i]), macro_xs_result[threadIdx.x + i] );
+} 
+
+//	come after the third kernel macro_kernel
+__global__ void add_macro_xs_single_thread (double* macro_xs_d, double* macro_xs_result, int num ) {
+	for ( int j = 0; j < num; j ++)
+		for ( int i = 0;i < 4; i ++)
+			atomicAdd( &(macro_xs_d[i]), macro_xs_result[j + i] );
+} 
+
+//	come after the third kernel macro_kernel
+__global__ void add_macro_xs_four_threads (double* macro_xs_d, double* macro_xs_result, int num ) {
+	for ( int j = 0; j < num; j ++)
+		macro_xs_d[threadIdx.x] += macro_xs_result[j + threadIdx.x];
+} 
+
+//	third kernel utilizing CalcDataPtrs_d allocated on device
+__global__ void macro_kernel (double * macro_xs, const CalcDataPtrs_d* data, int mat, double E, int numL, cuDoubleComplex * sigTfactors) {
+	int nuc = data->materials.mats_2d[mat* data->materials.pitch + threadIdx.x ];
+	double * d_ptr = &(data->pseudo_K0RS_2d [nuc * numL]);
 
 	// MicroScopic XS's to Calculate
 	double sigT, sigA, sigF, sigE;
@@ -48,39 +74,62 @@ __global__ void (CalcDataPtrs_d* data) {
 		window--;
 
 	// Calculate sigTfactors
-	calculate_sig_T_sim ( E, input.numL, data->pseudo_K0RS_2d[nuc], sigTfactors );
+	double phi;
+	double sqrt_E = sqrt(E);
+	for( int i = 0; i < numL; i++ ){
+		phi = d_ptr[i] * sqrt_E;
+
+		if( i == 1 )
+			phi -= - atan( phi );
+		else if( i == 2 )
+			phi -= atan( 3.0 * phi / (3.0 - phi*phi));
+		else if( i == 3 )
+			phi -= atan(phi*(15.0-phi*phi)/(15.0-6.0*phi*phi));
+
+		phi += phi;
+
+		sigTfactors[i].x= cos(phi);
+		sigTfactors[i].y= - sin(phi);
+	}
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
-	Window w = data->windows[nuc][window];
-	sigT = E * w.T;
-	sigA = E * w.A;
-	sigF = E * w.F;
+	Window w = data->windows_2d[nuc * data->pitch_windows + window];
+	sigT = E * w.T;	sigA = E * w.A;	sigF = E * w.F;
 	// Loop over Poles within window, add contributions
-	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt(E), 0);
+	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt_E, 0);
 	for( int i = w.start; i < w.end; i++ )	{
-		Pole pole = data->poles_2d[nuc+i];
+		Pole pole = data->poles_2d[nuc * data->pitch_poles + i];
 		cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
 		sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
 		sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
 		sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
 	}
-
 	sigE = sigT - sigA;
 
-	micro_xs[0] = sigT;	micro_xs[1] = sigA;	micro_xs[2] = sigF;	micro_xs[3] = sigE;
+	int base = 4 * threadIdx.x, idx = mat * data->materials.pitch + threadIdx.x;
+	macro_xs[base] += sigT * data->materials.concs_2d[idx ];
+	macro_xs[base+1] += sigA * data->materials.concs_2d[idx ];
+	macro_xs[base+2] += sigF * data->materials.concs_2d[idx ];
+	macro_xs[base+3] += sigE * data->materials.concs_2d[idx ];
+}
 
-	for( int j = 0; j < 4; j++ ){
-		macro_xs[j] += micro_xs[j] * data->materials.concs_2d[mat+i];
-	}
-}*/
 // use data_d
-void calculate_macro_xs_d ( double * macro_xs, int mat, double E, Input input, CalcDataPtrs_d* data, cuDoubleComplex * sigTfactors ) {
+void calc_macro_xs_driver ( double * macro_xs, int mat, double E, Input input, CalcDataPtrs* data, CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors ) {
 	// zero out macro vector
-	for( int i = 0; i < 4; i++ )
-		macro_xs[i] = 0;
-
+	int num = data->materials.num_nucs[mat];
+	double *macro_xs_d, *macro_xs_results;
+	cuDoubleComplex * sigTfactors_d;
+	assert (cudaMalloc((void **) &macro_xs_d, 4*sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &macro_xs_results, 4*num*sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigTfactors_d, input.numL*sizeof(cuDoubleComplex)) == cudaSuccess);
+	assert(cudaMemset( macro_xs_d, 0, 4*sizeof(double) ) == cudaSuccess);
+	assert(cudaMemset( macro_xs_results, 0, num*4*sizeof(double) ) == cudaSuccess);
+	macro_kernel<<<1, num>>> (macro_xs_results, data_d, mat, E, input.numL, sigTfactors_d);
 	// for nuclide in mat
-	for( int i = 0; i < data->materials.num_nucs[mat]; i++ ){
-	}
+//	add_macro_xs<<<1, num>>> (macro_xs_d, macro_xs_results);
+//	add_macro_xs_single_thread<<<1,1>>> (macro_xs_d, macro_xs_results, num );
+	add_macro_xs_four_threads<<<1,4 >>> (macro_xs_d, macro_xs_results, num ); 
+	assert(cudaMemcpy( macro_xs, macro_xs_d, 4*sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+	assert(cudaMemcpy( sigTfactors, sigTfactors_d, 4*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
 }
 
 __global__ void calc_sig_kernel ( cuDoubleComplex const1, cuDoubleComplex const2, Pole* poles, 
@@ -92,9 +141,18 @@ __global__ void calc_sig_kernel ( cuDoubleComplex const1, cuDoubleComplex const2
 	sigF[blockIdx.x + base] = cuCreal( cuCmul( pole.MP_RF, CDUM) );
 }
 
+__global__ void calc_sig_dd_kernel ( cuDoubleComplex const1, cuDoubleComplex const2, CalcDataPtrs_d* data_d, int nuc, 
+		int base, double* sigT, double* sigA, double* sigF, cuDoubleComplex* sigTfactors) {
+	Pole pole = data_d->poles_2d[ nuc * data_d->pitch_poles +  blockIdx.x + base ];
+	cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
+	sigT[blockIdx.x + base] = cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
+	sigA[blockIdx.x + base] = cuCreal( cuCmul( pole.MP_RA, CDUM) );
+	sigF[blockIdx.x + base] = cuCreal( cuCmul( pole.MP_RF, CDUM) );
+}
+
 __global__ void sum_sigs ( double* sigTs, double* sigAs, double* sigFs, double* sigT, double* sigA, double* sigF, 
 		int tpb, int len ) {
-	*sigA = *sigF = *sigT = 0;
+	//*sigA = *sigF = *sigT = 0;
 	int i, j;
 	for ( i = 0; i < len; i += tpb ) {
 		if ( ( j = i + threadIdx.x ) < len ) {
@@ -105,7 +163,7 @@ __global__ void sum_sigs ( double* sigTs, double* sigAs, double* sigFs, double* 
 	}
 }
 
-//	CUDA adaptation of 
+//	second try of CUDA adaptation of RSBench; data is copied to device every time called
 void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors ) {
 	// MicroScopic XS's to Calculate
 	double sigT, sigA, sigF, sigE;
@@ -137,7 +195,7 @@ void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDa
 	assert (cudaMalloc((void **) &sigF_d, sizeof(double)) == cudaSuccess);
 	assert (cudaMalloc((void **) &poles_d, num*sizeof(Pole)) == cudaSuccess);
 	assert (cudaMalloc((void **) &sigTfactors_d, num*sizeof(cuDoubleComplex)) == cudaSuccess);
-	assert(cudaMemcpy( sigTfactors_d, sigTfactors, input.numL*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice) == cudaSuccess);
+//	assert(cudaMemcpy( sigTfactors_d, sigTfactors, input.numL*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice) == cudaSuccess);
 	assert(cudaMemcpy( poles_d, data.poles[nuc], sizeof(Pole),cudaMemcpyHostToDevice) == cudaSuccess);
 	calc_sig_kernel<<<num, 1>>> ( const1, const2, poles_d, 
 			w.start, sigTs, sigAs, sigFs, sigTfactors_d );
@@ -154,6 +212,56 @@ void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDa
 	micro_xs[0] = sigT;	micro_xs[1] = sigA;	micro_xs[2] = sigF;	micro_xs[3] = sigE;
 }
 
+//	second try of CUDA adaptation of RSBench; data is copied to device every time called
+void calc_sig_dd_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, 
+	CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors ) {
+	// MicroScopic XS's to Calculate
+	double sigT, sigA, sigF, sigE;
+
+	// Calculate Window Index
+	double spacing = 1.0 / data.n_windows[nuc];
+	int window = (int) ( E / spacing );
+	if( window == data.n_windows[nuc] )
+		window--;
+
+	// Calculate sigTfactors
+	calculate_sig_T_sim ( E, input.numL, data.pseudo_K0RS[nuc], sigTfactors );
+
+	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
+	Window w = data.windows[nuc][window];
+	sigT = E * w.T;	sigA = E * w.A;	sigF = E * w.F;
+	// Loop over Poles within window, add contributions
+	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt(E), 0);
+	int num = w.end - w.start + 1;
+	double* sigTs, *sigAs, *sigFs, *sigT_d, *sigA_d, *sigF_d; 
+//	Pole* poles_d; 
+	cuDoubleComplex* sigTfactors_d;
+	/* allocate memory on device */
+	assert (cudaMalloc((void **) &sigTs, num*sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigAs, num*sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigFs, num*sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigT_d, sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigA_d, sizeof(double)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigF_d, sizeof(double)) == cudaSuccess);
+//	assert (cudaMalloc((void **) &poles_d, num*sizeof(Pole)) == cudaSuccess);
+	assert (cudaMalloc((void **) &sigTfactors_d, num*sizeof(cuDoubleComplex)) == cudaSuccess);
+//	assert(cudaMemcpy( poles_d, data.poles[nuc], sizeof(Pole),cudaMemcpyHostToDevice) == cudaSuccess);
+	calc_sig_dd_kernel<<<num, 1>>> ( const1, const2, data_d, nuc, 
+			w.start, sigTs, sigAs, sigFs, sigTfactors_d );
+	sum_sigs<<<1, 512>>> ( sigTs, sigAs, sigFs, sigT_d, sigA_d, sigF_d, 512, num );
+	assert(cudaMemcpy( &sigT, sigT_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+	assert(cudaMemcpy( &sigA, sigA_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+	assert(cudaMemcpy( &sigF, sigF_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+
+	cudaFree( sigTs );  cudaFree( sigAs );  cudaFree( sigFs );  //cudaFree( poles_d); 
+	cudaFree( sigTfactors_d); cudaFree( sigT_d );  cudaFree( sigA_d );  cudaFree( sigF_d );  
+
+	sigE = sigT - sigA;
+
+	micro_xs[0] = sigT;	micro_xs[1] = sigA;	micro_xs[2] = sigF;	micro_xs[3] = sigE;
+}
+
+//	first version of CUDA addption - only the four-iteration loop; each time called, data is copied to the device
 void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors)
 {
 	// MicroScopic XS's to Calculate
@@ -177,6 +285,48 @@ void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input inpu
 	assert(cudaMemcpy( sigTfactors, cudcomp_d, input.numL*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
 	cudaFree( cudcomp_d );  
 	cudaFree( data_d );  
+	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
+	Window w = data.windows[nuc][window];
+	sigT = E * w.T;
+	sigA = E * w.A;
+	sigF = E * w.F;
+	// Loop over Poles within window, add contributions
+	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt(E), 0);
+	for( int i = w.start; i < w.end; i++ ) {
+		Pole pole = data.poles[nuc][i];
+		cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
+		sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
+		sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
+		sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
+	}
+
+	sigE = sigT - sigA;
+
+	micro_xs[0] = sigT;
+	micro_xs[1] = sigA;
+	micro_xs[2] = sigF;
+	micro_xs[3] = sigE;
+}
+
+//	improved first version of CUDA addption - only the four-iteration loop; data is copied to the device in the beginning
+void calculate_micro_xs_dd_driver( double * micro_xs, int nuc, double E, Input input, 
+	CalcDataPtrs data, CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors) {
+	// MicroScopic XS's to Calculate
+	double sigT, sigA, sigF, sigE;
+	cuDoubleComplex* cudcomp_d;
+
+	// Calculate Window Index
+	double spacing = 1.0 / data.n_windows[nuc];
+	int window = (int) ( E / spacing );
+	if( window == data.n_windows[nuc] )
+		window--;
+
+	/* allocate memory on device */
+	assert (cudaMalloc((void **) &cudcomp_d, input.numL*sizeof(cuDoubleComplex)) == cudaSuccess);
+	// Calculate sigTfactors
+	calc_sig_T_sim_dd_kernel<<<1, input.numL>>> ( E, input.numL, data_d, nuc * input.numL, cudcomp_d);
+	assert(cudaMemcpy( sigTfactors, cudcomp_d, input.numL*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
+	cudaFree( cudcomp_d );  
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = data.windows[nuc][window];
 	sigT = E * w.T;

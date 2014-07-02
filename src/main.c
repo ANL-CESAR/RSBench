@@ -101,7 +101,7 @@ int main(int argc, char * argv[])
 
 	#pragma omp parallel default(none) \
 	private(seed, mat, E, i) \
-	shared(input, data, numL) 
+	shared(input, data, numL, data_d) 
 	{
 		double macro_xs[4];
 		int thread = omp_get_thread_num();
@@ -131,7 +131,8 @@ int main(int argc, char * argv[])
 			#endif
 			mat = pick_mat( &seed );
 			E = rn( &seed );
-			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors, &counter, &counter2 );
+//			calculate_macro_xs( macro_xs, mat, E, input, data, data_d, sigTfactors, &counter, &counter2 );
+			calc_macro_xs_driver( macro_xs, mat, E, input, &data, data_d, sigTfactors);
 		}
 //		printf ("counter: %i\n", counter);
 //		printf ("counter2: %i\n", counter2);

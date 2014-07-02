@@ -129,7 +129,7 @@ size_t get_mem_estimate( Input input );
 
 // xs_kernel.c
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input,
-	CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter, int* counter2 ); 
+	CalcDataPtrs data, CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors, int* counter, int* counter2 ); 
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input,
 	CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter );
 void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data,
@@ -143,6 +143,11 @@ void calculate_micro_xs_driver( double * micro_xs, int nuc, double E,
 	Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors);
 void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input,
 	CalcDataPtrs data, cuDoubleComplex * sigTfactors );
+void calculate_micro_xs_dd_driver( double * micro_xs, int nuc, double E, Input input,
+        CalcDataPtrs data, CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors);
+void calc_sig_dd_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, 
+	CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors );
+void calc_macro_xs_driver ( double * macro_xs, int mat, double E, Input input, CalcDataPtrs* data, CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors );
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );
