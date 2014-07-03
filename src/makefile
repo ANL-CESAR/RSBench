@@ -59,7 +59,7 @@ endif
 CFLAGS := -fopenmp -std=gnu99 -I/usr/local/cuda/include/ -ffast-math -I.
 CPPFLAGS := -fopenmp -I/usr/local/cuda/include/ -ffast-math -I.
 GCC_O_FLAGS =
-NVCC_FLAGS = -gencode arch=compute_30,code=sm_30 -O3  -Xptxas=-v -DDERIVED_ATOMIC_FUNCTIONS_H
+NVCC_FLAGS = -gencode arch=compute_35,code=sm_35 -O3  -Xptxas=-v -DDERIVED_ATOMIC_FUNCTIONS_H
 # Linker Flags
 LDFLAGS = -L/usr/local/cuda/lib64/ -lm -lcudart 
 
