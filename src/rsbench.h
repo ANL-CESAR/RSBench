@@ -148,6 +148,7 @@ void calculate_micro_xs_dd_driver( double * micro_xs, int nuc, double E, Input i
 void calc_sig_dd_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, 
 	CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors );
 void calc_macro_xs_driver ( double * macro_xs, int mat, double E, Input input, CalcDataPtrs* data, CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors );
+void top_calc_driver (const CalcDataPtrs_d* data,  Input input);
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );

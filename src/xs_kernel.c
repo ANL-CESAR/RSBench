@@ -18,9 +18,9 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 
 //		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors, counter);
 //		calculate_micro_xs_driver( micro_xs, nuc, E, input, data, sigTfactors);
-		calculate_micro_xs_dd_driver( micro_xs, nuc, E, input, data, data_d, sigTfactors);
+//		calculate_micro_xs_dd_driver( micro_xs, nuc, E, input, data, data_d, sigTfactors);
 //		calc_sig_driver( micro_xs, nuc, E, input, data, sigTfactors);
-//		calc_sig_dd_driver( micro_xs, nuc, E, input, data, data_d, sigTfactors);
+		calc_sig_dd_driver( micro_xs, nuc, E, input, data, data_d, sigTfactors);
 
 		for( int j = 0; j < 4; j++ )
 		{
