@@ -1,6 +1,15 @@
 #include "rsbench.h"
 #include "My_Stats.h"
 
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, char *file, int line, bool abort=true){
+   if (code != cudaSuccess)
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
 // Updated distribution built from actual OpenMC look-ups 
 __constant__ double dist[12] = {
 	0.207834,	// fuel
@@ -105,9 +114,11 @@ __device__ void devCalc_macro_xs( double * macro_xs, int mat, double E, Input in
 }
 
 //	top level kernel - 4th version
-__global__ void calc_kernel (const CalcDataPtrs_d* data, Input input)   {
+__global__ void calc_kernel (const CalcDataPtrs_d* data, Input input, int* ints_d)   {
 	// going to be dynamic
-	unsigned long seed = threadIdx.x + blockIdx.x * 512;
+	ints_d[threadIdx.x + blockIdx.x * 500] = 1;// threadIdx.x + blockIdx.x * 100;
+	ints_d[ 10 ] = 1;// threadIdx.x + blockIdx.x * 100;
+	unsigned long seed = threadIdx.x + blockIdx.x * blockDim.x;
 	int mat = devPick_mat( &seed );
 	double E = devRn( &seed );
 	double macro_xs[4];
@@ -117,12 +128,20 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, Input input)   {
 
 //	top level driver - 4th version
 void top_calc_driver (const CalcDataPtrs_d* data,  Input input){
-	calc_kernel<<<input.lookups/500,500>>> ( data, input);
+	int* ints_d, *ints = (int*)malloc(sizeof(int)*input.lookups);
+	assert (cudaMalloc((void **) &ints_d, input.lookups*sizeof(int)) == cudaSuccess);
+	assert(cudaMemset( ints_d, 0, input.lookups*sizeof(int) ) == cudaSuccess);
+	calc_kernel<<<input.lookups/500, 500>>> ( data, input, ints_d);
+	printf ("%i %i\n", input.lookups/500, 500);
+	assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
+	printf ("%i %i\n", ints[0], ints[10]);
+	cudaFree( ints_d);
+	free(ints);
 }
 
 //	add val to the vlaue stored at address
 __device__ double atomicAdd(double* address, double val) {
-	unsigned long long int* address_as_ull =
+/*	unsigned long long int* address_as_ull =
 		(unsigned long long int*)address;
 	unsigned long long int old = *address_as_ull, assumed;
 	do {
@@ -131,7 +150,8 @@ __device__ double atomicAdd(double* address, double val) {
 				__double_as_longlong(val +
 					__longlong_as_double(assumed)));
 	} while (assumed != old);
-	return __longlong_as_double(old);
+	return __longlong_as_double(old);*/
+	return 1.0;
 }
 
 //	compute SigT (the finest)
@@ -180,6 +200,7 @@ __global__ void add_macro_xs_four_threads (double* macro_xs_d, double* macro_xs_
 
 //	third kernel utilizing CalcDataPtrs_d allocated on device
 __global__ void macro_kernel (double * macro_xs, const CalcDataPtrs_d* data, int mat, double E, int numL, cuDoubleComplex * sigTfactors) {
+	//printf ("breaking bad\n");
 	int nuc = data->materials.mats_2d[mat* data->materials.pitch + threadIdx.x ];
 	double * d_ptr = &(data->pseudo_K0RS_2d [nuc * numL]);
 
@@ -243,12 +264,18 @@ void calc_macro_xs_driver ( double * macro_xs, int mat, double E, Input input, C
 	assert(cudaMemset( macro_xs_d, 0, 4*sizeof(double) ) == cudaSuccess);
 	assert(cudaMemset( macro_xs_results, 0, num*4*sizeof(double) ) == cudaSuccess);
 	macro_kernel<<<1, num>>> (macro_xs_results, data_d, mat, E, input.numL, sigTfactors_d);
+	gpuErrchk( cudaGetLastError() );
+//        gpuErrchk( cudaDeviceSynchronize() );
+//	cudaDeviceSynchronize();
+//	printf ("E: %f\n", E);
+//	printf ("sigTfactors: x:%f, y:%f\n", sigTfactors[0].x, sigTfactors[0].y);
 	// for nuclide in mat
 //	add_macro_xs<<<1, num>>> (macro_xs_d, macro_xs_results);
 //	add_macro_xs_single_thread<<<1,1>>> (macro_xs_d, macro_xs_results, num );
 	add_macro_xs_four_threads<<<1,4 >>> (macro_xs_d, macro_xs_results, num ); 
 //	assert(cudaMemcpy( macro_xs, macro_xs_d, 4*sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
-//	assert(cudaMemcpy( sigTfactors, sigTfactors_d, 4*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
+	assert(cudaMemcpy( sigTfactors, sigTfactors_d, 4*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
+//	printf ("sigTfactors: x:%f, y:%f\n", sigTfactors[0].x, sigTfactors[0].y);
 }
 
 __global__ void calc_sig_kernel ( cuDoubleComplex const1, cuDoubleComplex const2, Pole* poles, 

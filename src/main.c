@@ -2,13 +2,13 @@
 
 int main(int argc, char * argv[])
 {
-	//dotp_driver(8);
+	dotp_driver(8);
 	// =====================================================================
 	// Initialization & Command Line Read-In
 	// =====================================================================
 
 	int version = 2;
-	int max_procs = omp_get_num_procs();
+//	int max_procs = omp_get_num_procs();
 	double start, stop;
 	
 	srand(time(NULL));
@@ -17,7 +17,7 @@ int main(int argc, char * argv[])
 	Input input = read_CLI( argc, argv );
 
 	// Set number of OpenMP Threads
-	omp_set_num_threads(input.nthreads); 
+//	omp_set_num_threads(input.nthreads); 
 	
 	// =====================================================================
 	// Print-out of Input Summary
@@ -93,35 +93,33 @@ int main(int argc, char * argv[])
 	#endif	
 
 	start = omp_get_wtime();
+	//input.lookups = 10000;
+//	unsigned long seed = rand();
+//	int mat;
+//	double E;
+//	int i;
 
-	unsigned long seed = rand();
-	int mat;
-	double E;
-	int i;
-
-	#pragma omp parallel default(none) \
+//	#pragma omp parallel default(none) \
 	private(seed, mat, E, i) \
 	shared(input, data, numL, data_d) 
 	{
-		double macro_xs[4];
+//		double macro_xs[4];
 		int thread = omp_get_thread_num();
-		seed += thread;
+//		seed += thread;
 //		printf ("input.lookups: %i\n", input.lookups);
 		
 		#ifdef PAPI
 		int eventset = PAPI_NULL; 
 		int num_papi_events;
-		#pragma omp critical
+//		#pragma omp critical
 		{
 			counter_init(&eventset, &num_papi_events);
 		}
 		#endif
-		cuDoubleComplex * sigTfactors =
-			(cuDoubleComplex *) malloc( input.numL * sizeof(cuDoubleComplex) );
-		int counter = 0, counter2=0;
-		#pragma omp for schedule(dynamic)
-		for( i = 0; i < input.lookups; i++ )
-		{
+//		cuDoubleComplex * sigTfactors = (cuDoubleComplex *) malloc( input.numL * sizeof(cuDoubleComplex) );
+//		int counter = 0, counter2=0;
+//		#pragma omp for schedule(dynamic)
+/*		for( i = 0; i < input.lookups; i++ ) {
 			#ifdef STATUS
 			if( thread == 0 && i % 1000 == 0 )
 				printf("\rCalculating XS's... (%.0lf%% completed)",
@@ -133,13 +131,12 @@ int main(int argc, char * argv[])
 			E = rn( &seed );
 //			calculate_macro_xs( macro_xs, mat, E, input, data, data_d, sigTfactors, &counter, &counter2 );
 			calc_macro_xs_driver( macro_xs, mat, E, input, &data, data_d, sigTfactors);
-		}
+		}*/
 //		printf ("counter: %i\n", counter);
 //		printf ("counter2: %i\n", counter2);
-		free(sigTfactors);
+//		free(sigTfactors);
 		#ifdef PAPI
-		if( thread == 0 )
-		{
+		if( thread == 0 ){
 			printf("\n");
 			border_print();
 			center_print("PAPI COUNTER RESULTS", 79);
@@ -147,13 +144,14 @@ int main(int argc, char * argv[])
 			printf("Count          \tSmybol      \tDescription\n");
 		}
 		{
-		#pragma omp barrier
+//		#pragma omp barrier
 		}
 		
 		counter_stop(&eventset, num_papi_events);
 		#endif
 	}
 
+	top_calc_driver ( data_d, input);
 	stop = omp_get_wtime();
 	#ifndef PAPI
 	printf("\nSimulation Complete.\n");
