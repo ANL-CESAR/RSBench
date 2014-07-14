@@ -1,13 +1,15 @@
 #include "rsbench.h"
 #include "My_Stats.h"
+#include "cuPrintf.h"
+#include "cuPrintf.cu"
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, char *file, int line, bool abort=true){
-   if (code != cudaSuccess)
-   {
-      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
-      if (abort) exit(code);
-   }
+	if (code != cudaSuccess)
+	{
+		fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+		if (abort) exit(code);
+	}
 }
 
 // Updated distribution built from actual OpenMC look-ups 
@@ -114,43 +116,109 @@ __device__ void devCalc_macro_xs( double * macro_xs, int mat, double E, Input in
 }
 
 //	top level kernel - 4th version
-__global__ void calc_kernel (const CalcDataPtrs_d* data, Input input, int* ints_d)   {
+__global__ void calc_kernel (const CalcDataPtrs_d* data, Input input/*, int* ints_d*/)   {
 	// going to be dynamic
-	ints_d[threadIdx.x + blockIdx.x * 500] = 1;// threadIdx.x + blockIdx.x * 100;
-	ints_d[ 10 ] = 1;// threadIdx.x + blockIdx.x * 100;
 	unsigned long seed = threadIdx.x + blockIdx.x * blockDim.x;
 	int mat = devPick_mat( &seed );
 	double E = devRn( &seed );
+	double sqrt_E = sqrt(E);
 	double macro_xs[4];
 	cuDoubleComplex sigTfactors[4];
-	devCalc_macro_xs( macro_xs, mat, E, input,  data, sigTfactors);
+	//	devCalc_macro_xs( macro_xs, mat, E, input,  data, sigTfactors);
+	// zero out macro vector
+	int i;
+	for( i = 0; i < 4; i++ )
+		macro_xs[i] = 0;
+
+//	ints_d[threadIdx.x + blockIdx.x * 500] = 1;// threadIdx.x + blockIdx.x * 100;
+	// for nuclide in mat;
+	for( i = 0; i < data->materials.num_nucs[mat]; i++ ){
+		double micro_xs[4];
+		int nuc = data->materials.mats_2d[mat* data->materials.pitch + i];
+
+		//	devCalc_micro_xs( micro_xs, nuc, E, input, data, sigTfactors);
+		// MicroScopic XS's to Calculate
+		double sigT;	double sigA;	double sigF;	double sigE;
+
+		// Calculate Window Index
+		double spacing = 1.0 / data->n_windows[nuc];
+		int window = (int) ( E / spacing );
+		if( window == data->n_windows[nuc] )
+			window--;
+
+		// Calculate sigTfactors
+		double * d_ptr = &(data->pseudo_K0RS_2d [nuc * input.numL]);
+		double phi;
+		for( int k = 0; k < input.numL; k++ ) {
+			phi = d_ptr[k] * sqrt_E;
+
+			if( k == 1 )
+				phi -= - atan( phi );
+			else if( k == 2 )
+				phi -= atan( 3.0 * phi / (3.0 - phi*phi));
+			else if( k == 3 )
+				phi -= atan(phi*(15.0-phi*phi)/(15.0-6.0*phi*phi));
+
+			phi += phi;
+
+			sigTfactors[k].x= cos(phi);
+			sigTfactors[k].y= - sin(phi);
+		}
+		// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
+		Window w = data->windows_2d[nuc * data->pitch_windows + window];
+		sigT = E * w.T;	sigA = E * w.A;	sigF = E * w.F;
+		// Loop over Poles within window, add contributions
+		cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt_E, 0);
+		for( int k = w.start; k < w.end; k ++ ){
+			Pole pole = data->poles_2d[ nuc * data->pitch_poles + k];
+			cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
+			sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
+			sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
+			sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
+		}
+
+		sigE = sigT - sigA;
+		micro_xs[0] = sigT; micro_xs[1] = sigA;	micro_xs[2] = sigF; micro_xs[3] = sigE;
+
+		for( int j = 0; j < 4; j++ ){
+			macro_xs[j] += micro_xs[j] * data->materials.concs_2d[mat* data->materials.pitch+i];
+		}
+	}
+//	ints_d[threadIdx.x + blockIdx.x * 500] = 7;// threadIdx.x + blockIdx.x * 100;
 }
 
 //	top level driver - 4th version
 void top_calc_driver (const CalcDataPtrs_d* data,  Input input){
-	int* ints_d, *ints = (int*)malloc(sizeof(int)*input.lookups);
-	assert (cudaMalloc((void **) &ints_d, input.lookups*sizeof(int)) == cudaSuccess);
-	assert(cudaMemset( ints_d, 0, input.lookups*sizeof(int) ) == cudaSuccess);
-	calc_kernel<<<input.lookups/500, 500>>> ( data, input, ints_d);
-	printf ("%i %i\n", input.lookups/500, 500);
-	assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
-	printf ("%i %i\n", ints[0], ints[10]);
-	cudaFree( ints_d);
-	free(ints);
+	int* ints_d;//, *ints = (int*)malloc(sizeof(int)*input.lookups);
+//	assert (cudaMalloc((void **) &ints_d, input.lookups*sizeof(int)) == cudaSuccess);
+//	assert(cudaMemset( ints_d, 0, input.lookups*sizeof(int) ) == cudaSuccess);
+	cudaPrintfInit();
+	calc_kernel<<<input.lookups/500, 500>>> ( data, input);//, ints_d);
+	cudaPrintfDisplay(stdout, true);
+	cudaPrintfEnd();
+//	printf ("%i %i\n", input.lookups/500, 500);
+//	assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
+//	printf ("%i %i\n", ints[0], ints[10]/*, ints[9999990]*/);
+//	int sum = 0, idx;
+//	for ( idx = 0; idx < input.lookups; idx++)
+//		sum += ints[idx];
+//	printf ( "sum: %i\n", sum );	
+//	cudaFree( ints_d);
+//	free(ints);
 }
 
 //	add val to the vlaue stored at address
 __device__ double atomicAdd(double* address, double val) {
-/*	unsigned long long int* address_as_ull =
+	/*	unsigned long long int* address_as_ull =
 		(unsigned long long int*)address;
-	unsigned long long int old = *address_as_ull, assumed;
-	do {
+		unsigned long long int old = *address_as_ull, assumed;
+		do {
 		assumed = old;
 		old = atomicCAS(address_as_ull, assumed,
-				__double_as_longlong(val +
-					__longlong_as_double(assumed)));
-	} while (assumed != old);
-	return __longlong_as_double(old);*/
+		__double_as_longlong(val +
+		__longlong_as_double(assumed)));
+		} while (assumed != old);
+		return __longlong_as_double(old);*/
 	return 1.0;
 }
 
@@ -199,8 +267,8 @@ __global__ void add_macro_xs_four_threads (double* macro_xs_d, double* macro_xs_
 } 
 
 //	third kernel utilizing CalcDataPtrs_d allocated on device
-__global__ void macro_kernel (double * macro_xs, const CalcDataPtrs_d* data, int mat, double E, int numL, cuDoubleComplex * sigTfactors) {
-	//printf ("breaking bad\n");
+__global__ void macro_kernel (double * macro_xs, const CalcDataPtrs_d* data, int mat, double E, int numL) {
+	cuDoubleComplex sigTfactors[4];
 	int nuc = data->materials.mats_2d[mat* data->materials.pitch + threadIdx.x ];
 	double * d_ptr = &(data->pseudo_K0RS_2d [nuc * numL]);
 
@@ -257,25 +325,21 @@ void calc_macro_xs_driver ( double * macro_xs, int mat, double E, Input input, C
 	// zero out macro vector
 	int num = data->materials.num_nucs[mat];
 	double *macro_xs_d, *macro_xs_results;
-	cuDoubleComplex * sigTfactors_d;
-	assert (cudaMalloc((void **) &macro_xs_d, 4*sizeof(double)) == cudaSuccess);
+	//	cuDoubleComplex * sigTfactors_d;
+	//	assert (cudaMalloc((void **) &macro_xs_d, 4*sizeof(double)) == cudaSuccess);
 	assert (cudaMalloc((void **) &macro_xs_results, 4*num*sizeof(double)) == cudaSuccess);
-	assert (cudaMalloc((void **) &sigTfactors_d, input.numL*sizeof(cuDoubleComplex)) == cudaSuccess);
-	assert(cudaMemset( macro_xs_d, 0, 4*sizeof(double) ) == cudaSuccess);
-	assert(cudaMemset( macro_xs_results, 0, num*4*sizeof(double) ) == cudaSuccess);
-	macro_kernel<<<1, num>>> (macro_xs_results, data_d, mat, E, input.numL, sigTfactors_d);
-	gpuErrchk( cudaGetLastError() );
-//        gpuErrchk( cudaDeviceSynchronize() );
-//	cudaDeviceSynchronize();
-//	printf ("E: %f\n", E);
-//	printf ("sigTfactors: x:%f, y:%f\n", sigTfactors[0].x, sigTfactors[0].y);
+	//	assert (cudaMalloc((void **) &sigTfactors_d, input.numL*sizeof(cuDoubleComplex)) == cudaSuccess);
+	//	assert(cudaMemset( macro_xs_d, 0, 4*sizeof(double) ) == cudaSuccess);
+	//	assert(cudaMemset( macro_xs_results, 0, num*4*sizeof(double) ) == cudaSuccess);
+	macro_kernel<<<1, num>>> (macro_xs_results, data_d, mat, E, input.numL);
+	//	gpuErrchk( cudaGetLastError() );
+	//        gpuErrchk( cudaDeviceSynchronize() );
 	// for nuclide in mat
-//	add_macro_xs<<<1, num>>> (macro_xs_d, macro_xs_results);
-//	add_macro_xs_single_thread<<<1,1>>> (macro_xs_d, macro_xs_results, num );
-	add_macro_xs_four_threads<<<1,4 >>> (macro_xs_d, macro_xs_results, num ); 
-//	assert(cudaMemcpy( macro_xs, macro_xs_d, 4*sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
-	assert(cudaMemcpy( sigTfactors, sigTfactors_d, 4*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
-//	printf ("sigTfactors: x:%f, y:%f\n", sigTfactors[0].x, sigTfactors[0].y);
+	//	add_macro_xs_four_threads<<<1,4 >>> (macro_xs_d, macro_xs_results, num ); 
+	//	assert(cudaMemcpy( macro_xs, macro_xs_d, 4*sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+	//	assert(cudaMemcpy( sigTfactors, sigTfactors_d, 4*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
+	//	cudaFree(macro_xs_d);
+	cudaFree(macro_xs_results);
 }
 
 __global__ void calc_sig_kernel ( cuDoubleComplex const1, cuDoubleComplex const2, Pole* poles, 
@@ -298,7 +362,6 @@ __global__ void calc_sig_dd_kernel ( cuDoubleComplex const1, cuDoubleComplex con
 
 __global__ void sum_sigs ( double* sigTs, double* sigAs, double* sigFs, double* sigT, double* sigA, double* sigF, 
 		int tpb, int len ) {
-	//*sigA = *sigF = *sigT = 0;
 	int i, j;
 	for ( i = 0; i < len; i += tpb ) {
 		if ( ( j = i + threadIdx.x ) < len ) {
@@ -341,7 +404,7 @@ void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDa
 	assert (cudaMalloc((void **) &sigF_d, sizeof(double)) == cudaSuccess);
 	assert (cudaMalloc((void **) &poles_d, num*sizeof(Pole)) == cudaSuccess);
 	assert (cudaMalloc((void **) &sigTfactors_d, num*sizeof(cuDoubleComplex)) == cudaSuccess);
-//	assert(cudaMemcpy( sigTfactors_d, sigTfactors, input.numL*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice) == cudaSuccess);
+	//	assert(cudaMemcpy( sigTfactors_d, sigTfactors, input.numL*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice) == cudaSuccess);
 	assert(cudaMemcpy( poles_d, data.poles[nuc], sizeof(Pole),cudaMemcpyHostToDevice) == cudaSuccess);
 	calc_sig_kernel<<<num, 1>>> ( const1, const2, poles_d, 
 			w.start, sigTs, sigAs, sigFs, sigTfactors_d );
@@ -360,7 +423,7 @@ void calc_sig_driver ( double * micro_xs, int nuc, double E, Input input, CalcDa
 
 //	second try of CUDA adaptation of RSBench; data is copied to device every time called
 void calc_sig_dd_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, 
-	CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors ) {
+		CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors ) {
 	// MicroScopic XS's to Calculate
 	double sigT, sigA, sigF, sigE;
 
@@ -380,7 +443,7 @@ void calc_sig_dd_driver ( double * micro_xs, int nuc, double E, Input input, Cal
 	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt(E), 0);
 	int num = w.end - w.start + 1;
 	double* sigTs, *sigAs, *sigFs, *sigT_d, *sigA_d, *sigF_d; 
-//	Pole* poles_d; 
+	//	Pole* poles_d; 
 	cuDoubleComplex* sigTfactors_d;
 	/* allocate memory on device */
 	assert (cudaMalloc((void **) &sigTs, num*sizeof(double)) == cudaSuccess);
@@ -389,15 +452,15 @@ void calc_sig_dd_driver ( double * micro_xs, int nuc, double E, Input input, Cal
 	assert (cudaMalloc((void **) &sigT_d, sizeof(double)) == cudaSuccess);
 	assert (cudaMalloc((void **) &sigA_d, sizeof(double)) == cudaSuccess);
 	assert (cudaMalloc((void **) &sigF_d, sizeof(double)) == cudaSuccess);
-//	assert (cudaMalloc((void **) &poles_d, num*sizeof(Pole)) == cudaSuccess);
+	//	assert (cudaMalloc((void **) &poles_d, num*sizeof(Pole)) == cudaSuccess);
 	assert (cudaMalloc((void **) &sigTfactors_d, num*sizeof(cuDoubleComplex)) == cudaSuccess);
-//	assert(cudaMemcpy( poles_d, data.poles[nuc], sizeof(Pole),cudaMemcpyHostToDevice) == cudaSuccess);
+	//	assert(cudaMemcpy( poles_d, data.poles[nuc], sizeof(Pole),cudaMemcpyHostToDevice) == cudaSuccess);
 	calc_sig_dd_kernel<<<num, 1>>> ( const1, const2, data_d, nuc, 
 			w.start, sigTs, sigAs, sigFs, sigTfactors_d );
 	sum_sigs<<<1, 512>>> ( sigTs, sigAs, sigFs, sigT_d, sigA_d, sigF_d, 512, num );
-//	assert(cudaMemcpy( &sigT, sigT_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
-//	assert(cudaMemcpy( &sigA, sigA_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
-//	assert(cudaMemcpy( &sigF, sigF_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+	assert(cudaMemcpy( &sigT, sigT_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+	assert(cudaMemcpy( &sigA, sigA_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+	assert(cudaMemcpy( &sigF, sigF_d, sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
 
 	cudaFree( sigTs );  cudaFree( sigAs );  cudaFree( sigFs );  //cudaFree( poles_d); 
 	cudaFree( sigTfactors_d); cudaFree( sigT_d );  cudaFree( sigA_d );  cudaFree( sigF_d );  
@@ -456,7 +519,7 @@ void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input inpu
 
 //	improved first version of CUDA addption - only the four-iteration loop; data is copied to the device in the beginning
 void calculate_micro_xs_dd_driver( double * micro_xs, int nuc, double E, Input input, 
-	CalcDataPtrs data, CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors) {
+		CalcDataPtrs data, CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors) {
 	// MicroScopic XS's to Calculate
 	double sigT, sigA, sigF, sigE;
 	cuDoubleComplex* cudcomp_d;
@@ -471,7 +534,7 @@ void calculate_micro_xs_dd_driver( double * micro_xs, int nuc, double E, Input i
 	assert (cudaMalloc((void **) &cudcomp_d, input.numL*sizeof(cuDoubleComplex)) == cudaSuccess);
 	// Calculate sigTfactors
 	calc_sig_T_sim_dd_kernel<<<1, input.numL>>> ( E, input.numL, data_d, nuc * input.numL, cudcomp_d);
-	assert(cudaMemcpy( sigTfactors, cudcomp_d, input.numL*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
+	//	assert(cudaMemcpy( sigTfactors, cudcomp_d, input.numL*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
 	cudaFree( cudcomp_d );  
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = data.windows[nuc][window];

@@ -158,7 +158,7 @@ int main(int argc, char * argv[])
 	//printf("\nnumL: %i\n", numL);
 	#endif
 	// free device memeory
-	free_CalcDataPtrs_d ( data_d );
+//	free_CalcDataPtrs_d ( data_d );
 	// =====================================================================
 	// Print / Save Results and Exit
 	// =====================================================================
