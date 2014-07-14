@@ -326,19 +326,19 @@ void calc_macro_xs_driver ( double * macro_xs, int mat, double E, Input input, C
 	int num = data->materials.num_nucs[mat];
 	double *macro_xs_d, *macro_xs_results;
 	//	cuDoubleComplex * sigTfactors_d;
-	//	assert (cudaMalloc((void **) &macro_xs_d, 4*sizeof(double)) == cudaSuccess);
-	assert (cudaMalloc((void **) &macro_xs_results, 4*num*sizeof(double)) == cudaSuccess);
+		assert (cudaMalloc((void **) &macro_xs_d, 4*sizeof(double)) == cudaSuccess);
+		assert (cudaMalloc((void **) &macro_xs_results, 4*num*sizeof(double)) == cudaSuccess);
 	//	assert (cudaMalloc((void **) &sigTfactors_d, input.numL*sizeof(cuDoubleComplex)) == cudaSuccess);
-	//	assert(cudaMemset( macro_xs_d, 0, 4*sizeof(double) ) == cudaSuccess);
-	//	assert(cudaMemset( macro_xs_results, 0, num*4*sizeof(double) ) == cudaSuccess);
-	macro_kernel<<<1, num>>> (macro_xs_results, data_d, mat, E, input.numL);
+		assert(cudaMemset( macro_xs_d, 0, 4*sizeof(double) ) == cudaSuccess);
+		assert(cudaMemset( macro_xs_results, 0, num*4*sizeof(double) ) == cudaSuccess);
+		macro_kernel<<<1, num>>> (macro_xs_results, data_d, mat, E, input.numL);
 	//	gpuErrchk( cudaGetLastError() );
 	//        gpuErrchk( cudaDeviceSynchronize() );
 	// for nuclide in mat
-	//	add_macro_xs_four_threads<<<1,4 >>> (macro_xs_d, macro_xs_results, num ); 
-	//	assert(cudaMemcpy( macro_xs, macro_xs_d, 4*sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
+		add_macro_xs_four_threads<<<1,4 >>> (macro_xs_d, macro_xs_results, num ); 
+		assert(cudaMemcpy( macro_xs, macro_xs_d, 4*sizeof(double),cudaMemcpyDeviceToHost) == cudaSuccess);
 	//	assert(cudaMemcpy( sigTfactors, sigTfactors_d, 4*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost) == cudaSuccess);
-	//	cudaFree(macro_xs_d);
+		cudaFree(macro_xs_d);
 	cudaFree(macro_xs_results);
 }
 
