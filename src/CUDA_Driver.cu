@@ -1,7 +1,7 @@
 #include "rsbench.h"
 #include "My_Stats.h"
-#include "cuPrintf.h"
-#include "cuPrintf.cu"
+//#include "cuPrintf.h"
+//#include "cuPrintf.cu"
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, char *file, int line, bool abort=true){
@@ -192,10 +192,10 @@ void top_calc_driver (const CalcDataPtrs_d* data,  Input input){
 	int* ints_d;//, *ints = (int*)malloc(sizeof(int)*input.lookups);
 //	assert (cudaMalloc((void **) &ints_d, input.lookups*sizeof(int)) == cudaSuccess);
 //	assert(cudaMemset( ints_d, 0, input.lookups*sizeof(int) ) == cudaSuccess);
-	cudaPrintfInit();
+//	cudaPrintfInit();
 	calc_kernel<<<input.lookups/500, 500>>> ( data, input);//, ints_d);
-	cudaPrintfDisplay(stdout, true);
-	cudaPrintfEnd();
+//	cudaPrintfDisplay(stdout, true);
+//	cudaPrintfEnd();
 //	printf ("%i %i\n", input.lookups/500, 500);
 //	assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
 //	printf ("%i %i\n", ints[0], ints[10]/*, ints[9999990]*/);
