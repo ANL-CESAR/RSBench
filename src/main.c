@@ -1,24 +1,22 @@
 #include "rsbench.h"
 
-int main(int argc, char * argv[])
-{
+int main(int argc, char * argv[]) {
 	dotp_driver(8);
 	// =====================================================================
 	// Initialization & Command Line Read-In
 	// =====================================================================
 
-	int version = 2;
-//	int max_procs = omp_get_num_procs();
-	double start, stop;
-	
+	int version = 3;
+	cudaEvent_t begin, end;
+	float milliseconds = 0;
+	cudaEventCreate(&begin);
+	cudaEventCreate(&end);
+
 	srand(time(NULL));
-	
+
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
 
-	// Set number of OpenMP Threads
-//	omp_set_num_threads(input.nthreads); 
-	
 	// =====================================================================
 	// Print-out of Input Summary
 	// =====================================================================
@@ -33,9 +31,9 @@ int main(int argc, char * argv[])
 	border_print();
 	center_print("INITIALIZATION", 79);
 	border_print();
-	
-	start = omp_get_wtime();
-	
+
+	cudaEventRecord(begin, 0);
+
 	// Allocate & fill energy grids
 	printf("Generating resonance distributions...\n");
 	int * n_poles = generate_n_poles( input );
@@ -43,7 +41,7 @@ int main(int argc, char * argv[])
 	// Allocate & fill Window grids
 	printf("Generating window distributions...\n");
 	int * n_windows = generate_n_windows( input );
-	
+
 	// Get material data
 	printf("Loading Hoogenboom-Martin material data...\n");
 	Materials materials = get_materials( input ); 
@@ -68,109 +66,114 @@ int main(int argc, char * argv[])
 	data.windows = windows;
 	data.pseudo_K0RS = pseudo_K0RS;
 	CalcDataPtrs_d* data_d = init_data ( input, &data );
-//	free_CalcDataPtrs_d ( data_d );
-	stop = omp_get_wtime();
-	printf("Initialization Complete. (%.2lf seconds)\n", stop-start);
-	
+	//	free_CalcDataPtrs_d ( data_d );
+	cudaEventRecord(end, 0);
+	cudaEventSynchronize(end);
+	cudaEventElapsedTime(&milliseconds, begin, end);
+	printf("Initialization Complete 2. (%.2lf seconds)\n", milliseconds/1000);
+
 	// =====================================================================
 	// Cross Section (XS) Parallel Lookup Simulation Begins
 	// =====================================================================
 	border_print();
 	center_print("SIMULATION", 79);
 	border_print();
-	
+
 	printf("Beginning Simulation.\n");
-	#ifndef STATUS
+#ifndef STATUS
 	printf("Calculating XS's...\n");
-	#endif
-	
-	#ifdef PAPI
+#endif
+
+#ifdef PAPI
 	/* initialize papi with one thread here  */
 	if ( PAPI_library_init(PAPI_VER_CURRENT) != PAPI_VER_CURRENT){
 		fprintf(stderr, "PAPI library init error!\n");
 		exit(1);
 	}
-	#endif	
-
-	start = omp_get_wtime();
-	//input.lookups = 10000;
-//	unsigned long seed = rand();
-//	int mat;
-//	double E;
-//	int i;
-
-//	#pragma omp parallel default(none) \
-	private(seed, mat, E, i) \
-	shared(input, data, numL, data_d) 
-	{
-//		double macro_xs[4];
-		int thread = omp_get_thread_num();
-//		seed += thread;
-//		printf ("input.lookups: %i\n", input.lookups);
-		
-		#ifdef PAPI
-		int eventset = PAPI_NULL; 
-		int num_papi_events;
-//		#pragma omp critical
-		{
-			counter_init(&eventset, &num_papi_events);
-		}
-		#endif
-//		cuDoubleComplex * sigTfactors = (cuDoubleComplex *) malloc( input.numL * sizeof(cuDoubleComplex) );
-//		int counter = 0, counter2=0;
-//		#pragma omp for schedule(dynamic)
-/*		for( i = 0; i < input.lookups; i++ ) {
-			#ifdef STATUS
-			if( thread == 0 && i % 1000 == 0 )
-				printf("\rCalculating XS's... (%.0lf%% completed)",
-						(i / ( (double)input.lookups /
-						(double) input.nthreads )) /
-						(double) input.nthreads * 100.0);
-			#endif
-			mat = pick_mat( &seed );
-			E = rn( &seed );
-//			calculate_macro_xs( macro_xs, mat, E, input, data, data_d, sigTfactors, &counter, &counter2 );
-			calc_macro_xs_driver( macro_xs, mat, E, input, &data, data_d, sigTfactors);
-		}*/
-//		printf ("counter: %i\n", counter);
-//		printf ("counter2: %i\n", counter2);
-//		free(sigTfactors);
-		#ifdef PAPI
-		if( thread == 0 ){
-			printf("\n");
-			border_print();
-			center_print("PAPI COUNTER RESULTS", 79);
-			border_print();
-			printf("Count          \tSmybol      \tDescription\n");
-		}
-		{
-//		#pragma omp barrier
-		}
-		
-		counter_stop(&eventset, num_papi_events);
-		#endif
-	}
-
-	top_calc_driver ( data_d, input);
-	stop = omp_get_wtime();
-	#ifndef PAPI
-	printf("\nSimulation Complete.\n");
-	//printf("\nnumL: %i\n", numL);
-	#endif
-	// free device memeory
-//	free_CalcDataPtrs_d ( data_d );
+#endif	
+	
+	cudaEventRecord(begin, 0);
+	top_calc_driver ( data_d, input, 200);
+	cudaEventRecord(end, 0);
+	cudaEventSynchronize(end);
+	cudaEventElapsedTime(&milliseconds, begin, end);
+	printf("\nSimulation 1 Complete.\n");
 	// =====================================================================
 	// Print / Save Results and Exit
 	// =====================================================================
 	border_print();
-	center_print("RESULTS", 79);
+	center_print("RESULTS 1", 79);
 	border_print();
 
-	printf("Threads:     %d\n", input.nthreads);
-	printf("Runtime:     %.3lf seconds\n", stop-start);
+	printf("NTPB:        %i\n", 200);
+	printf ("Time for the kernel: %f ms\n", milliseconds);
 	printf("Lookups:     "); fancy_int(input.lookups);
-	printf("Lookups/s:   "); fancy_int((double) input.lookups / (stop-start));
+	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
 
+	cudaEventRecord(begin, 0);
+	top_calc_driver ( data_d, input, 250);
+	cudaEventRecord(end, 0);
+	cudaEventSynchronize(end);
+	cudaEventElapsedTime(&milliseconds, begin, end);
+	printf("\nSimulation 2 Complete.\n");
+	border_print();
+	center_print("RESULTS 2", 79);
+	border_print();
+
+	printf("NTPB:        %i\n", 250);
+	printf ("Time for the kernel: %f ms\n", milliseconds);
+	printf("Lookups:     "); fancy_int(input.lookups);
+	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
+	// free device memeory
+	//	free_CalcDataPtrs_d ( data_d );
+
+	cudaEventRecord(begin, 0);
+	top_calc_driver ( data_d, input, 400);
+	cudaEventRecord(end, 0);
+	cudaEventSynchronize(end);
+	cudaEventElapsedTime(&milliseconds, begin, end);
+	printf("\nSimulation 3 Complete.\n");
+	border_print();
+	center_print("RESULTS 3", 79);
+	border_print();
+
+	printf("NTPB:        %i\n", 400);
+	printf ("Time for the kernel: %f ms\n", milliseconds);
+	printf("Lookups:     "); fancy_int(input.lookups);
+	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
+
+	cudaEventRecord(begin, 0);
+	top_calc_driver ( data_d, input, 500);
+	cudaEventRecord(end, 0);
+	cudaEventSynchronize(end);
+	cudaEventElapsedTime(&milliseconds, begin, end);
+	printf("\nSimulation 4 Complete.\n");
+	border_print();
+	center_print("RESULTS 4", 79);
+	border_print();
+
+	printf("NTPB:        %i\n", 500);
+	printf ("Time for the kernel: %f ms\n", milliseconds);
+	printf("Lookups:     "); fancy_int(input.lookups);
+	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
+
+	cudaEventRecord(begin, 0);
+	top_calc_driver ( data_d, input, 1000);
+	cudaEventRecord(end, 0);
+	cudaEventSynchronize(end);
+	cudaEventElapsedTime(&milliseconds, begin, end);
+	printf("\nSimulation 5 Complete.\n");
+	border_print();
+	center_print("RESULTS 5", 79);
+	border_print();
+
+	printf("NTPB:        %i\n", 1000);
+	printf ("Time for the kernel: %f ms\n", milliseconds);
+	printf("Lookups:     "); fancy_int(input.lookups);
+	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
+	// =====================================================================
+	// Print / Save Results and Exit
+	// =====================================================================
 	border_print();
 
 	return 0;
