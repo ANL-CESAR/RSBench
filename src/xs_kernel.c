@@ -2,8 +2,7 @@
 
 // Reviewed
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, 
-	CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors, int* counter, int* counter2 ) 
-{
+	CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors, int* counter, int* counter2 ) {
 	// zero out macro vector
 	for( int i = 0; i < 4; i++ )
 		macro_xs[i] = 0;
@@ -16,9 +15,9 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 		double micro_xs[4];
 		int nuc = (data.materials).mats[mat][i];
 
-		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors, counter);
+//		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors, counter);
 //		calculate_micro_xs_driver( micro_xs, nuc, E, input, data, sigTfactors);
-//		calculate_micro_xs_dd_driver( micro_xs, nuc, E, input, data, data_d, sigTfactors);
+		calculate_micro_xs_dd_driver( micro_xs, nuc, E, input, data, data_d, sigTfactors);
 //		calc_sig_driver( micro_xs, nuc, E, input, data, sigTfactors);
 //		calc_sig_dd_driver( micro_xs, nuc, E, input, data, data_d, sigTfactors);
 
@@ -29,8 +28,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	}
 }
 
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter)
-{
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors, int* counter){
 	// MicroScopic XS's to Calculate
 	double sigT;
 	double sigA;
@@ -48,9 +46,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	calculate_sig_T_sim ( E, input.numL, data.pseudo_K0RS[nuc], sigTfactors );
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = data.windows[nuc][window];
-	sigT = E * w.T;
-	sigA = E * w.A;
-	sigF = E * w.F;
+	sigT = E * w.T;	sigA = E * w.A; sigF = E * w.F;
 	// Loop over Poles within window, add contributions
 //	if ( *counter < ( w.end - w.start + 1) )
 //		*counter = w.end - w.start + 1;
@@ -66,17 +62,12 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 
 	sigE = sigT - sigA;
 
-	micro_xs[0] = sigT;
-	micro_xs[1] = sigA;
-	micro_xs[2] = sigF;
-	micro_xs[3] = sigE;
+	micro_xs[0] = sigT;	micro_xs[1] = sigA;	micro_xs[2] = sigF;	micro_xs[3] = sigE;
 }
 
-void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors )
-{
+void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors ) {
 	double phi;
-	for( int i = 0; i < input.numL; i++ )
-	{
+	for( int i = 0; i < input.numL; i++ ){
 		phi = data.pseudo_K0RS[nuc][i] * sqrt(E);
 
 		if( i == 1 )
@@ -93,12 +84,10 @@ void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, cuDoubl
 	}
 }
 
-void calculate_sig_T_sim ( double E, int num_iter, const double* data, cuDoubleComplex * sigTfactors )
-{
+void calculate_sig_T_sim ( double E, int num_iter, const double* data, cuDoubleComplex * sigTfactors ){
 	double phi;
 	double sqrt_E = sqrt(E);
-	for( int i = 0; i < num_iter; i++ )
-	{
+	for( int i = 0; i < num_iter; i++ ){
 		phi = data[i] * sqrt_E;
 
 		if( i == 1 )

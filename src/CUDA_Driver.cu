@@ -1,6 +1,18 @@
 #include "rsbench.h"
 #include "My_Stats.h"
 
+#define cudaCheckErrors(msg) \
+    do { \
+        cudaError_t __err = cudaGetLastError(); \
+        if (__err != cudaSuccess) { \
+            fprintf(stderr, "Fatal error: %s (%s at %s:%d)\n", \
+                msg, cudaGetErrorString(__err), \
+                __FILE__, __LINE__); \
+            fprintf(stderr, "*** FAILED - ABORTING\n"); \
+            exit(1); \
+        } \
+    } while (0)
+
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, char *file, int line, bool abort=true){
 	if (code != cudaSuccess)
@@ -114,9 +126,13 @@ __device__ void devCalc_macro_xs( double * macro_xs, int mat, double E, Input in
 }
 
 //	top level kernel - 4th version
-__global__ void calc_kernel (const CalcDataPtrs_d* data, Input input/*, int* ints_d*/)   {
+__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*, int* ints_d*/)   {
 	// going to be dynamic
-	unsigned long seed = threadIdx.x + blockIdx.x * blockDim.x;
+	int tmp = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned long seed = tmp;
+	if ( tmp >= lookups)
+		return;
+	//printf ("%i %i\n", tmp, lookups);
 	int mat = devPick_mat( &seed );
 	double E = devRn( &seed );
 	double sqrt_E = sqrt(E);
@@ -130,7 +146,7 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, Input input/*, int* int
 	//	printf ("calc_kernel: %i\n", threadIdx.x + blockIdx.x * 500);
 	//	ints_d[threadIdx.x + blockIdx.x * 500] = 1;// threadIdx.x + blockIdx.x * 100;
 	// for nuclide in mat;
-	//	int counter = 0;
+	int counter = 0;
 	for( i = 0; i < data->materials.num_nucs[mat]; i++ ){
 		double micro_xs[4];
 		int nuc = data->materials.mats_2d[mat* data->materials.pitch + i];
@@ -146,9 +162,9 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, Input input/*, int* int
 			window--;
 
 		// Calculate sigTfactors
-		double * d_ptr = &(data->pseudo_K0RS_2d [nuc * input.numL]);
+		double * d_ptr = &(data->pseudo_K0RS_2d [nuc * numL]);
 		double phi;
-		for( int k = 0; k < input.numL; k++ ) {
+		for( int k = 0; k < numL; k++ ) {
 			phi = d_ptr[k] * sqrt_E;
 
 			if( k == 1 )
@@ -163,7 +179,7 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, Input input/*, int* int
 			sigTfactors[k].x= cos(phi);
 			sigTfactors[k].y= - sin(phi);
 		}
-		//		counter ++;
+		counter ++;
 		// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 		Window w = data->windows_2d[nuc * data->pitch_windows + window];
 		sigT = E * w.T;	sigA = E * w.A;	sigF = E * w.F;
@@ -184,25 +200,32 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, Input input/*, int* int
 			macro_xs[j] += micro_xs[j] * data->materials.concs_2d[mat* data->materials.pitch+i];
 		}
 	}
-	//	ints_d[threadIdx.x + blockIdx.x * 500] = counter;// threadIdx.x + blockIdx.x * 100;
+//	ints_d[tmp] = counter;// threadIdx.x + blockIdx.x * 100;
 }
 
 //	top level driver - 4th version
-void top_calc_driver (const CalcDataPtrs_d* data,  Input input, int ntpb){
-	//	int* ints_d, *ints;// = (int*)malloc(sizeof(int)*input.lookups);
+void top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input* input_d, Input input){
+	//	int* ints_d, *ints = (int*)malloc(sizeof(int)*input.lookups);
 	//	assert (cudaMalloc((void **) &ints_d, input.lookups*sizeof(int)) == cudaSuccess);
 	//	assert(cudaMemset( ints_d, 0, input.lookups*sizeof(int) ) == cudaSuccess);
-	calc_kernel<<<input.lookups/ntpb, ntpb>>> ( data, input);//, ints_d);
+	int num_blocs = input.lookups/ntpb;
+	if ( ntpb * num_blocs < input.lookups )
+		num_blocs ++;
+//	printf ("%i %i\n", num_blocs, ntpb);	
+//	gpuErrchk( cudaGetLastError() );
+	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL/*, ints_d*/);
 	cudaDeviceSynchronize();
-	/*	printf ("%i %i\n", input.lookups/500, 500);
-		assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
-		printf ("%i %i\n", ints[0], ints[10]);
-		int sum = 0, idx;
-		for ( idx = 0; idx < input.lookups; idx++)
+//		printf ("%i %i\n", input.lookups/500, 500);
+	//assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
+//	gpuErrchk( cudaGetLastError() );
+//	cudaCheckErrors("cudaMemcpy2 error");
+/*	printf ("%i %i\n", ints[0], ints[10]);
+	int sum = 0, idx;
+	for ( idx = 0; idx < input.lookups; idx++)
 		sum += ints[idx];
-		printf ( "sum: %i\n", sum );
-		cudaFree( ints_d);
-		free(ints);*/
+	printf ( "sum: %i\n", sum );
+	cudaFree( ints_d);
+	free(ints);*/
 }
 
 //	add val to the vlaue stored at address
@@ -468,8 +491,7 @@ void calc_sig_dd_driver ( double * micro_xs, int nuc, double E, Input input, Cal
 }
 
 //	first version of CUDA addption - only the four-iteration loop; each time called, data is copied to the device
-void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors)
-{
+void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, cuDoubleComplex * sigTfactors) {
 	// MicroScopic XS's to Calculate
 	double sigT, sigA, sigF, sigE;
 	double* data_d;
@@ -493,9 +515,7 @@ void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input inpu
 	cudaFree( data_d );  
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = data.windows[nuc][window];
-	sigT = E * w.T;
-	sigA = E * w.A;
-	sigF = E * w.F;
+	sigT = E * w.T;	sigA = E * w.A;	sigF = E * w.F;
 	// Loop over Poles within window, add contributions
 	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt(E), 0);
 	for( int i = w.start; i < w.end; i++ ) {
@@ -508,10 +528,7 @@ void calculate_micro_xs_driver( double * micro_xs, int nuc, double E, Input inpu
 
 	sigE = sigT - sigA;
 
-	micro_xs[0] = sigT;
-	micro_xs[1] = sigA;
-	micro_xs[2] = sigF;
-	micro_xs[3] = sigE;
+	micro_xs[0] = sigT; micro_xs[1] = sigA; micro_xs[2] = sigF; micro_xs[3] = sigE;
 }
 
 //	improved first version of CUDA addption - only the four-iteration loop; data is copied to the device in the beginning

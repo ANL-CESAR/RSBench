@@ -1,7 +1,7 @@
 #include "rsbench.h"
 
 // generate CalcDataPtrs_d data on device from CalcDataPtrs* data on host
-CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data ) {
+CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data, Input* input_d ) {
 	CalcDataPtrs_d* data_d;
 	assert(cudaMalloc((void**) &data_d, sizeof(CalcDataPtrs_d))==cudaSuccess);
 
@@ -90,6 +90,8 @@ CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data ) {
 	assert(cudaMemcpy( concs_d, concs_h, 12 * max *sizeof(double), cudaMemcpyHostToDevice ) == cudaSuccess);
 	assert(cudaMemcpy( &(data_d->materials.concs_2d), &concs_d, sizeof(double*),cudaMemcpyHostToDevice) == cudaSuccess);
 
+	assert(cudaMalloc((void**) &input_d, sizeof(Input))==cudaSuccess);
+	assert(cudaMemcpy( input_d, &input, sizeof(Input), cudaMemcpyHostToDevice ) == cudaSuccess);
 	return data_d;
 }
 

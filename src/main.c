@@ -1,5 +1,25 @@
 #include "rsbench.h"
 
+void run_test ( cudaEvent_t* begin, cudaEvent_t* end, int order, int ntpb, float* milliseconds,
+	CalcDataPtrs_d* data_d, Input* input_d, Input input) {
+	cudaEventRecord(*begin, 0);
+	top_calc_driver ( data_d, ntpb, input_d, input);
+	cudaEventRecord(*end, 0);
+	cudaEventSynchronize(*end);
+	cudaEventElapsedTime(milliseconds, *begin, *end);
+	printf("\nSimulation %i Complete.\n", order);
+	border_print();
+	char buffer[20];
+	sprintf ( buffer, "RESULTS %i", order);
+	center_print(buffer, 79);
+	border_print();
+
+	printf("NTPB:        %i\n", ntpb);
+	printf ("Time for the kernel: %f ms\n", *milliseconds/1000);
+	printf("Lookups:     "); fancy_int(input.lookups);
+	printf("Lookups/s:   "); fancy_int((double) input.lookups / (*milliseconds) * 1000 );
+}
+
 int main(int argc, char * argv[]) {
 	dotp_driver(8);
 	// =====================================================================
@@ -16,7 +36,7 @@ int main(int argc, char * argv[]) {
 
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
-
+	Input* input_d;
 	// =====================================================================
 	// Print-out of Input Summary
 	// =====================================================================
@@ -65,7 +85,7 @@ int main(int argc, char * argv[]) {
 	data.poles = poles;
 	data.windows = windows;
 	data.pseudo_K0RS = pseudo_K0RS;
-	CalcDataPtrs_d* data_d = init_data ( input, &data );
+	CalcDataPtrs_d* data_d = init_data ( input, &data, input_d );
 	//	free_CalcDataPtrs_d ( data_d );
 	cudaEventRecord(end, 0);
 	cudaEventSynchronize(end);
@@ -90,90 +110,14 @@ int main(int argc, char * argv[]) {
 		fprintf(stderr, "PAPI library init error!\n");
 		exit(1);
 	}
-#endif	
-	
-	cudaEventRecord(begin, 0);
-	top_calc_driver ( data_d, input, 200);
-	cudaEventRecord(end, 0);
-	cudaEventSynchronize(end);
-	cudaEventElapsedTime(&milliseconds, begin, end);
-	printf("\nSimulation 1 Complete.\n");
-	// =====================================================================
-	// Print / Save Results and Exit
-	// =====================================================================
-	border_print();
-	center_print("RESULTS 1", 79);
-	border_print();
+#endif
+	// Tesla K20C	
+	cudaSetDevice(0);
 
-	printf("NTPB:        %i\n", 200);
-	printf ("Time for the kernel: %f ms\n", milliseconds);
-	printf("Lookups:     "); fancy_int(input.lookups);
-	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
-
-	cudaEventRecord(begin, 0);
-	top_calc_driver ( data_d, input, 250);
-	cudaEventRecord(end, 0);
-	cudaEventSynchronize(end);
-	cudaEventElapsedTime(&milliseconds, begin, end);
-	printf("\nSimulation 2 Complete.\n");
-	border_print();
-	center_print("RESULTS 2", 79);
-	border_print();
-
-	printf("NTPB:        %i\n", 250);
-	printf ("Time for the kernel: %f ms\n", milliseconds);
-	printf("Lookups:     "); fancy_int(input.lookups);
-	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
-	// free device memeory
-	//	free_CalcDataPtrs_d ( data_d );
-
-	cudaEventRecord(begin, 0);
-	top_calc_driver ( data_d, input, 400);
-	cudaEventRecord(end, 0);
-	cudaEventSynchronize(end);
-	cudaEventElapsedTime(&milliseconds, begin, end);
-	printf("\nSimulation 3 Complete.\n");
-	border_print();
-	center_print("RESULTS 3", 79);
-	border_print();
-
-	printf("NTPB:        %i\n", 400);
-	printf ("Time for the kernel: %f ms\n", milliseconds);
-	printf("Lookups:     "); fancy_int(input.lookups);
-	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
-
-	cudaEventRecord(begin, 0);
-	top_calc_driver ( data_d, input, 500);
-	cudaEventRecord(end, 0);
-	cudaEventSynchronize(end);
-	cudaEventElapsedTime(&milliseconds, begin, end);
-	printf("\nSimulation 4 Complete.\n");
-	border_print();
-	center_print("RESULTS 4", 79);
-	border_print();
-
-	printf("NTPB:        %i\n", 500);
-	printf ("Time for the kernel: %f ms\n", milliseconds);
-	printf("Lookups:     "); fancy_int(input.lookups);
-	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
-
-	cudaEventRecord(begin, 0);
-	top_calc_driver ( data_d, input, 1000);
-	cudaEventRecord(end, 0);
-	cudaEventSynchronize(end);
-	cudaEventElapsedTime(&milliseconds, begin, end);
-	printf("\nSimulation 5 Complete.\n");
-	border_print();
-	center_print("RESULTS 5", 79);
-	border_print();
-
-	printf("NTPB:        %i\n", 1000);
-	printf ("Time for the kernel: %f ms\n", milliseconds);
-	printf("Lookups:     "); fancy_int(input.lookups);
-	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
-	// =====================================================================
-	// Print / Save Results and Exit
-	// =====================================================================
+	int ntpbs[] = {32, 64, 80, 96, 100, 112, 128, 160, 192, 200, 224, 250, 400, 500, 512, 1000};
+	for ( int i = 0; i < sizeof(ntpbs)/sizeof(int); i ++ ) {
+		run_test ( &begin, &end, i+1, ntpbs[i], &milliseconds, data_d, input_d, input );
+	}
 	border_print();
 
 	return 0;

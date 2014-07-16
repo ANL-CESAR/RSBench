@@ -113,7 +113,7 @@ Window ** generate_window_params( Input input, int * n_windows, int * n_poles );
 double ** generate_pseudo_K0RS( Input input );
 
 // CUDA_init.c
-CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data );
+CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data, Input* input_d );
 void free_CalcDataPtrs_d ( CalcDataPtrs_d* data_d );
 
 // material.c
@@ -148,7 +148,7 @@ void calculate_micro_xs_dd_driver( double * micro_xs, int nuc, double E, Input i
 void calc_sig_dd_driver ( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, 
 	CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors );
 void calc_macro_xs_driver ( double * macro_xs, int mat, double E, Input input, CalcDataPtrs* data, CalcDataPtrs_d* data_d, cuDoubleComplex * sigTfactors );
-void top_calc_driver (const CalcDataPtrs_d* data,  Input input, int ntpb);
+void top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input* input_d, Input input);
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );
