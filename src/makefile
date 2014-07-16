@@ -56,7 +56,7 @@ endif
 CFLAGS := -fopenmp -std=gnu99 -I/usr/local/cuda-6.0/include/ -ffast-math -I.
 CPPFLAGS := -fopenmp -I/usr/local/cuda-6.0/include/ -ffast-math -I.
 GCC_O_FLAGS =
-NVCC_FLAGS = -gencode arch=compute_35,code=sm_35 -O3 # -Xptxas=-v -DDERIVED_ATOMIC_FUNCTIONS_H
+NVCC_FLAGS = -gencode arch=compute_35,code=sm_35 -O5 # -Xptxas=-v -DDERIVED_ATOMIC_FUNCTIONS_H
 # Linker Flags
 LDFLAGS = -L/usr/local/cuda-6.0/lib64/ -lm -lcudart 
 

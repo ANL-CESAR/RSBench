@@ -36,6 +36,18 @@ __constant__ double dist[12] = {
 	0.000140,	// top nozzle
 	0.002414,	// top of fuel assemblies
 	0.001519 	// bottom of fuel assemblies
+/*  0.140,	// fuel
+  0.052,	// cladding
+  0.275,	// cold, borated water
+  0.134,	// hot, borated water
+  0.154,	// RPV
+  0.064,	// Lower, radial reflector
+  0.066,	// Upper reflector / top plate
+  0.055,	// bottom plate
+  0.008,	// bottom nozzle
+  0.015,	// top nozzle
+  0.025,	// top of fuel assemblies
+  0.153*/ 	// bottom of fuel assemblies
 };	
 
 __device__ double devRn(unsigned long * seed) {
@@ -138,15 +150,18 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 	double sqrt_E = sqrt(E);
 	double macro_xs[4];
 	cuDoubleComplex sigTfactors[4];
+	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt_E, 0);
 	//	devCalc_macro_xs( macro_xs, mat, E, input,  data, sigTfactors);
 	// zero out macro vector
 	int i;
-	for( i = 0; i < 4; i++ )
+        #pragma unroll 4
+	for( i = 0; i < 4; i++ ){
 		macro_xs[i] = 0;
+	}
 	//	printf ("calc_kernel: %i\n", threadIdx.x + blockIdx.x * 500);
 	//	ints_d[threadIdx.x + blockIdx.x * 500] = 1;// threadIdx.x + blockIdx.x * 100;
 	// for nuclide in mat;
-	int counter = 0;
+	//int counter = 0;
 	for( i = 0; i < data->materials.num_nucs[mat]; i++ ){
 		double micro_xs[4];
 		int nuc = data->materials.mats_2d[mat* data->materials.pitch + i];
@@ -178,29 +193,33 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 
 			sigTfactors[k].x= cos(phi);
 			sigTfactors[k].y= - sin(phi);
+	//		counter ++;
 		}
-		counter ++;
 		// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 		Window w = data->windows_2d[nuc * data->pitch_windows + window];
 		sigT = E * w.T;	sigA = E * w.A;	sigF = E * w.F;
 		// Loop over Poles within window, add contributions
-		cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt_E, 0);
 		for( int k = w.start; k < w.end; k ++ ){
 			Pole pole = data->poles_2d[ nuc * data->pitch_poles + k];
 			cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
 			sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
 			sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
 			sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
+	//		counter ++;
 		}
+//		if ( w.end-w.start +1 > counter )
+//			counter = w.end-w.start +1;
 
 		sigE = sigT - sigA;
 		micro_xs[0] = sigT; micro_xs[1] = sigA;	micro_xs[2] = sigF; micro_xs[3] = sigE;
 
+        	#pragma unroll 4
 		for( int j = 0; j < 4; j++ ){
 			macro_xs[j] += micro_xs[j] * data->materials.concs_2d[mat* data->materials.pitch+i];
 		}
 	}
 //	ints_d[tmp] = counter;// threadIdx.x + blockIdx.x * 100;
+//	printf ("%i %i\n", tmp, counter);
 }
 
 //	top level driver - 4th version

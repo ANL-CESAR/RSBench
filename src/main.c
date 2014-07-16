@@ -15,7 +15,7 @@ void run_test ( cudaEvent_t* begin, cudaEvent_t* end, int order, int ntpb, float
 	border_print();
 
 	printf("NTPB:        %i\n", ntpb);
-	printf ("Time for the kernel: %f ms\n", *milliseconds/1000);
+	printf ("Time for the kernel: %f seconds\n", *milliseconds/1000);
 	printf("Lookups:     "); fancy_int(input.lookups);
 	printf("Lookups/s:   "); fancy_int((double) input.lookups / (*milliseconds) * 1000 );
 }
@@ -119,6 +119,6 @@ int main(int argc, char * argv[]) {
 		run_test ( &begin, &end, i+1, ntpbs[i], &milliseconds, data_d, input_d, input );
 	}
 	border_print();
-
+	cudaFree(input_d);
 	return 0;
 }
