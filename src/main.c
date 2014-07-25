@@ -1,23 +1,21 @@
 #include "rsbench.h"
 
-void run_test ( cudaEvent_t* begin, cudaEvent_t* end, int order, int ntpb, float* milliseconds,
-	CalcDataPtrs_d* data_d, Input* input_d, Input input) {
+void run_test (CalcDataPtrs_d* data_d, Input input, cudaEvent_t* begin, cudaEvent_t* end, int ntpb, int idx) {
+	float milliseconds = 0;
 	cudaEventRecord(*begin, 0);
-	top_calc_driver ( data_d, ntpb, input_d, input);
+	top_calc_driver ( data_d, ntpb, input);
 	cudaEventRecord(*end, 0);
 	cudaEventSynchronize(*end);
-	cudaEventElapsedTime(milliseconds, *begin, *end);
-	printf("\nSimulation %i Complete.\n", order);
+	cudaEventElapsedTime(&milliseconds, *begin, *end);
+	printf("\nSimulation %i Complete.\n", idx);
 	border_print();
-	char buffer[20];
-	sprintf ( buffer, "RESULTS %i", order);
-	center_print(buffer, 79);
+	center_print("RESULTS", 79);
 	border_print();
 
 	printf("NTPB:        %i\n", ntpb);
-	printf ("Time for the kernel: %f seconds\n", *milliseconds/1000);
+	printf ("Time for the kernel: %f ms\n", milliseconds);
 	printf("Lookups:     "); fancy_int(input.lookups);
-	printf("Lookups/s:   "); fancy_int((double) input.lookups / (*milliseconds) * 1000 );
+	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
 }
 
 int main(int argc, char * argv[]) {
@@ -36,7 +34,7 @@ int main(int argc, char * argv[]) {
 
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
-	Input* input_d;
+
 	// =====================================================================
 	// Print-out of Input Summary
 	// =====================================================================
@@ -85,7 +83,7 @@ int main(int argc, char * argv[]) {
 	data.poles = poles;
 	data.windows = windows;
 	data.pseudo_K0RS = pseudo_K0RS;
-	CalcDataPtrs_d* data_d = init_data ( input, &data, input_d );
+	CalcDataPtrs_d* data_d = init_data ( input, &data );
 	//	free_CalcDataPtrs_d ( data_d );
 	cudaEventRecord(end, 0);
 	cudaEventSynchronize(end);
@@ -110,15 +108,11 @@ int main(int argc, char * argv[]) {
 		fprintf(stderr, "PAPI library init error!\n");
 		exit(1);
 	}
-#endif
-	// Tesla K20C	
-	cudaSetDevice(0);
-
-	int ntpbs[] = {32, 64, 80, 96, 100, 112, 128, 160, 192, 200, 224, 250, 400, 500, 512, 1000};
-	for ( int i = 0; i < sizeof(ntpbs)/sizeof(int); i ++ ) {
-		run_test ( &begin, &end, i+1, ntpbs[i], &milliseconds, data_d, input_d, input );
-	}
+#endif	
+	int ntpbs []= {32, 64, 96, 128, 192, 256, 512, 1024};	
+	for ( int i = 0; i < sizeof(ntpbs)/sizeof(int); i ++) 
+		run_test (data_d, input, &begin, &end, ntpbs[i], i);
 	border_print();
-	cudaFree(input_d);
+
 	return 0;
 }

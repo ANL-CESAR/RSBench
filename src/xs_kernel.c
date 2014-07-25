@@ -15,9 +15,9 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 		double micro_xs[4];
 		int nuc = (data.materials).mats[mat][i];
 
-//		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors, counter);
+		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors, counter);
 //		calculate_micro_xs_driver( micro_xs, nuc, E, input, data, sigTfactors);
-		calculate_micro_xs_dd_driver( micro_xs, nuc, E, input, data, data_d, sigTfactors);
+//		calculate_micro_xs_dd_driver( micro_xs, nuc, E, input, data, data_d, sigTfactors);
 //		calc_sig_driver( micro_xs, nuc, E, input, data, sigTfactors);
 //		calc_sig_dd_driver( micro_xs, nuc, E, input, data, data_d, sigTfactors);
 
@@ -48,8 +48,8 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	Window w = data.windows[nuc][window];
 	sigT = E * w.T;	sigA = E * w.A; sigF = E * w.F;
 	// Loop over Poles within window, add contributions
-//	if ( *counter < ( w.end - w.start + 1) )
-//		*counter = w.end - w.start + 1;
+	if ( *counter < ( w.end - w.start + 1) )
+		*counter = w.end - w.start + 1;
 	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt(E), 0);
 	for( int i = w.start; i < w.end; i++ )
 	{

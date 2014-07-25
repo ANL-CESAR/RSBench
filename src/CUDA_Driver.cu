@@ -223,7 +223,7 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 }
 
 //	top level driver - 4th version
-void top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input* input_d, Input input){
+void top_calc_driver (const CalcDataPtrs_d* data, int ntpb,/* Input* input_d,*/ Input input){
 	//	int* ints_d, *ints = (int*)malloc(sizeof(int)*input.lookups);
 	//	assert (cudaMalloc((void **) &ints_d, input.lookups*sizeof(int)) == cudaSuccess);
 	//	assert(cudaMemset( ints_d, 0, input.lookups*sizeof(int) ) == cudaSuccess);
