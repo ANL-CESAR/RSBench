@@ -138,13 +138,12 @@ __device__ void devCalc_macro_xs( double * macro_xs, int mat, double E, Input in
 }
 
 //	top level kernel - 4th version
-__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*, int* ints_d*/)   {
+__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, int* ints_d)   {
 	// going to be dynamic
 	int tmp = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned long seed = tmp;
 	if ( tmp >= lookups)
 		return;
-	//printf ("%i %i\n", tmp, lookups);
 	int mat = devPick_mat( &seed );
 	double E = devRn( &seed );
 	double sqrt_E = sqrt(E);
@@ -158,10 +157,7 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 	for( i = 0; i < 4; i++ ){
 		macro_xs[i] = 0;
 	}
-	//	printf ("calc_kernel: %i\n", threadIdx.x + blockIdx.x * 500);
-	//	ints_d[threadIdx.x + blockIdx.x * 500] = 1;// threadIdx.x + blockIdx.x * 100;
 	// for nuclide in mat;
-	//int counter = 0;
 	for( i = 0; i < data->materials.num_nucs[mat]; i++ ){
 		double micro_xs[4];
 		int nuc = data->materials.mats_2d[mat* data->materials.pitch + i];
@@ -193,7 +189,6 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 
 			sigTfactors[k].x= cos(phi);
 			sigTfactors[k].y= - sin(phi);
-	//		counter ++;
 		}
 		// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 		Window w = data->windows_2d[nuc * data->pitch_windows + window];
@@ -205,10 +200,11 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 			sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
 			sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
 			sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
-	//		counter ++;
 		}
-//		if ( w.end-w.start +1 > counter )
-//			counter = w.end-w.start +1;
+		if ( w.end-w.start +1 > 5 ) {
+			printf ("%i: mat-%i; counter-%i; i-%i; window-%i; nuc-%i; mat_pitch-%i; windPitch-%i; polesPitch-%i\n", 
+				tmp, mat, w.end-w.start +1, i, window, nuc, data->materials.pitch, data->pitch_windows, data->pitch_poles);
+		}
 
 		sigE = sigT - sigA;
 		micro_xs[0] = sigT; micro_xs[1] = sigA;	micro_xs[2] = sigF; micro_xs[3] = sigE;
@@ -219,32 +215,35 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 		}
 	}
 //	ints_d[tmp] = counter;// threadIdx.x + blockIdx.x * 100;
-//	printf ("%i %i\n", tmp, counter);
+//	printf ("%i: mat-%i; mat_pitch-%i; windPitch-%i; polesPitch-%i\n", 
+//				tmp, mat, data->materials.pitch, data->pitch_windows, data->pitch_poles);
+	//ints_d[tmp] = tmp%2 ? 1 : 2;
+	ints_d[tmp] = mat;
 }
 
 //	top level driver - 4th version
 void top_calc_driver (const CalcDataPtrs_d* data, int ntpb,/* Input* input_d,*/ Input input){
-	//	int* ints_d, *ints = (int*)malloc(sizeof(int)*input.lookups);
-	//	assert (cudaMalloc((void **) &ints_d, input.lookups*sizeof(int)) == cudaSuccess);
-	//	assert(cudaMemset( ints_d, 0, input.lookups*sizeof(int) ) == cudaSuccess);
+	int* ints_d, *ints = (int*)malloc(sizeof(int)*input.lookups);
+	assert (cudaMalloc((void **) &ints_d, input.lookups*sizeof(int)) == cudaSuccess);
+	assert(cudaMemset( ints_d, 0, input.lookups*sizeof(int) ) == cudaSuccess);
 	int num_blocs = input.lookups/ntpb;
 	if ( ntpb * num_blocs < input.lookups )
 		num_blocs ++;
-//	printf ("%i %i\n", num_blocs, ntpb);	
-//	gpuErrchk( cudaGetLastError() );
-	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL/*, ints_d*/);
+	printf ("%i %i\n", num_blocs, ntpb);	
+	gpuErrchk( cudaGetLastError() );
+	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL, ints_d);
 	cudaDeviceSynchronize();
 //		printf ("%i %i\n", input.lookups/500, 500);
-	//assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
-//	gpuErrchk( cudaGetLastError() );
+	assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
+	gpuErrchk( cudaGetLastError() );
 //	cudaCheckErrors("cudaMemcpy2 error");
-/*	printf ("%i %i\n", ints[0], ints[10]);
+	printf ("%i %i\n", ints[0], ints[9999999]);
 	int sum = 0, idx;
 	for ( idx = 0; idx < input.lookups; idx++)
 		sum += ints[idx];
 	printf ( "sum: %i\n", sum );
 	cudaFree( ints_d);
-	free(ints);*/
+	free(ints);
 }
 
 //	add val to the vlaue stored at address

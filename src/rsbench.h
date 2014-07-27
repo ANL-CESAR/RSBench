@@ -41,7 +41,7 @@ typedef struct{
 typedef struct{
 	int * num_nucs;
 	int * mats_2d;
-	size_t pitch;
+	int pitch;
 	double * concs_2d;
 //	size_t pitch_concs;
 } Materials_d;
@@ -72,15 +72,14 @@ typedef struct{
 } CalcDataPtrs;
 
 typedef struct{
+	Materials_d materials;
+	int pitch_poles;
+	int pitch_windows;
 	int * n_poles;
 	int * n_windows;
-	Materials_d materials;
 	Pole * poles_2d;
-	size_t pitch_poles;
 	Window * windows_2d;
-	size_t pitch_windows;
 	double * pseudo_K0RS_2d;
-//	size_t pitch_pseudo_K0RS;
 } CalcDataPtrs_d;
 
 static int numL = 0;

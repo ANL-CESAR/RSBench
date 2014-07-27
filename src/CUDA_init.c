@@ -5,7 +5,7 @@ CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data) {//, Input* input_d
 	CalcDataPtrs_d* data_d;
 	assert(cudaMalloc((void**) &data_d, sizeof(CalcDataPtrs_d))==cudaSuccess);
 
-	size_t  max;
+	int  max;
 
 	// n_poles
 	int * n_poles;
@@ -33,7 +33,8 @@ CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data) {//, Input* input_d
 	for ( int i = 0; i < input.n_nuclides; i++) {
 		memcpy( poles_h + i * max, data->poles[i], data->n_poles[i] * sizeof(Pole)) ; 
 	}
-	assert(cudaMemcpy( &(data_d->pitch_poles), &max, sizeof(size_t),cudaMemcpyHostToDevice) == cudaSuccess);
+	printf ("max poles: %i\n", max);
+	assert(cudaMemcpy( &(data_d->pitch_poles), &max, sizeof(int),cudaMemcpyHostToDevice) == cudaSuccess);
 	assert(cudaMemcpy( poles, poles_h, input.n_nuclides * max *sizeof(Pole), cudaMemcpyHostToDevice ) == cudaSuccess);
 	assert(cudaMemcpy( &(data_d->poles_2d), &poles, sizeof(Pole*),cudaMemcpyHostToDevice) == cudaSuccess);
 
@@ -48,7 +49,8 @@ CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data) {//, Input* input_d
 	for ( int i = 0; i < input.n_nuclides; i++) {
 		memcpy( windows_h + i * max, data->windows[i], data->n_windows[i] * sizeof(Window)) ; 
 	}
-	assert(cudaMemcpy( &(data_d->pitch_windows), &max, sizeof(size_t),cudaMemcpyHostToDevice) == cudaSuccess);
+	printf ("max windows: %i\n", max);
+	assert(cudaMemcpy( &(data_d->pitch_windows), &max, sizeof(int),cudaMemcpyHostToDevice) == cudaSuccess);
 	assert(cudaMemcpy( windows_d, windows_h, input.n_nuclides * max *sizeof(Window), cudaMemcpyHostToDevice ) == cudaSuccess);
 	assert(cudaMemcpy( &(data_d->windows_2d), &windows_d, sizeof(Window*),cudaMemcpyHostToDevice) == cudaSuccess);
 
@@ -78,7 +80,7 @@ CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data) {//, Input* input_d
 	mats_h = (int*) malloc ( 12*max*sizeof(int));
 	for (int i=0; i < 12; i ++)
 		memcpy( mats_h + i * max, data->materials.mats[i], data->materials.num_nucs[i]* sizeof(int) );
-	assert(cudaMemcpy( &(data_d->materials.pitch), &max, sizeof(size_t), cudaMemcpyHostToDevice) == cudaSuccess);
+	assert(cudaMemcpy( &(data_d->materials.pitch), &max, sizeof(int), cudaMemcpyHostToDevice) == cudaSuccess);
 	assert(cudaMemcpy( mats_d, mats_h, 12 * max *sizeof(int), cudaMemcpyHostToDevice ) == cudaSuccess);
 	assert(cudaMemcpy( &(data_d->materials.mats_2d), &mats_d, sizeof(int*),cudaMemcpyHostToDevice) == cudaSuccess);
 
