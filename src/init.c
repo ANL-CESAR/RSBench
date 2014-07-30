@@ -106,6 +106,8 @@ Window ** generate_window_params( Input input, int * n_windows, int * n_poles )
 			R[i][j].end = ctr*j + space;
 			if( j == n_windows[i] - 1 )
 				R[i][j].end = n_poles[i] - 1;
+			if ( j == n_windows[i] - 1 )
+				printf ("Init: nuc-%i, windows-%i, start-%i, end-%i\n", i, j, R[i][j].start, R[i][j].end);
 		}
 	}
 

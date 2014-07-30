@@ -47,12 +47,21 @@ CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data) {//, Input* input_d
 	assert(cudaMalloc((void**) &windows_d, max*sizeof(Window) * input.n_nuclides) == cudaSuccess);
 	windows_h = (Window*) malloc ( input.n_nuclides * max *sizeof(Window) );
 	for ( int i = 0; i < input.n_nuclides; i++) {
-		memcpy( windows_h + i * max, data->windows[i], data->n_windows[i] * sizeof(Window)) ; 
+		memcpy( windows_h + i * max, data->windows[i], data->n_windows[i] * sizeof(Window)) ;
+		printf ( "last element in the windows: nuc-%i, n_windows-%i, origin(%i, %i), reformatted(%i, %i)\n", 
+			i, data->n_windows[i], data->windows[i][data->n_windows[i]-1].start, 
+			data->windows[i][data->n_windows[i]-1].end, windows_h[i*max+data->n_windows[i]-1].start, windows_h[i*max+data->n_windows[i]-1].end);  
 	}
 	printf ("max windows: %i\n", max);
 	assert(cudaMemcpy( &(data_d->pitch_windows), &max, sizeof(int),cudaMemcpyHostToDevice) == cudaSuccess);
 	assert(cudaMemcpy( windows_d, windows_h, input.n_nuclides * max *sizeof(Window), cudaMemcpyHostToDevice ) == cudaSuccess);
 	assert(cudaMemcpy( &(data_d->windows_2d), &windows_d, sizeof(Window*),cudaMemcpyHostToDevice) == cudaSuccess);
+
+	int cmp_code = 0;
+	for ( int i = 0; i < input.n_nuclides; i++) {
+		if ( cmp_code= memcmp( windows_h + i * max, data->windows[i], data->n_windows[i] * sizeof(Window)) )
+			printf ("windows: i-%i; cmp_code-%i\n", i, cmp_code); 
+	}
 
 	// 2D double array - pseudo_K0RS_2d
 	double * pseudo_K0RS_h, *pseudo_K0RS_d;
@@ -74,7 +83,7 @@ CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data) {//, Input* input_d
 	for ( int i = 0; i < 12; i++)
 		if ( data->materials.num_nucs[i] > max )
 			max = data->materials.num_nucs[i];	
-//	printf ( "max_num_nucs: %u\n", max);
+	printf ( "max_num_nucs: %u\n", max);
 	int* mats_d, *mats_h;
 	assert(cudaMalloc((void**) &mats_d, 12 * max * sizeof(int))==cudaSuccess);
 	mats_h = (int*) malloc ( 12*max*sizeof(int));

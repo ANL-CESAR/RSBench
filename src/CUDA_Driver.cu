@@ -1,5 +1,4 @@
 #include "rsbench.h"
-#include "My_Stats.h"
 
 #define cudaCheckErrors(msg) \
     do { \
@@ -20,6 +19,20 @@ inline void gpuAssert(cudaError_t code, char *file, int line, bool abort=true){
 		fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
 		if (abort) exit(code);
 	}
+}
+
+//	add val to the vlaue stored at address
+__device__ double atomicAdd(double* address, double val) {
+	unsigned long long int* address_as_ull =
+		(unsigned long long int*)address;
+	unsigned long long int old = *address_as_ull, assumed;
+	do {
+		assumed = old;
+		old = atomicCAS(address_as_ull, assumed,
+				__double_as_longlong(val +
+					__longlong_as_double(assumed)));
+	} while (assumed != old);
+	return __longlong_as_double(old);
 }
 
 // Updated distribution built from actual OpenMC look-ups 
@@ -154,15 +167,12 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, 
 	// zero out macro vector
 	int i;
         #pragma unroll 4
-	for( i = 0; i < 4; i++ ){
-		macro_xs[i] = 0;
-	}
+	for( i = 0; i < 4; i++ ){	macro_xs[i] = 0;	}
 	// for nuclide in mat;
 	for( i = 0; i < data->materials.num_nucs[mat]; i++ ){
 		double micro_xs[4];
 		int nuc = data->materials.mats_2d[mat* data->materials.pitch + i];
 
-		//	devCalc_micro_xs( micro_xs, nuc, E, input, data, sigTfactors);
 		// MicroScopic XS's to Calculate
 		double sigT;	double sigA;	double sigF;	double sigE;
 
@@ -202,23 +212,25 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, 
 			sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
 		}
 		if ( w.end-w.start +1 > 5 ) {
-			printf ("%i: mat-%i; counter-%i; i-%i; window-%i; nuc-%i; mat_pitch-%i; windPitch-%i; polesPitch-%i\n", 
-				tmp, mat, w.end-w.start +1, i, window, nuc, data->materials.pitch, data->pitch_windows, data->pitch_poles);
-		}
+			if ( mat == 0 ) 
+				printf ("%i: mat-%i; counter-%i; i-%i; window-%i; nuc-%i; mat_pitch-%i; windPitch-%i; polesPitch-%i; nwindows-%i\n",
+					tmp, mat, w.end-w.start +1, i, window, nuc, data->materials.pitch, 
+					data->pitch_windows, data->pitch_poles, data->n_windows[nuc]);
+			ints_d[tmp] = 1;
+		} else if ( w.end-w.start +1 == 5 )
+			ints_d[tmp] = -1;
 
 		sigE = sigT - sigA;
 		micro_xs[0] = sigT; micro_xs[1] = sigA;	micro_xs[2] = sigF; micro_xs[3] = sigE;
 
         	#pragma unroll 4
-		for( int j = 0; j < 4; j++ ){
-			macro_xs[j] += micro_xs[j] * data->materials.concs_2d[mat* data->materials.pitch+i];
-		}
+		for( int j = 0; j < 4; j++ ){	macro_xs[j] += micro_xs[j] * data->materials.concs_2d[mat* data->materials.pitch+i];}
 	}
 //	ints_d[tmp] = counter;// threadIdx.x + blockIdx.x * 100;
 //	printf ("%i: mat-%i; mat_pitch-%i; windPitch-%i; polesPitch-%i\n", 
 //				tmp, mat, data->materials.pitch, data->pitch_windows, data->pitch_poles);
 	//ints_d[tmp] = tmp%2 ? 1 : 2;
-	ints_d[tmp] = mat;
+//	ints_d[tmp] = mat;
 }
 
 //	top level driver - 4th version
@@ -238,26 +250,16 @@ void top_calc_driver (const CalcDataPtrs_d* data, int ntpb,/* Input* input_d,*/ 
 	gpuErrchk( cudaGetLastError() );
 //	cudaCheckErrors("cudaMemcpy2 error");
 	printf ("%i %i\n", ints[0], ints[9999999]);
-	int sum = 0, idx;
+	int sum = 0, idx, sum_normal = 0;
 	for ( idx = 0; idx < input.lookups; idx++)
-		sum += ints[idx];
-	printf ( "sum: %i\n", sum );
+		if ( ints[idx] == 1 )
+			sum += ints[idx];
+		else if ( ints[idx] == -1 )
+			sum_normal ++;
+			
+	printf ( "sum: %i; sum_normal: %i\n", sum, sum_normal );
 	cudaFree( ints_d);
 	free(ints);
-}
-
-//	add val to the vlaue stored at address
-__device__ double atomicAdd(double* address, double val) {
-	unsigned long long int* address_as_ull =
-		(unsigned long long int*)address;
-	unsigned long long int old = *address_as_ull, assumed;
-	do {
-		assumed = old;
-		old = atomicCAS(address_as_ull, assumed,
-				__double_as_longlong(val +
-					__longlong_as_double(assumed)));
-	} while (assumed != old);
-	return __longlong_as_double(old);
 }
 
 //	compute SigT (the finest)
