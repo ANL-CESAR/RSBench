@@ -37,7 +37,7 @@ __device__ double atomicAdd(double* address, double val) {
 
 // Updated distribution built from actual OpenMC look-ups 
 __constant__ double dist[12] = {
-	0.207834,	// fuel
+/*	0.207834,	// fuel
 	0.381401,	// cladding
 	0.207763,	// cold, borated water
 	0.198185,	// hot, borated water
@@ -49,7 +49,7 @@ __constant__ double dist[12] = {
 	0.000140,	// top nozzle
 	0.002414,	// top of fuel assemblies
 	0.001519 	// bottom of fuel assemblies
-/*  0.140,	// fuel
+*/ 0.140,	// fuel
   0.052,	// cladding
   0.275,	// cold, borated water
   0.134,	// hot, borated water
@@ -60,7 +60,7 @@ __constant__ double dist[12] = {
   0.008,	// bottom nozzle
   0.015,	// top nozzle
   0.025,	// top of fuel assemblies
-  0.153*/ 	// bottom of fuel assemblies
+  0.013 	// bottom of fuel assemblies
 };	
 
 __device__ double devRn(unsigned long * seed) {
@@ -73,7 +73,8 @@ __device__ double devRn(unsigned long * seed) {
 // picks a material based on a probabilistic distribution
 __device__ int devPick_mat( unsigned long * seed ) {
 	double roll = devRn(seed);
-
+//	if ( roll > 0.86 )
+//		printf ("\nInteresting!!! %f %lu\n", roll, *seed);
 	// makes a pick based on the distro
 	for( int i = 0; i < 12; i++ ){
 		double running = 0;
@@ -158,6 +159,8 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, 
 	if ( tmp >= lookups)
 		return;
 	int mat = devPick_mat( &seed );
+//	if ( mat == 1 )
+//		printf ("ZERO MAT!!!\n");
 	double E = devRn( &seed );
 	double sqrt_E = sqrt(E);
 	double macro_xs[4];
@@ -213,11 +216,14 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, 
 		}
 		if ( w.end-w.start +1 > 5 ) {
 			if ( mat == 0 ) 
-				printf ("%i: mat-%i; counter-%i; i-%i; window-%i; nuc-%i; mat_pitch-%i; windPitch-%i; polesPitch-%i; nwindows-%i\n",
+				ints_d[tmp]=0;
+			else
+/*				printf ("%i: mat-%i; counter-%i; i-%i; window-%i; nuc-%i; mat_pitch-%i; windPitch-%i; polesPitch-%i; nwindows-%i\n",
 					tmp, mat, w.end-w.start +1, i, window, nuc, data->materials.pitch, 
-					data->pitch_windows, data->pitch_poles, data->n_windows[nuc]);
+					data->pitch_windows, data->pitch_poles, data->n_windows[nuc]);*/
 			ints_d[tmp] = 1;
-		} else if ( w.end-w.start +1 == 5 )
+
+		} else //if ( w.end-w.start +1 == 5 )
 			ints_d[tmp] = -1;
 
 		sigE = sigT - sigA;
@@ -245,19 +251,19 @@ void top_calc_driver (const CalcDataPtrs_d* data, int ntpb,/* Input* input_d,*/ 
 	gpuErrchk( cudaGetLastError() );
 	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL, ints_d);
 	cudaDeviceSynchronize();
-//		printf ("%i %i\n", input.lookups/500, 500);
 	assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
 	gpuErrchk( cudaGetLastError() );
 //	cudaCheckErrors("cudaMemcpy2 error");
 	printf ("%i %i\n", ints[0], ints[9999999]);
-	int sum = 0, idx, sum_normal = 0;
+	int sum = 0, idx, sum_normal = 0, sum_zero = 0;
 	for ( idx = 0; idx < input.lookups; idx++)
 		if ( ints[idx] == 1 )
 			sum += ints[idx];
 		else if ( ints[idx] == -1 )
 			sum_normal ++;
+		else 	sum_zero ++;
 			
-	printf ( "sum: %i; sum_normal: %i\n", sum, sum_normal );
+	printf ( "sum: %i; sum_normal: %i; sum_zero: %i\n", sum, sum_normal, sum_zero );
 	cudaFree( ints_d);
 	free(ints);
 }

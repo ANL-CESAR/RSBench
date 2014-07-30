@@ -48,9 +48,9 @@ CalcDataPtrs_d* init_data ( Input input, CalcDataPtrs* data) {//, Input* input_d
 	windows_h = (Window*) malloc ( input.n_nuclides * max *sizeof(Window) );
 	for ( int i = 0; i < input.n_nuclides; i++) {
 		memcpy( windows_h + i * max, data->windows[i], data->n_windows[i] * sizeof(Window)) ;
-		printf ( "last element in the windows: nuc-%i, n_windows-%i, origin(%i, %i), reformatted(%i, %i)\n", 
-			i, data->n_windows[i], data->windows[i][data->n_windows[i]-1].start, 
-			data->windows[i][data->n_windows[i]-1].end, windows_h[i*max+data->n_windows[i]-1].start, windows_h[i*max+data->n_windows[i]-1].end);  
+//		printf ( "last element in the windows: nuc-%i, n_windows-%i, origin(%i, %i), reformatted(%i, %i)\n", 
+//			i, data->n_windows[i], data->windows[i][data->n_windows[i]-1].start, 
+//			data->windows[i][data->n_windows[i]-1].end, windows_h[i*max+data->n_windows[i]-1].start, windows_h[i*max+data->n_windows[i]-1].end);  
 	}
 	printf ("max windows: %i\n", max);
 	assert(cudaMemcpy( &(data_d->pitch_windows), &max, sizeof(int),cudaMemcpyHostToDevice) == cudaSuccess);
