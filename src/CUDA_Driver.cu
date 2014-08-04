@@ -36,8 +36,9 @@ __device__ double atomicAdd(double* address, double val) {
 }
 
 // Updated distribution built from actual OpenMC look-ups 
-__constant__ double dist[12] = {
-		0.207834,	// fuel
+__constant__ double dist[2][12] = {
+	//	distribution based on actual OpenMC lookups
+	{	0.207834,	// fuel
 		0.381401,	// cladding
 		0.207763,	// cold, borated water
 		0.198185,	// hot, borated water
@@ -49,7 +50,9 @@ __constant__ double dist[12] = {
 		0.000140,	// top nozzle
 		0.002414,	// top of fuel assemblies
 		0.001519 	// bottom of fuel assemblies
-	 /* 0.140,	// fuel
+	},
+	//	estimated distribution based on volume
+	{ 0.140,	// fuel
 	0.052,	// cladding
 	0.275,	// cold, borated water
 	0.134,	// hot, borated water
@@ -60,7 +63,7 @@ __constant__ double dist[12] = {
 	0.008,	// bottom nozzle
 	0.015,	// top nozzle
 	0.025,	// top of fuel assemblies
-	0.013*/ 	// bottom of fuel assemblies
+	0.013} 	// bottom of fuel assemblies
 };	
 
 __device__ double devRn(unsigned long * seed) {
@@ -71,12 +74,12 @@ __device__ double devRn(unsigned long * seed) {
 }
 
 // picks a material based on a probabilistic distribution
-__device__ int devPick_mat( unsigned long * seed ) {
+__device__ int devPick_mat( unsigned long * seed, int dist_type ) {
 	double roll = devRn(seed);
 	// makes a pick based on the distro
 	double running = 0;
 	for( int i = 0; i < 12; i++ ) {
-		running += dist[i];
+		running += dist[dist_type][i];
 		if( roll < running )
 			return i;
 	}
@@ -157,13 +160,13 @@ __device__ void devCalc_macro_xs( double * macro_xs, int mat, double E, Input in
 }
 
 //	top level kernel - 4th version
-__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*, int* ints_d*/)   {
+__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, int dist_type/*, int* ints_d*/)   {
 	// going to be dynamic
 	int tmp = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned long seed = tmp;
 	if ( tmp >= lookups)
 		return;
-	int mat = devPick_mat( &seed );
+	int mat = devPick_mat(&seed, dist_type );
 	double E = devRn( &seed );
 	double sqrt_E = sqrt(E);
 	double macro_xs[4];
@@ -226,12 +229,12 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 }
 
 //	top level driver - 4th version
-void top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input input){
+void top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input input, int dist_type){
 	int num_blocs = input.lookups/ntpb;
 	if ( ntpb * num_blocs < input.lookups )
 		num_blocs ++;
 	printf ("%i %i\n", num_blocs, ntpb);	
-	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL/*, ints_d*/);
+	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL, dist_type/*, ints_d*/);
 	cudaDeviceSynchronize();
 }
 

@@ -1,9 +1,9 @@
 #include "rsbench.h"
 
-void run_test (CalcDataPtrs_d* data_d, Input input, cudaEvent_t* begin, cudaEvent_t* end, int ntpb, int idx) {
+void run_test (CalcDataPtrs_d* data_d, Input input, cudaEvent_t* begin, cudaEvent_t* end, int ntpb, int idx, int dist_type) {
 	float milliseconds = 0;
 	cudaEventRecord(*begin, 0);
-	top_calc_driver ( data_d, ntpb, input);
+	top_calc_driver ( data_d, ntpb, input, dist_type);
 	cudaEventRecord(*end, 0);
 	cudaEventSynchronize(*end);
 	cudaEventElapsedTime(&milliseconds, *begin, *end);
@@ -114,7 +114,7 @@ int main(int argc, char * argv[]) {
 #endif	
 	int ntpbs []= {32, 64, 96, 128, 192, 256, 512, 1024};	
 	for ( int i = 0; i < sizeof(ntpbs)/sizeof(int); i ++) 
-		run_test (data_d, input, &begin, &end, ntpbs[i], i);
+		run_test (data_d, input, &begin, &end, ntpbs[i], i, 0);
 	border_print();
 
 	return 0;
