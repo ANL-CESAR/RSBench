@@ -37,7 +37,7 @@ __device__ double atomicAdd(double* address, double val) {
 
 // Updated distribution built from actual OpenMC look-ups 
 __constant__ double dist[12] = {
-	/*	0.207834,	// fuel
+		0.207834,	// fuel
 		0.381401,	// cladding
 		0.207763,	// cold, borated water
 		0.198185,	// hot, borated water
@@ -49,7 +49,7 @@ __constant__ double dist[12] = {
 		0.000140,	// top nozzle
 		0.002414,	// top of fuel assemblies
 		0.001519 	// bottom of fuel assemblies
-	 */ 0.140,	// fuel
+	 /* 0.140,	// fuel
 	0.052,	// cladding
 	0.275,	// cold, borated water
 	0.134,	// hot, borated water
@@ -60,7 +60,7 @@ __constant__ double dist[12] = {
 	0.008,	// bottom nozzle
 	0.015,	// top nozzle
 	0.025,	// top of fuel assemblies
-	0.013 	// bottom of fuel assemblies
+	0.013*/ 	// bottom of fuel assemblies
 };	
 
 __device__ double devRn(unsigned long * seed) {
