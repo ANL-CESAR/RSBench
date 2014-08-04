@@ -37,7 +37,7 @@ __device__ double atomicAdd(double* address, double val) {
 
 // Updated distribution built from actual OpenMC look-ups 
 __constant__ double dist[12] = {
-	0.207834,	// fuel
+/*	0.207834,	// fuel
 	0.381401,	// cladding
 	0.207763,	// cold, borated water
 	0.198185,	// hot, borated water
@@ -49,7 +49,7 @@ __constant__ double dist[12] = {
 	0.000140,	// top nozzle
 	0.002414,	// top of fuel assemblies
 	0.001519 	// bottom of fuel assemblies
-/* 0.140,	// fuel
+*/ 0.140,	// fuel
   0.052,	// cladding
   0.275,	// cold, borated water
   0.134,	// hot, borated water
@@ -60,7 +60,7 @@ __constant__ double dist[12] = {
   0.008,	// bottom nozzle
   0.015,	// top nozzle
   0.025,	// top of fuel assemblies
-  0.013 */	// bottom of fuel assemblies
+  0.013 	// bottom of fuel assemblies
 };	
 
 __device__ double devRn(unsigned long * seed) {
@@ -152,7 +152,7 @@ __device__ void devCalc_macro_xs( double * macro_xs, int mat, double E, Input in
 }
 
 //	top level kernel - 4th version
-__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*, int* ints_d*/)   {
+__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, int* ints_d)   {
 	// going to be dynamic
 	int tmp = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned long seed = tmp;
@@ -240,21 +240,21 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 }
 
 //	top level driver - 4th version
-void top_calc_driver (const CalcDataPtrs_d* data, int ntpb,/* Input* input_d,*/ Input input){
-/*	int* ints_d, *ints = (int*)malloc(sizeof(int)*input.lookups);
+void top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input input){
+	int* ints_d, *ints = (int*)malloc(sizeof(int)*input.lookups);
 	assert (cudaMalloc((void **) &ints_d, input.lookups*sizeof(int)) == cudaSuccess);
-	assert(cudaMemset( ints_d, 0, input.lookups*sizeof(int) ) == cudaSuccess);*/
+	assert(cudaMemset( ints_d, 0, input.lookups*sizeof(int) ) == cudaSuccess);
 	int num_blocs = input.lookups/ntpb;
 	if ( ntpb * num_blocs < input.lookups )
 		num_blocs ++;
 	printf ("%i %i\n", num_blocs, ntpb);	
 	gpuErrchk( cudaGetLastError() );
-	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL/*, ints_d*/);
+	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL, ints_d);
 	cudaDeviceSynchronize();
-//	assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
+	assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
 	gpuErrchk( cudaGetLastError() );
 	cudaCheckErrors("cudaMemcpy2 error");
-/*	printf ("%i %i\n", ints[0], ints[9999999]);
+	printf ("%i %i\n", ints[0], ints[input.lookups-1]);
 	int sum = 0, idx, sum_normal = 0, sum_zero = 0;
 	for ( idx = 0; idx < input.lookups; idx++)
 		if ( ints[idx] == 1 )
@@ -265,7 +265,7 @@ void top_calc_driver (const CalcDataPtrs_d* data, int ntpb,/* Input* input_d,*/ 
 			
 	printf ( "sum: %i; sum_normal: %i; sum_zero: %i\n", sum, sum_normal, sum_zero );
 	cudaFree( ints_d);
-	free(ints);*/
+	free(ints);
 }
 
 //	compute SigT (the finest)
