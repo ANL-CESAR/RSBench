@@ -73,8 +73,6 @@ __device__ double devRn(unsigned long * seed) {
 // picks a material based on a probabilistic distribution
 __device__ int devPick_mat( unsigned long * seed ) {
 	double roll = devRn(seed);
-	//	if ( roll > 0.86 )
-	//		printf ("\nInteresting!!! %f %lu\n", roll, *seed);
 	// makes a pick based on the distro
 	double running = 0;
 	for( int i = 0; i < 12; i++ ) {
@@ -82,7 +80,6 @@ __device__ int devPick_mat( unsigned long * seed ) {
 		if( roll < running )
 			return i;
 	}
-//	printf ("rough\n");
 	return 11;/*
 		     for( int i = 0; i < 12; i++ ){
 		     double running = 0;
@@ -167,8 +164,6 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 	if ( tmp >= lookups)
 		return;
 	int mat = devPick_mat( &seed );
-	//	if ( mat == 1 )
-	//		printf ("ZERO MAT!!!\n");
 	double E = devRn( &seed );
 	double sqrt_E = sqrt(E);
 	double macro_xs[4];
@@ -221,16 +216,6 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 			sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
 			sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
 		}
-		/*		if ( w.end-w.start +1 > 5 ) {
-				if ( mat == 0 ) 
-				ints_d[tmp]=0;
-				else {
-				printf ("%i: mat-%i; counter-%i; i-%i; window-%i; nuc-%i; mat_pitch-%i; windPitch-%i; polesPitch-%i; nwindows-%i\n",
-				tmp, mat, w.end-w.start +1, i, window, nuc, data->materials.pitch, data->pitch_windows, data->pitch_poles, data->n_windows[nuc]);
-				ints_d[tmp] = 1; }
-
-				} else //if ( w.end-w.start +1 == 5 )
-				ints_d[tmp] = -1;*/
 
 		sigE = sigT - sigA;
 		micro_xs[0] = sigT; micro_xs[1] = sigA;	micro_xs[2] = sigF; micro_xs[3] = sigE;
@@ -238,40 +223,16 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL/*
 #pragma unroll 4
 		for( int j = 0; j < 4; j++ ){	macro_xs[j] += micro_xs[j] * data->materials.concs_2d[mat* data->materials.pitch+i];}
 	}
-	//	ints_d[tmp] = counter;// threadIdx.x + blockIdx.x * 100;
-	//	printf ("%i: mat-%i; mat_pitch-%i; windPitch-%i; polesPitch-%i\n", 
-	//				tmp, mat, data->materials.pitch, data->pitch_windows, data->pitch_poles);
-	//ints_d[tmp] = tmp%2 ? 1 : 2;
-	//	ints_d[tmp] = mat;
 }
 
 //	top level driver - 4th version
 void top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input input){
-	/*	int* ints_d, *ints = (int*)malloc(sizeof(int)*input.lookups);
-		assert (cudaMalloc((void **) &ints_d, input.lookups*sizeof(int)) == cudaSuccess);
-		assert(cudaMemset( ints_d, 0, input.lookups*sizeof(int) ) == cudaSuccess);*/
 	int num_blocs = input.lookups/ntpb;
 	if ( ntpb * num_blocs < input.lookups )
 		num_blocs ++;
 	printf ("%i %i\n", num_blocs, ntpb);	
-	//	gpuErrchk( cudaGetLastError() );
 	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL/*, ints_d*/);
 	cudaDeviceSynchronize();
-	/*	assert(cudaMemcpy( ints, ints_d, input.lookups*sizeof(int),cudaMemcpyDeviceToHost) == cudaSuccess);
-		gpuErrchk( cudaGetLastError() );
-		cudaCheckErrors("cudaMemcpy2 error");
-		printf ("%i %i\n", ints[0], ints[input.lookups-1]);
-		int sum = 0, idx, sum_normal = 0, sum_zero = 0;
-		for ( idx = 0; idx < input.lookups; idx++)
-		if ( ints[idx] == 1 )
-		sum += ints[idx];
-		else if ( ints[idx] == -1 )
-		sum_normal ++;
-		else 	sum_zero ++;
-
-		printf ( "sum: %i; sum_normal: %i; sum_zero: %i\n", sum, sum_normal, sum_zero );
-		cudaFree( ints_d);
-		free(ints);*/
 }
 
 //	compute SigT (the finest)
