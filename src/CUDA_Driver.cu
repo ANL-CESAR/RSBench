@@ -229,13 +229,20 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, 
 }
 
 //	top level driver - 4th version
-void top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input input, int dist_type){
+float top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input input, int dist_type, 
+	cudaEvent_t* begin, cudaEvent_t* end){
+	float milliseconds = 0;
 	int num_blocs = input.lookups/ntpb;
 	if ( ntpb * num_blocs < input.lookups )
 		num_blocs ++;
 	printf ("%i %i\n", num_blocs, ntpb);	
+	cudaEventRecord(*begin, 0);
 	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL, dist_type/*, ints_d*/);
 	cudaDeviceSynchronize();
+	cudaEventRecord(*end, 0);
+	cudaEventSynchronize(*end);
+	cudaEventElapsedTime(&milliseconds, *begin, *end);
+	return milliseconds;
 }
 
 //	compute SigT (the finest)

@@ -2,11 +2,11 @@
 
 void run_test (CalcDataPtrs_d* data_d, Input input, cudaEvent_t* begin, cudaEvent_t* end, int ntpb, int idx, int dist_type) {
 	float milliseconds = 0;
-	cudaEventRecord(*begin, 0);
-	top_calc_driver ( data_d, ntpb, input, dist_type);
-	cudaEventRecord(*end, 0);
-	cudaEventSynchronize(*end);
-	cudaEventElapsedTime(&milliseconds, *begin, *end);
+//	cudaEventRecord(*begin, 0);
+	milliseconds = top_calc_driver ( data_d, ntpb, input, dist_type, begin, end);
+//	cudaEventRecord(*end, 0);
+//	cudaEventSynchronize(*end);
+//	cudaEventElapsedTime(&milliseconds, *begin, *end);
 	printf("\nSimulation %i Complete.\n", idx);
 	border_print();
 	center_print("RESULTS", 79);
