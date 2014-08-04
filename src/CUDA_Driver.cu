@@ -214,17 +214,16 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, 
 			sigA += cuCreal( cuCmul( pole.MP_RA, CDUM) );
 			sigF += cuCreal( cuCmul( pole.MP_RF, CDUM) );
 		}
-/*		if ( w.end-w.start +1 > 5 ) {
+		if ( w.end-w.start +1 > 5 ) {
 			if ( mat == 0 ) 
 				ints_d[tmp]=0;
-			else
+			else {
 				printf ("%i: mat-%i; counter-%i; i-%i; window-%i; nuc-%i; mat_pitch-%i; windPitch-%i; polesPitch-%i; nwindows-%i\n",
-					tmp, mat, w.end-w.start +1, i, window, nuc, data->materials.pitch, 
-					data->pitch_windows, data->pitch_poles, data->n_windows[nuc]);
-			ints_d[tmp] = 1;
+					tmp, mat, w.end-w.start +1, i, window, nuc, data->materials.pitch, data->pitch_windows, data->pitch_poles, data->n_windows[nuc]);
+			ints_d[tmp] = 1; }
 
 		} else //if ( w.end-w.start +1 == 5 )
-			ints_d[tmp] = -1;*/
+			ints_d[tmp] = -1;
 
 		sigE = sigT - sigA;
 		micro_xs[0] = sigT; micro_xs[1] = sigA;	micro_xs[2] = sigF; micro_xs[3] = sigE;
