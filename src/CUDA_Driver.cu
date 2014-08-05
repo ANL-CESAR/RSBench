@@ -160,13 +160,13 @@ __device__ void devCalc_macro_xs( double * macro_xs, int mat, double E, Input in
 }
 
 //	top level kernel - 4th version
-__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, int dist_type/*, int* ints_d*/)   {
+__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, int* dist_type/*, int* ints_d*/)   {
 	// going to be dynamic
 	int tmp = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned long seed = tmp;
 	if ( tmp >= lookups)
 		return;
-	int mat = devPick_mat(&seed, dist_type );
+	int mat = devPick_mat(&seed, *dist_type );
 	double E = devRn( &seed );
 	double sqrt_E = sqrt(E);
 	double macro_xs[4];
@@ -231,17 +231,21 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, 
 //	top level driver - 4th version
 float top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input input, int dist_type, 
 	cudaEvent_t* begin, cudaEvent_t* end){
+	int* dist_type_d;
+	assert(cudaMalloc((void**)&dist_type_d, sizeof(int))==cudaSuccess);
+	assert(cudaMemcpy( dist_type_d, &dist_type, sizeof(int), cudaMemcpyHostToDevice) == cudaSuccess);
 	float milliseconds = 0;
 	int num_blocs = input.lookups/ntpb;
 	if ( ntpb * num_blocs < input.lookups )
 		num_blocs ++;
 	printf ("%i %i\n", num_blocs, ntpb);	
 	cudaEventRecord(*begin, 0);
-	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL, dist_type/*, ints_d*/);
+	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL, dist_type_d/*, ints_d*/);
 	cudaDeviceSynchronize();
 	cudaEventRecord(*end, 0);
 	cudaEventSynchronize(*end);
 	cudaEventElapsedTime(&milliseconds, *begin, *end);
+	cudaFree(dist_type_d);
 	return milliseconds;
 }
 
