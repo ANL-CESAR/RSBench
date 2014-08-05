@@ -116,6 +116,9 @@ int main(int argc, char * argv[]) {
 	for ( int i = 0; i < sizeof(ntpbs)/sizeof(int); i ++) 
 		run_test (data_d, input, &begin, &end, ntpbs[i], i, 0);
 	border_print();
+	for ( int i = 0; i < sizeof(ntpbs)/sizeof(int); i ++) 
+		run_test (data_d, input, &begin, &end, ntpbs[i], i, 1);
+	border_print();
 
 	return 0;
 }

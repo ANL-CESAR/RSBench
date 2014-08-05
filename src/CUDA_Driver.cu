@@ -66,7 +66,7 @@ __constant__ double dist[2][12] = {
 	0.013} 	// bottom of fuel assemblies
 };	
 
-__device__ double devRn(unsigned long * seed) {
+__forceinline__ __device__ double devRn(unsigned long * seed) {
 	unsigned long m = 2147483647;
 	unsigned long n1 = ( 16807ul * (*seed) ) % m;
 	(*seed) = n1;
@@ -74,7 +74,7 @@ __device__ double devRn(unsigned long * seed) {
 }
 
 // picks a material based on a probabilistic distribution
-__device__ int devPick_mat( unsigned long * seed, int dist_type ) {
+__forceinline__ __device__ int pick_mat( unsigned long * seed, int dist_type ) {
 	double roll = devRn(seed);
 	// makes a pick based on the distro
 	double running = 0;
@@ -160,13 +160,13 @@ __device__ void devCalc_macro_xs( double * macro_xs, int mat, double E, Input in
 }
 
 //	top level kernel - 4th version
-__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, int* dist_type/*, int* ints_d*/)   {
+__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, const int* numL, const int* dist_type/*, int* ints_d*/)   {
 	// going to be dynamic
 	int tmp = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned long seed = tmp;
 	if ( tmp >= lookups)
 		return;
-	int mat = devPick_mat(&seed, *dist_type );
+	int mat = pick_mat(&seed, *dist_type );
 	double E = devRn( &seed );
 	double sqrt_E = sqrt(E);
 	double macro_xs[4];
@@ -191,9 +191,9 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, 
 			window--;
 
 		// Calculate sigTfactors
-		double * d_ptr = &(data->pseudo_K0RS_2d [nuc * numL]);
+		double * d_ptr = &(data->pseudo_K0RS_2d [nuc * (*numL)]);
 		double phi;
-		for( int k = 0; k < numL; k++ ) {
+		for( int k = 0; k < (*numL); k++ ) {
 			phi = d_ptr[k] * sqrt_E;
 
 			if( k == 1 )
@@ -231,21 +231,24 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, int numL, 
 //	top level driver - 4th version
 float top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input input, int dist_type, 
 	cudaEvent_t* begin, cudaEvent_t* end){
-	int* dist_type_d;
+	int* dist_type_d, *numL_d;
 	assert(cudaMalloc((void**)&dist_type_d, sizeof(int))==cudaSuccess);
 	assert(cudaMemcpy( dist_type_d, &dist_type, sizeof(int), cudaMemcpyHostToDevice) == cudaSuccess);
+	assert(cudaMalloc((void**)&numL_d, sizeof(int))==cudaSuccess);
+	assert(cudaMemcpy( numL_d, &input.numL, sizeof(int), cudaMemcpyHostToDevice) == cudaSuccess);
 	float milliseconds = 0;
 	int num_blocs = input.lookups/ntpb;
 	if ( ntpb * num_blocs < input.lookups )
 		num_blocs ++;
 	printf ("%i %i\n", num_blocs, ntpb);	
 	cudaEventRecord(*begin, 0);
-	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, input.numL, dist_type_d/*, ints_d*/);
+	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, numL_d, dist_type_d/*, ints_d*/);
 	cudaDeviceSynchronize();
 	cudaEventRecord(*end, 0);
 	cudaEventSynchronize(*end);
 	cudaEventElapsedTime(&milliseconds, *begin, *end);
 	cudaFree(dist_type_d);
+	cudaFree(numL_d);
 	return milliseconds;
 }
 
