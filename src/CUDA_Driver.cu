@@ -160,20 +160,29 @@ __device__ void devCalc_macro_xs( double * macro_xs, int mat, double E, Input in
 }
 
 //	top level kernel - 4th version
-__global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, const int* numL, const int* dist_type/*, int* ints_d*/)   {
+__global__ void calc_kernel (const CalcDataPtrs_d* data, const int lookups, const int* numL, const int* dist_type)   {
 	// going to be dynamic
 	int tmp = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned long seed = tmp;
 	if ( tmp >= lookups)
 		return;
-	int mat = pick_mat(&seed, *dist_type );
+	int i, k, mat = 0;
+	double roll = devRn( &seed);
+	// makes a pick based on the distro
+	double running = 0;
+	for( i = 0; i < 12; i++ ) {
+		running += dist[*dist_type][i];
+		if( roll <= running ) {
+			mat = i;
+			break;
+		}
+	}
 	double E = devRn( &seed );
 	double sqrt_E = sqrt(E);
 	double macro_xs[4];
 	cuDoubleComplex sigTfactors[4];
 	cuDoubleComplex const1 = make_cuDoubleComplex(0, 1/E), const2 = make_cuDoubleComplex( sqrt_E, 0);
 	// zero out macro vector
-	int i;
 #pragma unroll 4
 	for( i = 0; i < 4; i++ ){	macro_xs[i] = 0;	}
 	// for nuclide in mat;
@@ -193,7 +202,7 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, const int*
 		// Calculate sigTfactors
 		double * d_ptr = &(data->pseudo_K0RS_2d [nuc * (*numL)]);
 		double phi;
-		for( int k = 0; k < (*numL); k++ ) {
+		for( k = 0; k < (*numL); k++ ) {
 			phi = d_ptr[k] * sqrt_E;
 
 			if( k == 1 )
@@ -212,7 +221,7 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, const int*
 		Window w = data->windows_2d[nuc * data->pitch_windows + window];
 		sigT = E * w.T;	sigA = E * w.A;	sigF = E * w.F;
 		// Loop over Poles within window, add contributions
-		for( int k = w.start; k < w.end; k ++ ){
+		for( k = w.start; k < w.end; k ++ ){
 			Pole pole = data->poles_2d[ nuc * data->pitch_poles + k];
 			cuDoubleComplex CDUM = cuCdiv( const1, cuCsub( pole.MP_EA, const2 ) );
 			sigT += cuCreal( cuCmul( pole.MP_RT, cuCmul( CDUM, sigTfactors[pole.l_value] ) ) );
@@ -224,31 +233,34 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, int lookups, const int*
 		micro_xs[0] = sigT; micro_xs[1] = sigA;	micro_xs[2] = sigF; micro_xs[3] = sigE;
 
 #pragma unroll 4
-		for( int j = 0; j < 4; j++ ){	macro_xs[j] += micro_xs[j] * data->materials.concs_2d[mat* data->materials.pitch+i];}
+		for( k = 0; k < 4; k++ ){	macro_xs[k] += micro_xs[k] * data->materials.concs_2d[mat* data->materials.pitch+i];}
 	}
 }
 
 //	top level driver - 4th version
 float top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input input, int dist_type, 
 	cudaEvent_t* begin, cudaEvent_t* end){
-	int* dist_type_d, *numL_d;
+	int* dist_type_d, *numL_d, *lookups_d;
 	assert(cudaMalloc((void**)&dist_type_d, sizeof(int))==cudaSuccess);
 	assert(cudaMemcpy( dist_type_d, &dist_type, sizeof(int), cudaMemcpyHostToDevice) == cudaSuccess);
 	assert(cudaMalloc((void**)&numL_d, sizeof(int))==cudaSuccess);
 	assert(cudaMemcpy( numL_d, &input.numL, sizeof(int), cudaMemcpyHostToDevice) == cudaSuccess);
+	assert(cudaMalloc((void**)&lookups_d, sizeof(int))==cudaSuccess);
+	assert(cudaMemcpy( lookups_d, &input.lookups, sizeof(int), cudaMemcpyHostToDevice) == cudaSuccess);
 	float milliseconds = 0;
 	int num_blocs = input.lookups/ntpb;
 	if ( ntpb * num_blocs < input.lookups )
 		num_blocs ++;
 	printf ("%i %i\n", num_blocs, ntpb);	
 	cudaEventRecord(*begin, 0);
-	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, numL_d, dist_type_d/*, ints_d*/);
+	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, numL_d, dist_type_d);
 	cudaDeviceSynchronize();
 	cudaEventRecord(*end, 0);
 	cudaEventSynchronize(*end);
 	cudaEventElapsedTime(&milliseconds, *begin, *end);
 	cudaFree(dist_type_d);
 	cudaFree(numL_d);
+	cudaFree(lookups_d);
 	return milliseconds;
 }
 

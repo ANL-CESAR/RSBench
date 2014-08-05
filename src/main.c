@@ -2,14 +2,12 @@
 
 void run_test (CalcDataPtrs_d* data_d, Input input, cudaEvent_t* begin, cudaEvent_t* end, int ntpb, int idx, int dist_type) {
 	float milliseconds = 0;
-//	cudaEventRecord(*begin, 0);
 	milliseconds = top_calc_driver ( data_d, ntpb, input, dist_type, begin, end);
-//	cudaEventRecord(*end, 0);
-//	cudaEventSynchronize(*end);
-//	cudaEventElapsedTime(&milliseconds, *begin, *end);
 	printf("\nSimulation %i Complete.\n", idx);
 	border_print();
-	center_print("RESULTS", 79);
+	char str[20];
+	sprintf(str, "RESULTS\t%i", idx);
+	center_print(str, 79);
 	border_print();
 
 	printf("NTPB:        %i\n", ntpb);
@@ -113,10 +111,10 @@ int main(int argc, char * argv[]) {
 	}
 #endif	
 	int ntpbs []= {32, 64, 96, 128, 192, 256, 512, 1024};	
-	for ( int i = 0; i < sizeof(ntpbs)/sizeof(int); i ++) 
+	for ( int i = 2; i < 4/*sizeof(ntpbs)/sizeof(int)*/; i ++) 
 		run_test (data_d, input, &begin, &end, ntpbs[i], i, 0);
 	border_print();
-	for ( int i = 0; i < sizeof(ntpbs)/sizeof(int); i ++) 
+	for ( int i = 2; i < 4/*sizeof(ntpbs)/sizeof(int)*/; i ++) 
 		run_test (data_d, input, &begin, &end, ntpbs[i], i, 1);
 	border_print();
 
