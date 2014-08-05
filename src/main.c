@@ -111,7 +111,7 @@ int main(int argc, char * argv[]) {
 	}
 #endif	
 	int ntpbs []= {32, 64, 96, 128, 192, 256, 512, 1024};	
-	for ( int i = 2; i < 4/*sizeof(ntpbs)/sizeof(int)*/; i ++) 
+	for ( int i = 2; i < 3/*sizeof(ntpbs)/sizeof(int)*/; i ++) 
 		run_test (data_d, input, &begin, &end, ntpbs[i], i, 0);
 	border_print();
 	for ( int i = 2; i < 4/*sizeof(ntpbs)/sizeof(int)*/; i ++) 
