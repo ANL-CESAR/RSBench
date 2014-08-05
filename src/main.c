@@ -6,7 +6,7 @@ int main(int argc, char * argv[])
 	// Initialization & Command Line Read-In
 	// =====================================================================
 
-	int version = 2;
+	int version = 3;
 	int max_procs = omp_get_num_procs();
 	double start, stop;
 	
@@ -42,7 +42,7 @@ int main(int argc, char * argv[])
 	// Allocate & fill Window grids
 	printf("Generating window distributions...\n");
 	int * n_windows = generate_n_windows( input );
-	
+
 	// Get material data
 	printf("Loading Hoogenboom-Martin material data...\n");
 	Materials materials = get_materials( input ); 

@@ -1,4 +1,18 @@
 =====================================================================
+NEW IN VERSION 3
+=====================================================================
+- [Bug Fix] Fixed an issue with the window pole assignment
+function (generate_window_params). There was a counter that was
+not being properly incremented, causing some windows to be
+assigned the same poles, and causing an issue with a border case
+receiving many more poles than others. This issue has been fixed
+so that all windows should now recieve about the same number of
+poles, and all windows should be unique. This change effects
+performance slightly, showing a 10-15% speedup in version 3
+vs. version 2.
+
+
+=====================================================================
 NEW IN VERSION 2
 =====================================================================
 - [Optimization] Moved the sigTfactor dynamic array allocation out

@@ -102,10 +102,9 @@ Window ** generate_window_params( Input input, int * n_windows, int * n_poles )
 			R[i][j].T = (double) rand() / RAND_MAX;
 			R[i][j].A = (double) rand() / RAND_MAX;
 			R[i][j].F = (double) rand() / RAND_MAX;
-			R[i][j].start = ctr*j; 
-			R[i][j].end = ctr*j + space;
-			if( j == n_windows[i] - 1 )
-				R[i][j].end = n_poles[i] - 1;
+			R[i][j].start = ctr; 
+			R[i][j].end = ctr + space - 1;
+			ctr += space;
 		}
 	}
 
