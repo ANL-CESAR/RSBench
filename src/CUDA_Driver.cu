@@ -236,7 +236,7 @@ __global__ void calc_kernel (const CalcDataPtrs_d* data, const int lookups, cons
 		for( k = 0; k < 4; k++ ){	macro_xs[k] += micro_xs[k] * data->materials.concs_2d[mat* data->materials.pitch+i];}
 	}
 //	if ( mat > 9 )
-//		printf ("roll: %f, tmp: %i, mat: %i, E: %f, numL: %i, lookups: %i\n", roll, tmp, mat, E, *numL, lookups);
+//	printf ("roll: %f, tmp: %i, mat: %i, E: %f, numL: %i, lookups: %i\n", roll, tmp, mat, E, *numL, lookups);
 }
 
 //	top level driver - 4th version

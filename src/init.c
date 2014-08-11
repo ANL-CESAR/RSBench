@@ -96,16 +96,20 @@ Window ** generate_window_params( Input input, int * n_windows, int * n_poles )
 	for( int i = 0; i < input.n_nuclides; i++ )
 	{
 		int space = n_poles[i] / n_windows[i];
+		int remainder = n_poles[i] - space * n_windows[i];
 		int ctr = 0;
 		for( int j = 0; j < n_windows[i]; j++ )
 		{
 			R[i][j].T = (double) rand() / RAND_MAX;
 			R[i][j].A = (double) rand() / RAND_MAX;
 			R[i][j].F = (double) rand() / RAND_MAX;
-			R[i][j].start = ctr*j; 
-			R[i][j].end = ctr*j + space;
-			if( j == n_windows[i] - 1 )
-				R[i][j].end = n_poles[i] - 1;
+			R[i][j].start = ctr; 
+			R[i][j].end = ctr + space - 1;
+			ctr += space;
+			if ( j < remainder ) {
+				ctr ++;
+				R[i][j].end ++;	
+			}
 /*			if ( j == n_windows[i] - 1 )
 				printf ("Init: nuc-%i, windows-%i, start-%i, end-%i\n", i, j, R[i][j].start, R[i][j].end);*/
 		}

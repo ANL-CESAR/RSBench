@@ -9,8 +9,9 @@
 #include<math.h>
 #include<complex.h>
 #include<cuda.h>
+#include"My_Stats.h"
 #include<cuda_runtime.h>
-#include <cuComplex.h>
+#include<cuComplex.h>
 #include<assert.h>
 
 #ifdef PAPI
