@@ -1,8 +1,16 @@
 #include "rsbench.h"
 
+const unsigned int NUM_ITER = 100;
+
+//	compute, collect, and analyze the running time of each grid setting
 void run_test (CalcDataPtrs_d* data_d, Input input, cudaEvent_t* begin, cudaEvent_t* end, int ntpb, int idx, int dist_type) {
-	float milliseconds = 0;
-	milliseconds = top_calc_driver ( data_d, ntpb, input, dist_type, begin, end);
+//	float milliseconds = 0;
+	double trials [NUM_ITER];
+	double* stats=NULL;
+	for ( int k = 0; k<NUM_ITER; k ++ ) {
+		trials[k] = top_calc_driver ( data_d, ntpb, input, dist_type, begin, end);
+	}
+	my_stats ( trials, &NUM_ITER, &stats);
 	printf("\nSimulation %i Complete.\n", idx);
 	border_print();
 	char str[20];
@@ -11,9 +19,11 @@ void run_test (CalcDataPtrs_d* data_d, Input input, cudaEvent_t* begin, cudaEven
 	border_print();
 
 	printf("NTPB:        %i\n", ntpb);
-	printf ("Time for the kernel: %f ms\n", milliseconds);
+	printf ("Average Time for the kernel: %f ms\n", stats[5]);
+	printf ("Median Time for the kernel: %f ms\n", stats[2]);
+	printf ("Stdev Time for the kernel: %f ms\n", stats[7]);
 	printf("Lookups:     "); fancy_int(input.lookups);
-	printf("Lookups/s:   "); fancy_int((double) input.lookups / milliseconds * 1000 );
+	printf("Average Lookups/s:   "); fancy_int((double) input.lookups / stats[5] * 1000 );
 }
 
 int main(int argc, char * argv[]) {
@@ -111,12 +121,14 @@ int main(int argc, char * argv[]) {
 	}
 #endif	
 	int ntpbs []= {32, 64, 96, 128, 192, 256, 512, 1024};	
-	for ( int i = 3; i < 4/*sizeof(ntpbs)/sizeof(int)*/; i ++) 
+	printf ("Using actual OpenMC lookups based distrituion: \n");
+	for ( int i = 0; i < sizeof(ntpbs)/sizeof(int); i ++) 
 		run_test (data_d, input, &begin, &end, ntpbs[i], i, 0);
 	border_print();
-//	for ( int i = 0; i < sizeof(ntpbs)/sizeof(int); i ++) 
-//		run_test (data_d, input, &begin, &end, ntpbs[i], i, 1);
-//	border_print();
+	printf ("Using volume based distrituion: \n");
+	for ( int i = 0; i < sizeof(ntpbs)/sizeof(int); i ++) 
+		run_test (data_d, input, &begin, &end, ntpbs[i], i, 1);
+	border_print();
 
 	return 0;
 }

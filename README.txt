@@ -6,7 +6,7 @@
                    | | \ \ ____) | |_) |  __/ | | | (__| | | |
                    |_|  \_\_____/|____/ \___|_| |_|\___|_| |_|
                          
-                                   Version 2
+                                   Version 3
 
 ==============================================================================
 Contact Information
@@ -15,14 +15,15 @@ Contact Information
 Organization:     Center for Exascale Simulation of Advanced Reactors (CESAR)
                   Argonne National Laboratory
 
-Development Lead: John Tramm <jtramm@mcs.anl.gov>
+Development Lead: John Tramm <jtramm@mcs.anl.gov> [original RSBench]
+		  Aaron X. Fan <axf@uchicago.edu> [CUDA C version]
 
 ==============================================================================
 What is RSBench?
 ==============================================================================
 
 A mini-app to represent the multipole resonance representation lookup
-cross section algorithm.
+cross section algorithm implemented in NVIDIA CUDA C.
 
 ==============================================================================
 Quick Start Guide
@@ -64,7 +65,7 @@ Running RSBench---------------------------------------------------------------
 
 	To run RSBench with default settings, use the following command:
 
-	>$ ./RSBench
+	>$ ./rsbench
 
 	For non-default settings, RSBench supports the following command line
 	options:	

@@ -253,7 +253,7 @@ float top_calc_driver (const CalcDataPtrs_d* data, int ntpb, Input input, int di
 	int num_blocs = input.lookups/ntpb;
 	if ( ntpb * num_blocs < input.lookups )
 		num_blocs ++;
-	printf ("%i %i\n", num_blocs, ntpb);	
+//	printf ("%i %i\n", num_blocs, ntpb);	
 	cudaEventRecord(*begin, 0);
 	calc_kernel<<<num_blocs, ntpb>>> ( data, input.lookups, numL_d, dist_type_d);
 	cudaDeviceSynchronize();
