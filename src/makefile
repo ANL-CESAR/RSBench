@@ -29,13 +29,19 @@ obj = $(source:.c=.o)
 # Sets Flags
 #===============================================================================
 
-# Regular gcc Compiler
+# Standard Flags
+CFLAGS := -std=gnu99
+
+# gcc Compiler
 ifeq ($(COMPILER),gnu)
   CC = gcc
+  CFLAGS += -fopenmp -ffast-math
 endif
 
-# Standard Flags
-CFLAGS := -fopenmp -std=gnu99 -ffast-math
+ifeq ($(COMPILER),intel)
+  CC = icc
+  CFLAGS += -openmp -xhost -ansi-alias -no-prec-div
+endif
 
 # Linker Flags
 LDFLAGS = -lm
