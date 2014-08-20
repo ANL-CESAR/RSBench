@@ -1,0 +1,8 @@
+# ctags
+tags
+
+# object files
+*.o
+
+# executable
+rsbench
