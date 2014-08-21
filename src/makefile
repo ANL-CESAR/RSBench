@@ -60,7 +60,7 @@ endif
 
 # Optimization Flags
 ifeq ($(OPTIMIZE),yes)
-  CFLAGS += -O3
+  CFLAGS += -Ofast
 endif
 
 # Calculation Status % Complete Indicator
