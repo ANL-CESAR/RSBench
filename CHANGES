@@ -1,4 +1,15 @@
 =====================================================================
+NEW IN VERSION 4
+=====================================================================
+- Minor bug fix that caused incorrect operation when compiled with
+GCC (intel worked fine). This was due to a bug in OpenMP causing
+private variables to not be correctly copied into the parallel
+region. The result was that the RNG was improperly initialized,
+generating the same value every time, speeding up the calculation
+significantly. Intel's OMP implementation was correct so all
+results from intel runs should have the same performance.
+
+=====================================================================
 NEW IN VERSION 3
 =====================================================================
 - [Bug Fix] Fixed an issue with the window pole assignment
