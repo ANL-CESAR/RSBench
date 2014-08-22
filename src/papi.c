@@ -15,7 +15,7 @@ void counter_init( int *eventset, int *num_papi_events )
 	
 	// Bandwidth Used
 	// ((PAPI_Lx_TCM * Lx_linesize) / PAPI_TOT_CYC) * Clock(MHz)
-	//int events[] = {PAPI_L3_TCM, PAPI_TOT_CYC};
+	int events[] = {PAPI_L3_TCM, PAPI_TOT_CYC};
 
 	// L3 Total Cache Miss Ratio
 	// PAPI_L3_TCM / PAPI_L3_TCA
@@ -39,7 +39,7 @@ void counter_init( int *eventset, int *num_papi_events )
 	
 	// MFlops (Alternate?)
 	// (PAPI_FP_INS/PAPI_TOT_CYC) * Clock(MHz)
-	int events[] = { PAPI_DP_OPS, PAPI_TOT_CYC };
+	//int events[] = { PAPI_DP_OPS, PAPI_TOT_CYC };
 
 	
 	// TLB misses (Using native counters)
@@ -257,17 +257,32 @@ void counter_stop( int * eventset, int num_papi_events )
 	long_long * values = malloc( num_papi_events * sizeof(long_long));
 	PAPI_stop(*eventset, values);
 	int thread = omp_get_thread_num();
+	static long long accum_vals[5] = {0};
 
 	#pragma omp critical (papi)
 	{
 		printf("Thread %d\n", thread);
 		for( int i = 0; i < num_papi_events; i++ )
 		{
+			accum_vals[i] += values[i];
 			PAPI_get_event_info(events[i], &info);
 			printf("%-15lld\t%s\t%s\n", values[i],info.symbol,info.long_descr);
 		}
+	}
+	{
+		#pragma omp barrier
+	}
+	#pragma omp master
+	{
+		printf("Aummulated totals!\n");
+		for( int i = 0; i < num_papi_events; i++ )
+		{
+			PAPI_get_event_info(events[i], &info);
+			printf("%-15lld\t%s\n", accum_vals[i], info.symbol);
+		}
+		printf("GFLOPs: %lf\n", (double)accum_vals[0] / (double)accum_vals[1] * 32.);
+	}
 		free(events);
 		free(values);	
-	}
 }
 
