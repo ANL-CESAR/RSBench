@@ -72,6 +72,58 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	micro_xs[3] = sigE;
 }
 
+// Temperature Dependent Variation of Kernel
+// (This involves using the Faddeeva function to
+// Doppler broaden the poles within the window)
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors)
+{
+	// MicroScopic XS's to Calculate
+	double sigT;
+	double sigA;
+	double sigF;
+	double sigE;
+
+	// Calculate Window Index
+	double spacing = 1.0 / data.n_windows[nuc];
+	int window = (int) ( E / spacing );
+	if( window == data.n_windows[nuc] )
+		window--;
+
+	// Calculate sigTfactors
+	calculate_sig_T(nuc, E, input, data, sigTfactors );
+
+	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
+	Window w = data.windows[nuc][window];
+	sigT = E * w.T;
+	sigA = E * w.A;
+	sigF = E * w.F;
+
+	double dopp = 0.5;
+
+	// Loop over Poles within window, add contributions
+	for( int i = w.start; i < w.end; i++ )
+	{
+		// Prep Z
+		double Z = (E - creal(pole.MP_EA)) * dopp;
+
+		// Call Fadeeva Function
+		double faddeeva = exp(-1.0 * creal(Z * Z)) * erfc(-1.0 * creal(Z * I));
+
+		// Update W
+
+		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );
+		sigA += creal( pole.MP_RA * faddeeva);
+		sigF += creal( pole.MP_RF * faddeeva);
+	}
+
+	sigE = sigT - sigA;
+
+	micro_xs[0] = sigT;
+	micro_xs[1] = sigA;
+	micro_xs[2] = sigF;
+	micro_xs[3] = sigE;
+}
+
 void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors )
 {
 	double phi;
