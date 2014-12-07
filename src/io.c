@@ -189,6 +189,7 @@ void print_CLI_error(void)
 	printf("  -l <lookups>     Number of Cross-section (XS) lookups\n");
 	printf("  -p <poles>       Average Number of Poles per Nuclide\n");
 	printf("  -w <poles>       Average Number of Windows per Nuclide\n");
+	printf("  -d               Enables Temperature Dependence (Doppler Broadening)\n");
 	printf("Default is equivalent to: -s large -l 10000000 -p 1000 -w 250\n");
 	printf("See readme for full description of default run values\n");
 	exit(4);

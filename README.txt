@@ -6,7 +6,7 @@
                    | | \ \ ____) | |_) |  __/ | | | (__| | | |
                    |_|  \_\_____/|____/ \___|_| |_|\___|_| |_|
                          
-                                   Version 4
+                                   Version 5
 
 ==============================================================================
 Contact Information
@@ -76,6 +76,7 @@ Running RSBench---------------------------------------------------------------
 	  -l <lookups>     Number of Cross-section (XS) lookups
 	  -p <poles>       Average Number of Poles per Nuclide
 	  -w <windows>     Average Number of Windows per Nuclide
+	  -d               Enables Temperature Dependence (Doppler Broadening)
 	Default is equivalent to: -s large -l 10000000 -p 1000 -w 250
 
 	-t <threads>
@@ -123,6 +124,15 @@ Running RSBench---------------------------------------------------------------
 
 		This value, along with the H-M benchmark size, is responsible for
 		the total size of the RSBench data structures.
+
+	-d
+		This flag enables temperature dependence in the calculation (i.e.,
+		Doppler broadening). This represents a calculation where the
+		temperature of the materials in the reactor are not considered
+		constant (i.e., something of interest for exascale reactor problems).
+		Doppler broadening is accomplished via the evaluation of the Faddeeva
+		function for each pole within a window, which is accomplished by using
+		the C library error function conjugate and an exponential evaluation.
 
 ==============================================================================
 Debugging, Optimization & Profiling

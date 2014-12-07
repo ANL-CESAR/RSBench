@@ -1,4 +1,20 @@
 =====================================================================
+NEW IN VERSION 5
+=====================================================================
+- Added a new temperature dependence feature to correspond which
+uses Doppler broadening to translate pole data from 0K to any
+arbitrary material temperature. This is accomplished by evaluating
+the Faddeeva function (via an exponential multiplied by the standard
+C error function).
+
+This new Doppler mode is by default not enabled in Version 5.
+
+It can be enabled via the "-d" flag on the command line.
+
+Impact varies by compiler, but is relatively small (only a
+~10-15% slowdown).
+
+=====================================================================
 NEW IN VERSION 4
 =====================================================================
 - Minor bug fix that caused incorrect operation when compiled with

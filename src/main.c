@@ -6,7 +6,7 @@ int main(int argc, char * argv[])
 	// Initialization & Command Line Read-In
 	// =====================================================================
 
-	int version = 4;
+	int version = 5;
 	int max_procs = omp_get_num_procs();
 	double start, stop;
 	
