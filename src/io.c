@@ -79,6 +79,8 @@ Input read_CLI( int argc, char * argv[] )
 	input.avg_n_windows = 250;
 	// defaults to 4;
 	input.numL = 4;
+	// defaults to no temperature dependence (no Doppler broadening)
+	input.doppler = 0;
 	
 	// Collect Raw Input
 	for( int i = 1; i < argc; i++ )
@@ -123,6 +125,11 @@ Input read_CLI( int argc, char * argv[] )
 			}
 			else
 				print_CLI_error();
+		}
+		// Doppler Broadening (Temperature Dependence)
+		else if( strcmp(arg, "-d") == 0 )
+		{	
+			input.doppler = 1;
 		}
 		// Avg number of windows per nuclide (-w)
 		else if( strcmp(arg, "-w") == 0 )
@@ -198,6 +205,10 @@ void print_input_summary(Input input)
 		printf("Small\n");
 	else
 		printf("Large\n");
+	if( input.doppler == 1 )
+		printf("Temperature Dependence:      ON\n");
+	else
+		printf("Temperature Dependence:      OFF\n");
 	printf("Total Nuclides:              %d\n", input.n_nuclides);
 	printf("Avg Poles per Nuclide:       "); fancy_int(input.avg_n_poles);
 	printf("Avg Windows per Nuclide:     "); fancy_int(input.avg_n_windows);
