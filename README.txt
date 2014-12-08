@@ -76,8 +76,8 @@ Running RSBench---------------------------------------------------------------
 	  -l <lookups>     Number of Cross-section (XS) lookups
 	  -p <poles>       Average Number of Poles per Nuclide
 	  -w <windows>     Average Number of Windows per Nuclide
-	  -d               Enables Temperature Dependence (Doppler Broadening)
-	Default is equivalent to: -s large -l 10000000 -p 1000 -w 250
+	  -d               Disables Temperature Dependence (Doppler Broadening)
+	Default is equivalent to: -s large -l 10000000 -p 1000 -w 100
 
 	-t <threads>
 
@@ -112,24 +112,20 @@ Running RSBench---------------------------------------------------------------
 		data - as extending the run will decrease the percentage of
 		runtime spent on initialization.
 
-	-r <resonances>
+	-p <poles>
+		
+		This is the average number of poles per nuclide. Default is
+		set to 1000.
 
-		Sets the average number of resonances per nuclide. It is
-		assumed that each nuclide has a different number of resonances
-		evenly spaced through energy space, where -r sets the average
-		number of resonances per nuclide. The variance between nuclides is
-		farirly small ( < 20% usually). The total number of resonances is
-		guaranteed to be equal to the number of nuclides multiplied by the
-		average number of resonances per nuclide.
+	-w <windows>
 
-		This value, along with the H-M benchmark size, is responsible for
-		the total size of the RSBench data structures.
+		This is the number of windows per nuclide. Default is set to
+		100.
 
 	-d
-		This flag enables temperature dependence in the calculation (i.e.,
+		This flag disables temperature dependence in the calculation (i.e.,
 		Doppler broadening). This represents a calculation where the
 		temperature of the materials in the reactor are not considered
-		constant (i.e., something of interest for exascale reactor problems).
 		Doppler broadening is accomplished via the evaluation of the Faddeeva
 		function for each pole within a window, which is accomplished by using
 		the C library error function conjugate and an exponential evaluation.

@@ -9,10 +9,20 @@ C error function).
 
 This new Doppler mode is by default not enabled in Version 5.
 
-It can be enabled via the "-d" flag on the command line.
+It is set to default, but can be disabled via the "-d" flag on the
+command line.
 
 Impact varies by compiler, but is relatively small (only a
 ~10-15% slowdown).
+
+- Changed the default runtime parameters from 250 windows per nuclide
+down to 100 windows per nuclide (increasing the number of poles
+per lookup from an average of 4 to an average of 10). This
+directly impacts performance, so expect lookups/sec to change in
+Version 5 as compared to Version 4. This change was made as more
+nuclides have had multipole data generated for them in the time
+since RSBench was originally written, so estimates for these variables
+have been updated to more accurately reflect the full scale code.
 
 =====================================================================
 NEW IN VERSION 4
