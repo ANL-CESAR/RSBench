@@ -7,10 +7,9 @@ arbitrary material temperature. This is accomplished by evaluating
 the Faddeeva function (via an exponential multiplied by the standard
 C error function).
 
-This new Doppler mode is by default not enabled in Version 5.
-
-It is set to default, but can be disabled via the "-d" flag on the
-command line.
+This new Doppler mode is by default enabled in Version 5.  It is
+set to default, but can be disabled via the "-d" flag on the command
+line.
 
 Impact varies by compiler, but is relatively small (only a
 ~10-15% slowdown).
