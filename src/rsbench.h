@@ -27,8 +27,10 @@ typedef struct{
 
 typedef struct{
 	int * num_nucs;
-	int ** mats;
-	double ** concs;
+	int mats_sz;
+	int * mats_idx;
+	int * mats;
+	double * concs;
 } Materials;
 
 typedef struct{
@@ -75,8 +77,9 @@ double ** generate_pseudo_K0RS( Input input );
 
 // material.c
 int * load_num_nucs(Input input);
-int ** load_mats( Input input, int * num_nucs );
-double ** load_concs( int * num_nucs );
+int * load_mats_idx( int * num_nucs );
+int * load_mats( int * num_nucs, int * mats_idx, int mats_sz, long n_nuclides );
+double * load_concs( int mats_sz );
 int pick_mat( unsigned long * seed );
 Materials get_materials(Input input);
 

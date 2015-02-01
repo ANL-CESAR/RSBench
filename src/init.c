@@ -81,7 +81,7 @@ Pole ** generate_poles( Input input, int * n_poles )
 			R[i][j].MP_RT = rn_v() + rn_v() * _Complex_I;
 			R[i][j].MP_RA = rn_v() + rn_v() * _Complex_I;
 			R[i][j].MP_RF = rn_v() + rn_v() * _Complex_I;
-			R[i][j].l_value = rand() % input.numL;
+			R[i][j].l_value = (int) floor(rn_v() * RAND_MAX) % input.numL;
 			#else
 			R[i][j].MP_EA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
 			R[i][j].MP_RT = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;

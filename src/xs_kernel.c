@@ -11,17 +11,17 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	for( int i = 0; i < (data.materials).num_nucs[mat]; i++ )
 	{
 		double micro_xs[4];
-		int nuc = (data.materials).mats[mat][i];
+		int nuc = (data.materials).mats[(data.materials).mats_idx[mat] + i];
 
 		calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors);
 
 		for( int j = 0; j < 4; j++ )
 		{
-			macro_xs[j] += micro_xs[j] * data.materials.concs[mat][i];
+			macro_xs[j] += micro_xs[j] * (data.materials).concs[(data.materials).mats_idx[mat] + i];
 		}
 	}
 
-	/* Debug
+	/*// Debug
 	printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
 	E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
 	*/

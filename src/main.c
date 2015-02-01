@@ -102,7 +102,8 @@ int main(int argc, char * argv[])
 	double E;
 	int i;
 	#pragma omp parallel default(none) \
-	private(seed, mat, E, i) \
+	private(mat, E, i) \
+	firstprivate(seed) \
 	shared(input, data, vhash) 
 	{
 		double macro_xs[4];
