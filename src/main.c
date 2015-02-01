@@ -9,9 +9,14 @@ int main(int argc, char * argv[])
 	int version = 3;
 	int max_procs = omp_get_num_procs();
 	double start, stop;
+	unsigned long long vhash = 0;
 	
+	#ifdef VERIFICATION
+	srand(26);
+	#else
 	srand(time(NULL));
-	
+	#endif
+
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
 
@@ -96,10 +101,9 @@ int main(int argc, char * argv[])
 	int mat;
 	double E;
 	int i;
-
 	#pragma omp parallel default(none) \
 	private(seed, mat, E, i) \
-	shared(input, data) 
+	shared(input, data, vhash) 
 	{
 		double macro_xs[4];
 		int thread = omp_get_thread_num();
@@ -126,9 +130,30 @@ int main(int argc, char * argv[])
 						(double) input.nthreads )) /
 						(double) input.nthreads * 100.0);
 			#endif
+			#ifdef VERIFICATION
+			#pragma omp critical
+		        {
+				mat = pick_mat( &seed );
+				E = rn_v();
+		        }
+			#else
 			mat = pick_mat( &seed );
 			E = rn( &seed );
+			#endif
+
 			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors ); 
+
+			// Verification hash calculation
+			// This method provides a consistent hash accross
+			// architectures and compilers.
+			#ifdef VERIFICATION
+			char line[256];
+			sprintf(line, "%.5lf %d %.5lf %.5lf %.5lf %.5lf",
+			     E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3]);
+			unsigned long long vhash_local = hash(line, 10000);
+			#pragma omp atomic
+			vhash += vhash_local;
+			#endif
 		}
 
 		free(sigTfactors);
@@ -165,6 +190,9 @@ int main(int argc, char * argv[])
 	printf("Runtime:     %.3lf seconds\n", stop-start);
 	printf("Lookups:     "); fancy_int(input.lookups);
 	printf("Lookups/s:   "); fancy_int((double) input.lookups / (stop-start));
+	#ifdef VERIFICATION
+	printf("Verification checksum: %llu\n", vhash);
+	#endif
 
 	border_print();
 

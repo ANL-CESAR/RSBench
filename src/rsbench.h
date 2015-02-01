@@ -82,6 +82,8 @@ Materials get_materials(Input input);
 
 // utils.c
 double rn(unsigned long * seed);
+double rn_v(void);
+unsigned int hash(unsigned char *str, int nbins);
 size_t get_mem_estimate( Input input );
 
 // xs_kernel.c

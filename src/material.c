@@ -116,7 +116,11 @@ double ** load_concs( int * num_nucs )
 	
 	for( int i = 0; i < 12; i++ )
 		for( int j = 0; j < num_nucs[i]; j++ )
+			#ifdef VERIFICATION
+			concs[i][j] = rn_v();
+			#else
 			concs[i][j] = (double) rand() / (double) RAND_MAX;
+			#endif
 
 	// test
 	/*
@@ -153,7 +157,11 @@ int pick_mat( unsigned long * seed )
 	dist[10] = 0.025;	// top of fuel assemblies
 	dist[11] = 0.013;	// bottom of fuel assemblies
 	
+	#ifdef VERIFICATION
+	double roll = rn_v();
+	#else
 	double roll = rn(seed);
+	#endif
 
 	// makes a pick based on the distro
 	for( int i = 0; i < 12; i++ )

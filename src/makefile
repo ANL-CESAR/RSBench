@@ -8,6 +8,7 @@ DEBUG     = no
 PROFILE   = no
 STATUS    = yes
 PAPI      = no
+VERIFY    = yes
 
 #===============================================================================
 # Program name & source code list
@@ -73,6 +74,11 @@ ifeq ($(PAPI),yes)
   CFLAGS += -DPAPI
   source += papi.c
   LDFLAGS += -lpapi
+endif
+
+# Verification of results mode
+ifeq ($(VERIFY),yes)
+  CFLAGS += -DVERIFICATION
 endif
 
 #===============================================================================
