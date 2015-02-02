@@ -97,18 +97,17 @@ int main(int argc, char * argv[])
 
 	start = omp_get_wtime();
 
-	unsigned long seed = rand();
+	unsigned long seed;
 	int mat;
 	double E;
 	int i;
 	#pragma omp parallel default(none) \
-	private(mat, E, i) \
-	firstprivate(seed) \
+	private(seed, mat, E, i) \
 	shared(input, data, vhash) 
 	{
 		double macro_xs[4];
 		int thread = omp_get_thread_num();
-		seed += thread;
+		seed = (thread+1)*19+17;
 		
 		#ifdef PAPI
 		int eventset = PAPI_NULL; 

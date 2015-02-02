@@ -9,11 +9,7 @@ int * generate_n_poles( Input input )
 
 	for( int i = 0; i < total_resonances; i++ )
 	{
-		#ifdef VERIFICATION
-		R[(int) floor(rn_v() * RAND_MAX) % input.n_nuclides]++;
-		#else
 		R[rand() % input.n_nuclides]++;
-		#endif
 	}
 
 	// Ensure all nuclides have at least 1 resonance
@@ -37,11 +33,7 @@ int * generate_n_windows( Input input )
 
 	for( int i = 0; i < total_resonances; i++ )
 	{
-		#ifdef VERIFICATION
-		R[(int) floor(rn_v() * RAND_MAX) % input.n_nuclides]++;
-		#else
 		R[rand() % input.n_nuclides]++;
-		#endif
 	}
 
 	// Ensure all nuclides have at least 1 resonance
@@ -76,19 +68,11 @@ Pole ** generate_poles( Input input, int * n_poles )
 	{
 		for( int j = 0; j < n_poles[i]; j++ )
 		{
-			#ifdef VERIFICATION
-			R[i][j].MP_EA = rn_v() + rn_v() * _Complex_I;
-			R[i][j].MP_RT = rn_v() + rn_v() * _Complex_I;
-			R[i][j].MP_RA = rn_v() + rn_v() * _Complex_I;
-			R[i][j].MP_RF = rn_v() + rn_v() * _Complex_I;
-			R[i][j].l_value = (int) floor(rn_v() * RAND_MAX) % input.numL;
-			#else
 			R[i][j].MP_EA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
 			R[i][j].MP_RT = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
 			R[i][j].MP_RA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
 			R[i][j].MP_RF = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
 			R[i][j].l_value = rand() % input.numL;
-			#endif
 		}
 	}
 	
@@ -122,15 +106,9 @@ Window ** generate_window_params( Input input, int * n_windows, int * n_poles )
 		int ctr = 0;
 		for( int j = 0; j < n_windows[i]; j++ )
 		{
-			#ifdef VERIFICATION
-			R[i][j].T = rn_v();
-			R[i][j].A = rn_v();
-			R[i][j].F = rn_v();
-			#else
 			R[i][j].T = (double) rand() / RAND_MAX;
 			R[i][j].A = (double) rand() / RAND_MAX;
 			R[i][j].F = (double) rand() / RAND_MAX;
-			#endif
 			R[i][j].start = ctr; 
 			R[i][j].end = ctr + space - 1;
 
