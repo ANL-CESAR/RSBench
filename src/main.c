@@ -6,7 +6,7 @@ int main(int argc, char * argv[])
 	// Initialization & Command Line Read-In
 	// =====================================================================
 
-	int version = 3;
+	int version = 5;
 	int max_procs = omp_get_num_procs();
 	double start, stop;
 	unsigned long long vhash = 0;
@@ -97,17 +97,15 @@ int main(int argc, char * argv[])
 
 	start = omp_get_wtime();
 
-	unsigned long seed;
-	int mat;
-	double E;
-	int i;
 	#pragma omp parallel default(none) \
-	private(seed, mat, E, i) \
 	shared(input, data, vhash) 
 	{
+		unsigned long seed = time(NULL)+1;
 		double macro_xs[4];
 		int thread = omp_get_thread_num();
-		seed = (thread+1)*19+17;
+		seed += thread;
+		int mat;
+		double E;
 		
 		#ifdef PAPI
 		int eventset = PAPI_NULL; 
@@ -121,7 +119,7 @@ int main(int argc, char * argv[])
 			(complex double *) malloc( input.numL * sizeof(complex double) );
 
 		#pragma omp for schedule(dynamic)
-		for( i = 0; i < input.lookups; i++ )
+		for( int i = 0; i < input.lookups; i++ )
 		{
 			#ifdef STATUS
 			if( thread == 0 && i % 1000 == 0 )

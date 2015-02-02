@@ -39,9 +39,16 @@ ifeq ($(COMPILER),gnu)
   CFLAGS += -fopenmp -ffast-math
 endif
 
+# intel compiler
 ifeq ($(COMPILER),intel)
   CC = icc
   CFLAGS += -openmp -xhost -ansi-alias -no-prec-div
+endif
+
+# PGI compiler (thanks Chip!)
+ifeq ($(COMPILER),pgi)
+  CC = pgcc
+  CFLAGS := -mp -fastsse
 endif
 
 # Linker Flags
@@ -61,7 +68,7 @@ endif
 
 # Optimization Flags
 ifeq ($(OPTIMIZE),yes)
-  CFLAGS += -O3
+  CFLAGS += -Ofast
 endif
 
 # Calculation Status % Complete Indicator

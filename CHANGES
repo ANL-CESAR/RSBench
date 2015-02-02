@@ -1,4 +1,40 @@
 =====================================================================
+NEW IN VERSION 5
+=====================================================================
+- Added a new temperature dependence feature that
+uses Doppler broadening to translate pole data from 0K to any
+arbitrary material temperature. This is accomplished by evaluating
+the Faddeeva function (via an exponential multiplied by the standard
+C error function).
+
+This new Doppler mode is by default enabled in Version 5.  It is
+set to default, but can be disabled via the "-d" flag on the command
+line.
+
+Impact varies by compiler, but is relatively small (only a
+~10-15% slowdown).
+
+- Changed the default runtime parameters from 250 windows per nuclide
+down to 100 windows per nuclide (increasing the number of poles
+per lookup from an average of 4 to an average of 10). This
+directly impacts performance, so expect lookups/sec to change in
+Version 5 as compared to Version 4. This change was made as more
+nuclides have had multipole data generated for them in the time
+since RSBench was originally written, so estimates for these variables
+have been updated to more accurately reflect the full scale code.
+
+=====================================================================
+NEW IN VERSION 4
+=====================================================================
+- Minor bug fix that caused incorrect operation when compiled with
+GCC (intel worked fine). This was due to a bug in OpenMP causing
+private variables to not be correctly copied into the parallel
+region. The result was that the RNG was improperly initialized,
+generating the same value every time, speeding up the calculation
+significantly. Intel's OMP implementation was correct so all
+results from intel runs should have the same performance.
+
+=====================================================================
 NEW IN VERSION 3
 =====================================================================
 - [Bug Fix] Fixed an issue with the window pole assignment
