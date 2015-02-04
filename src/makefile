@@ -3,12 +3,12 @@
 #===============================================================================
 
 COMPILER  = gnu
-OPTIMIZE  = yes
+OPTIMIZE  = no
 DEBUG     = no
 PROFILE   = no
-STATUS    = yes
+STATUS    = no
 PAPI      = no
-VERIFY    = yes
+VERIFY    = no
 
 #===============================================================================
 # Program name & source code list
@@ -31,7 +31,10 @@ obj = $(source:.c=.o)
 #===============================================================================
 
 # Standard Flags
-CFLAGS := -std=gnu99
+CFLAGS := -std=gnu99 -Wall -I${OCCA_DIR}/include
+
+# Linker flags
+LDFLAGS = -lm -L${OCCA_DIR}/lib -locca
 
 # gcc Compiler
 ifeq ($(COMPILER),gnu)
@@ -50,9 +53,6 @@ ifeq ($(COMPILER),pgi)
   CC = pgcc
   CFLAGS := -mp -fastsse
 endif
-
-# Linker Flags
-LDFLAGS = -lm
 
 # Debug Flags
 ifeq ($(DEBUG),yes)

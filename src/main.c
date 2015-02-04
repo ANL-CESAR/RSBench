@@ -1,5 +1,15 @@
 #include "rsbench.h"
 
+#define USING_HYBRID 1
+#define USING_OPENMP 1
+#define USING_CUDA   0
+
+#if USING_OPENMP
+const long outer_dim = 312500; const long inner_dim = 32;
+#elif USING_CUDA
+const long outer_dim = 312500; const long inner_dim = 32;
+#endif
+
 int main(int argc, char * argv[])
 {
 	// =====================================================================
@@ -7,10 +17,64 @@ int main(int argc, char * argv[])
 	// =====================================================================
 
 	int version = 5;
-	int max_procs = omp_get_num_procs();
-	double start, stop;
 	unsigned long long vhash = 0;
+	struct timeval start, end;
+	double wall_time;
 	
+	// These are the sum of the function values, evaluated in kernel.
+	// They are the cumulative result of the random lookups.
+
+	// Vectors for sums of F(x_i).  Dimensions will be V_sums[0:outer_dim].
+	// In kernel, Each outer unit j will reduce is results to V_sum[i].
+	// In main, we will need to reduce V_sums to get a single V_sum
+	double *V_sums;
+
+	// Sum of all F(x_i) from kernel.  Outside of kernel, V_sums will be reduced
+	// to get V_sum
+	double V_sum[4] = {0, 0, 0, 0};
+
+	// =====================================================================
+	// OCCA declarations
+	// =====================================================================
+
+	#if USING_OPENMP
+	const char *device_infos = "mode = OpenMP";
+	#elif USING_CUDA
+	const char *device_infos = "mode = CUDA, deviceID = 0";
+	#endif
+
+	occaKernel lookup_kernel;
+	occaDevice device;
+
+	// For RSBench
+	occaMemory dev_poles, dev_windows, dev_pseudo_K0RS, dev_n_poles,
+	     dev_n_windows, dev_num_nucs, dev_mats, dev_mats_idx, dev_concs;
+
+	// For verification
+	occaMemory dev_V_sums;
+
+	occaKernelInfo lookupInfo = occaGenKernelInfo();
+	occaKernelInfoAddDefine(lookupInfo, "inner_dim", occaLong(inner_dim));
+	occaKernelInfoAddDefine(lookupInfo, "outer_dim", occaLong(outer_dim));
+	#ifdef VERIFICATION
+	// occaKernelInfoAddDefine(lookupInfo, "VERIFICATION", occaInt(1));
+	#endif
+
+
+	device = occaGetDevice(device_infos);
+
+	#if USING_HYBRID || USING_CUDA
+	//lookup_touch = occaBuildKernelFromSource(device,
+	//     "lookup_kernel.okl","lookup_touch", lookupInfo);
+	lookup_kernel = occaBuildKernelFromSource(device,
+	     "lookup_kernel.okl", "lookup_kernel", lookupInfo);
+	#elif USING_OPENMP
+	//lookup_touch = occaBuildKernelFromSource(device,
+	//     "lookup_kernel.okl", "lookup_touch", lookupInfo);
+	lookup_kernel = occaBuildKernelFromSource(device,
+	     "lookup_kernel.okl", "lookup_kernel", lookupInfo);
+	#endif
+
 	#ifdef VERIFICATION
 	srand(26);
 	#else
@@ -20,9 +84,6 @@ int main(int argc, char * argv[])
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
 
-	// Set number of OpenMP Threads
-	omp_set_num_threads(input.nthreads); 
-	
 	// =====================================================================
 	// Print-out of Input Summary
 	// =====================================================================
@@ -38,7 +99,7 @@ int main(int argc, char * argv[])
 	center_print("INITIALIZATION", 79);
 	border_print();
 	
-	start = omp_get_wtime();
+	gettimeofday(&start, NULL);
 	
 	// Allocate & fill energy grids
 	printf("Generating resonance distributions...\n");
@@ -72,9 +133,62 @@ int main(int argc, char * argv[])
 	data.windows = windows;
 	data.pseudo_K0RS = pseudo_K0RS;
 
-	stop = omp_get_wtime();
-	printf("Initialization Complete. (%.2lf seconds)\n", stop-start);
+	// Prepare verification arrays
+	V_sums = (double *) calloc( 4 * input.lookups, sizeof(double) );
+
+	gettimeofday(&end, NULL);
+	wall_time = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)/1000000.;
+	printf("Initialization Complete. (%.3lf seconds)\n", wall_time);
 	
+	// =====================================================================
+	// OCCA mallocs and memcopies
+	// =====================================================================
+
+	printf("Allocating and copying to device memory...\n");
+	// REMEMBER: memcopy is part of malloc (last arg gets copied to device)
+
+	#if USING_CUDA
+//	dev_poles = occaDeviceMalloc(device, input.n_nuclides*input.avg_n_poles*sizeof(Pole), NULL);
+//	dev_windows = occaDeviceMalloc(device, input.n_nuclides*input.avg_n_windows*sizeof(Window), NULL);
+//	dev_pseudo_K0RS = occaDeviceMalloc(device, input.n_nuclides*input.numL*sizeof(double), NULL);
+	dev_poles = occaDeviceMalloc(device, input.n_nuclides*input.avg_n_poles*sizeof(Pole), data.poles[0]);
+	dev_windows = occaDeviceMalloc(device, input.n_nuclides*input.avg_n_windows*sizeof(Window), data.windows[0]);
+	dev_pseudo_K0RS = occaDeviceMalloc(device, input.n_nuclides*input.numL*sizeof(double), data.pseudo_K0RS[0]);
+	dev_n_poles = occaDeviceMalloc(device, input.n_nuclides*sizeof(int), data.n_poles);
+	dev_n_windows = occaDeviceMalloc(device, input.n_nuclides*sizeof(int), data.n_windows);
+	dev_num_nucs = occaDeviceMalloc(device, 12*sizeof(int), materials.num_nucs);
+	dev_mats = occaDeviceMalloc(device, materials.mats_sz*sizeof(int), materials.mats);
+	dev_mats_idx = occaDeviceMalloc(device, 12*sizeof(int), materials.mats_idx);
+	dev_concs = occaDeviceMalloc(device, materials.mats_sz*sizeof(double), materials.concs);
+	dev_V_sums = occaDeviceMalloc(device, 4*input.lookups*sizeof(double), V_sums);
+
+	// Call kernel to apply "proper" first-touch on large arrays
+//	occaKernelRun(lookup_touch,
+//	     dev_poles,
+//	     dev_windows,
+//	     dev_pseudo_K0RS,
+//	     occaInt(input.n_nuclides),
+//	     occaInt(input.avg_n_poles),
+//	     occaInt(input.avg_n_windows),
+//	     occaInt(input.numL));
+
+	// Properly initialize arrays
+//	occaCopyPtrToMem(dev_poles, poles[0], occaAutoSize, occaNoOffset);
+//	occaCopyPtrToMem(dev_windows, windows[0], occaAutoSize, occaNoOffset);
+//	occaCopyPtrToMem(dev_pseudo_K0RS, pseudo_K0RS[0], occaAutoSize, occaNoOffset);
+	#elif USING_OPENMP
+	dev_poles = occaDeviceWrapMemory(device, data.poles[0], input.n_nuclides*input.avg_n_poles*sizeof(Pole));
+	dev_windows = occaDeviceWrapMemory(device, data.windows[0], input.n_nuclides*input.avg_n_windows*sizeof(Window));
+	dev_pseudo_K0RS = occaDeviceWrapMemory(device, data.pseudo_K0RS[0], input.n_nuclides*input.numL*sizeof(double));
+	dev_n_poles = occaDeviceWrapMemory(device, data.n_poles, input.n_nuclides*sizeof(int));
+	dev_n_windows = occaDeviceWrapMemory(device, data.n_windows, input.n_nuclides*sizeof(int));
+	dev_num_nucs = occaDeviceWrapMemory(device, materials.num_nucs, 12*sizeof(int));
+	dev_mats = occaDeviceWrapMemory(device, materials.mats, materials.mats_sz*sizeof(int));
+	dev_mats_idx = occaDeviceWrapMemory(device, materials.mats_idx, 12*sizeof(int));
+	dev_concs = occaDeviceWrapMemory(device, materials.concs, materials.mats_sz*sizeof(double));
+	dev_V_sums = occaDeviceWrapMemory(device, V_sums, 4*input.lookups*sizeof(double));
+	#endif
+
 	// =====================================================================
 	// Cross Section (XS) Parallel Lookup Simulation Begins
 	// =====================================================================
@@ -82,100 +196,50 @@ int main(int argc, char * argv[])
 	center_print("SIMULATION", 79);
 	border_print();
 	
-	printf("Beginning Simulation.\n");
-	#ifndef STATUS
+	printf("Beginning Kernel...\n");
 	printf("Calculating XS's...\n");
-	#endif
 	
-	#ifdef PAPI
-	/* initialize papi with one thread here  */
-	if ( PAPI_library_init(PAPI_VER_CURRENT) != PAPI_VER_CURRENT){
-		fprintf(stderr, "PAPI library init error!\n");
-		exit(1);
-	}
-	#endif	
+	occaDeviceFinish(device);
+	gettimeofday(&start, NULL);
 
-	start = omp_get_wtime();
+	occaKernelRun(lookup_kernel,
+	     dev_poles,
+	     dev_windows,
+	     dev_pseudo_K0RS,
+	     dev_n_poles,
+	     dev_n_windows,
+	     dev_num_nucs,
+	     dev_mats,
+	     dev_mats_idx,
+	     dev_concs,
+	     occaInt(input.lookups),
+	     occaInt(input.n_nuclides),
+	     occaInt(input.avg_n_poles),
+	     occaInt(input.avg_n_windows),
+	     occaInt(input.numL),
+	     dev_V_sums);
 
-	#pragma omp parallel default(none) \
-	shared(input, data, vhash) 
-	{
-		unsigned long seed = time(NULL)+1;
-		double macro_xs[4];
-		int thread = omp_get_thread_num();
-		seed += thread;
-		int mat;
-		double E;
-		
-		#ifdef PAPI
-		int eventset = PAPI_NULL; 
-		int num_papi_events;
-		#pragma omp critical
-		{
-			counter_init(&eventset, &num_papi_events);
-		}
-		#endif
-		complex double * sigTfactors =
-			(complex double *) malloc( input.numL * sizeof(complex double) );
+	occaDeviceFinish(device);
+	gettimeofday(&end, NULL);
+	wall_time = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)/1000000.;
 
-		#pragma omp for schedule(dynamic)
-		for( int i = 0; i < input.lookups; i++ )
-		{
-			#ifdef STATUS
-			if( thread == 0 && i % 1000 == 0 )
-				printf("\rCalculating XS's... (%.0lf%% completed)",
-						(i / ( (double)input.lookups /
-						(double) input.nthreads )) /
-						(double) input.nthreads * 100.0);
-			#endif
-			#ifdef VERIFICATION
-			#pragma omp critical
-		        {
-				mat = pick_mat( &seed );
-				E = rn_v();
-		        }
-			#else
-			mat = pick_mat( &seed );
-			E = rn( &seed );
-			#endif
+	printf("Kernel complete.\n" );
 
-			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors ); 
+	// Device-to-host memcopy
+	printf("Copying from device memory...\n");
+	occaCopyMemToPtr(V_sums, dev_V_sums, 4*input.lookups*sizeof(double), 0);
 
-			// Verification hash calculation
-			// This method provides a consistent hash accross
-			// architectures and compilers.
-			#ifdef VERIFICATION
-			char line[256];
-			sprintf(line, "%.5lf %d %.5lf %.5lf %.5lf %.5lf",
-			     E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3]);
-			unsigned long long vhash_local = hash(line, 10000);
-			#pragma omp atomic
-			vhash += vhash_local;
-			#endif
-		}
-
-		free(sigTfactors);
-		
-		#ifdef PAPI
-		if( thread == 0 )
-		{
-			printf("\n");
-			border_print();
-			center_print("PAPI COUNTER RESULTS", 79);
-			border_print();
-			printf("Count          \tSmybol      \tDescription\n");
-		}
-		{
-		#pragma omp barrier
-		}
-		counter_stop(&eventset, num_papi_events);
-		#endif
+	// Reduce sums
+	for(int i=0; i<input.lookups; i++){
+		V_sum[0] += V_sums[4*i + 0];
+		V_sum[1] += V_sums[4*i + 1];
+		V_sum[2] += V_sums[4*i + 2];
+		V_sum[3] += V_sums[4*i + 3];
 	}
 
-	stop = omp_get_wtime();
-	#ifndef PAPI
+	const double V_total_sum = V_sum[0] + V_sum[1] + V_sum[2] + V_sum[3];
+
 	printf("\nSimulation Complete.\n");
-	#endif
 
 	// =====================================================================
 	// Print / Save Results and Exit
@@ -185,9 +249,10 @@ int main(int argc, char * argv[])
 	border_print();
 
 	printf("Threads:     %d\n", input.nthreads);
-	printf("Runtime:     %.3lf seconds\n", stop-start);
+	printf("Runtime:     %.3lf seconds\n", wall_time);
 	printf("Lookups:     "); fancy_int(input.lookups);
-	printf("Lookups/s:   "); fancy_int((double) input.lookups / (stop-start));
+	printf("Lookups/s:   "); fancy_int((double) input.lookups / wall_time);
+	printf("Verification: %f\n", V_total_sum);
 	#ifdef VERIFICATION
 	printf("Verification checksum: %llu\n", vhash);
 	#endif

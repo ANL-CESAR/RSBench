@@ -5,6 +5,8 @@
 #include<string.h>
 #include<math.h>
 #include<complex.h>
+#include<sys/time.h>
+#include"occa_c.h"
 
 #ifdef PAPI
 #include "papi.h"
