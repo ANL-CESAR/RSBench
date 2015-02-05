@@ -1,15 +1,5 @@
 #include "rsbench.h"
 
-#define USING_HYBRID 1
-#define USING_OPENMP 1
-#define USING_CUDA   0
-
-#if USING_OPENMP
-const long outer_dim = 312500; const long inner_dim = 32;
-#elif USING_CUDA
-const long outer_dim = 312500; const long inner_dim = 32;
-#endif
-
 int main(int argc, char * argv[])
 {
 	// =====================================================================
@@ -37,60 +27,51 @@ int main(int argc, char * argv[])
 	// OCCA declarations
 	// =====================================================================
 
-	#if USING_OPENMP
-	const char *device_infos = "mode = OpenMP";
-	#elif USING_CUDA
-	const char *device_infos = "mode = CUDA, deviceID = 0";
-	#endif
-
+	occaKernelInfo lookupInfo;
 	occaKernel lookup_kernel;
 	occaDevice device;
 
-	// For RSBench
 	occaMemory dev_poles, dev_windows, dev_pseudo_K0RS, dev_n_poles,
 	     dev_n_windows, dev_num_nucs, dev_mats, dev_mats_idx, dev_concs;
 
-	// For verification
 	occaMemory dev_V_sums;
 
-	occaKernelInfo lookupInfo = occaGenKernelInfo();
-	occaKernelInfoAddDefine(lookupInfo, "inner_dim", occaLong(inner_dim));
-	occaKernelInfoAddDefine(lookupInfo, "outer_dim", occaLong(outer_dim));
+	// =====================================================================
+	// Read command-line input
+	// =====================================================================
+	Input input = read_CLI( argc, argv );
+
+	logo(version);
+	center_print("INPUT SUMMARY", 79);
+	border_print();
+	print_input_summary(input);
+
+	// =====================================================================
+	// Initialize OCCA
+	// =====================================================================
+	lookupInfo = occaCreateKernelInfo();
+	occaKernelInfoAddDefine(lookupInfo, "inner_dim", occaLong(input.inner_dim));
+	occaKernelInfoAddDefine(lookupInfo, "outer_dim", occaLong(input.outer_dim));
+
 	#ifdef VERIFICATION
 	// occaKernelInfoAddDefine(lookupInfo, "VERIFICATION", occaInt(1));
 	#endif
 
+	device = occaGetDevice(input.device_info);
 
-	device = occaGetDevice(device_infos);
-
-	#if USING_HYBRID || USING_CUDA
-	//lookup_touch = occaBuildKernelFromSource(device,
-	//     "lookup_kernel.okl","lookup_touch", lookupInfo);
-	lookup_kernel = occaBuildKernelFromSource(device,
-	     "lookup_kernel.okl", "lookup_kernel", lookupInfo);
-	#elif USING_OPENMP
 	//lookup_touch = occaBuildKernelFromSource(device,
 	//     "lookup_kernel.okl", "lookup_touch", lookupInfo);
 	lookup_kernel = occaBuildKernelFromSource(device,
-	     "lookup_kernel.okl", "lookup_kernel", lookupInfo);
-	#endif
+	     input.kernel, "lookup_kernel", lookupInfo);
 
+	// =====================================================================
+	// Initialize RNG
+	// =====================================================================
 	#ifdef VERIFICATION
 	srand(26);
 	#else
 	srand(time(NULL));
 	#endif
-
-	// Process CLI Fields
-	Input input = read_CLI( argc, argv );
-
-	// =====================================================================
-	// Print-out of Input Summary
-	// =====================================================================
-	logo(version);
-	center_print("INPUT SUMMARY", 79);
-	border_print();
-	print_input_summary(input);
 
 	// =====================================================================
 	// Prepare Pole Paremeter Grids
@@ -147,7 +128,19 @@ int main(int argc, char * argv[])
 	printf("Allocating and copying to device memory...\n");
 	// REMEMBER: memcopy is part of malloc (last arg gets copied to device)
 
-	#if USING_CUDA
+	if (strcasecmp(input.mode, "OpenMP") == 0) {
+	dev_poles = occaDeviceWrapMemory(device, data.poles[0], input.n_nuclides*input.avg_n_poles*sizeof(Pole));
+	dev_windows = occaDeviceWrapMemory(device, data.windows[0], input.n_nuclides*input.avg_n_windows*sizeof(Window));
+	dev_pseudo_K0RS = occaDeviceWrapMemory(device, data.pseudo_K0RS[0], input.n_nuclides*input.numL*sizeof(double));
+	dev_n_poles = occaDeviceWrapMemory(device, data.n_poles, input.n_nuclides*sizeof(int));
+	dev_n_windows = occaDeviceWrapMemory(device, data.n_windows, input.n_nuclides*sizeof(int));
+	dev_num_nucs = occaDeviceWrapMemory(device, materials.num_nucs, 12*sizeof(int));
+	dev_mats = occaDeviceWrapMemory(device, materials.mats, materials.mats_sz*sizeof(int));
+	dev_mats_idx = occaDeviceWrapMemory(device, materials.mats_idx, 12*sizeof(int));
+	dev_concs = occaDeviceWrapMemory(device, materials.concs, materials.mats_sz*sizeof(double));
+	dev_V_sums = occaDeviceWrapMemory(device, V_sums, 4*input.lookups*sizeof(double));
+	}
+	else{
 //	dev_poles = occaDeviceMalloc(device, input.n_nuclides*input.avg_n_poles*sizeof(Pole), NULL);
 //	dev_windows = occaDeviceMalloc(device, input.n_nuclides*input.avg_n_windows*sizeof(Window), NULL);
 //	dev_pseudo_K0RS = occaDeviceMalloc(device, input.n_nuclides*input.numL*sizeof(double), NULL);
@@ -176,18 +169,7 @@ int main(int argc, char * argv[])
 //	occaCopyPtrToMem(dev_poles, poles[0], occaAutoSize, occaNoOffset);
 //	occaCopyPtrToMem(dev_windows, windows[0], occaAutoSize, occaNoOffset);
 //	occaCopyPtrToMem(dev_pseudo_K0RS, pseudo_K0RS[0], occaAutoSize, occaNoOffset);
-	#elif USING_OPENMP
-	dev_poles = occaDeviceWrapMemory(device, data.poles[0], input.n_nuclides*input.avg_n_poles*sizeof(Pole));
-	dev_windows = occaDeviceWrapMemory(device, data.windows[0], input.n_nuclides*input.avg_n_windows*sizeof(Window));
-	dev_pseudo_K0RS = occaDeviceWrapMemory(device, data.pseudo_K0RS[0], input.n_nuclides*input.numL*sizeof(double));
-	dev_n_poles = occaDeviceWrapMemory(device, data.n_poles, input.n_nuclides*sizeof(int));
-	dev_n_windows = occaDeviceWrapMemory(device, data.n_windows, input.n_nuclides*sizeof(int));
-	dev_num_nucs = occaDeviceWrapMemory(device, materials.num_nucs, 12*sizeof(int));
-	dev_mats = occaDeviceWrapMemory(device, materials.mats, materials.mats_sz*sizeof(int));
-	dev_mats_idx = occaDeviceWrapMemory(device, materials.mats_idx, 12*sizeof(int));
-	dev_concs = occaDeviceWrapMemory(device, materials.concs, materials.mats_sz*sizeof(double));
-	dev_V_sums = occaDeviceWrapMemory(device, V_sums, 4*input.lookups*sizeof(double));
-	#endif
+	}
 
 	// =====================================================================
 	// Cross Section (XS) Parallel Lookup Simulation Begins

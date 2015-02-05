@@ -1,8 +1,17 @@
 typedef struct{
-	complex double MP_EA;
-	complex double MP_RT;
-	complex double MP_RA;
-	complex double MP_RF;
+	double real;
+	double imag;
+} Complex;
+
+typedef struct{
+	//complex double MP_EA;
+	//complex double MP_RT;
+	//complex double MP_RA;
+	//complex double MP_RF;
+	Complex MP_EA;
+	Complex MP_RT;
+	Complex MP_RA;
+	Complex MP_RF;
 	short int l_value;
 } Pole;
 
@@ -74,7 +83,8 @@ occaFunction int pick_mat( unsigned long int * seed ) {
   return 11;
 }
 
-occaFunction void calculate_sig_T( int nuc, double E, int numL, double * pseudo_K0RS, complex double * sigTfactors )
+//occaFunction void calculate_sig_T( int nuc, double E, int numL, double * pseudo_K0RS, complex double * sigTfactors )
+occaFunction void calculate_sig_T( int nuc, double E, int numL, double * pseudo_K0RS, Complex * sigTfactors)
 {
 	double phi;
 
@@ -91,14 +101,48 @@ occaFunction void calculate_sig_T( int nuc, double E, int numL, double * pseudo_
 
 		phi *= 2.0;
 
-		sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
+		//sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
+		sigTfactors[i].real = cos(phi);
+		sigTfactors[i].imag =  -sin(phi);
 	}
+}
+
+occaFunction Complex cadd(Complex a, Complex b)
+{
+	Complex c;
+	c.real = a.real + b.real;
+	c.imag = a.imag + b.imag;
+	return c;
+}
+
+occaFunction Complex csubtract(Complex a, Complex b)
+{
+	Complex c;
+	c.real = a.real - b.real;
+	c.imag = a.imag - b.imag;
+	return c;
+}
+
+occaFunction Complex cmultiply(Complex a, Complex b)
+{
+	Complex c;
+	c.real = a.real*b.real - a.imag*b.imag;
+	c.imag = a.imag*b.real + a.real*b.imag;
+	return c;
+}
+
+occaFunction Complex cdivide(Complex a, Complex b)
+{
+	Complex c;
+	c.real = (a.real*b.real + a.imag*b.imag)/(b.real*b.real + b.imag*b.imag);
+	c.imag = (a.imag*b.real - a.real*b.imag)/(b.real*b.real + b.imag*b.imag);
+	return c;
 }
 
 occaKernel void lookup_kernel(
      const Pole * const restrict poles,
      const Window * const restrict windows,
-     const double * const restrict pseudo_K0RS,
+     double * pseudo_K0RS,
      const int * const restrict n_poles,
      const int * const restrict n_windows,
      const int * const restrict num_nucs,
@@ -115,7 +159,8 @@ occaKernel void lookup_kernel(
 	for(int outer_id=0; outer_id<outer_dim; ++outer_id; outer0) {
 
 		double inner_V_sum[4];
-		complex double * sigTfactors = (complex double *) malloc(numL * sizeof(complex double));
+		//complex double * sigTfactors = (complex double *) malloc(numL * sizeof(complex double));
+		Complex * sigTfactors = (Complex *) malloc(numL * sizeof(Complex));
 
 		for (int inner_id=0; inner_id<inner_dim; ++inner_id; inner0) {
 
@@ -139,7 +184,7 @@ occaKernel void lookup_kernel(
 
 				// for nuclide in mat
 				for(int j=0; j<nucs_idx; j++){
-					int nuc = mats[mat_idx + i];
+					int nuc = mats[mat_idx + j];
 
 					// MicroScopic XS's to Calculate
 					double sigT;
@@ -164,14 +209,32 @@ occaKernel void lookup_kernel(
 
 					// Loop over Poles within window, add contributions
 					for(int k=w.start; k<w.end; k++){
-						complex double PSIIKI;
-						complex double CDUM;
+						//complex double PSIIKI;
+						//complex double CDUM;
+						Complex PSIIKI;
+						Complex CDUM;
 						Pole pole = poles[nuc*n_poles[nuc] + k];
-						PSIIKI = -(0.0 - 1.0 * _Complex_I) / (pole.MP_EA - sqrt(E));
-						CDUM = PSIIKI / E;
-						sigT += creal(pole.MP_RT * CDUM * sigTfactors[pole.l_value]);
-						sigA += creal(pole.MP_RA * CDUM);
-						sigF += creal(pole.MP_RF * CDUM);
+						//PSIIKI = -(0.0 - 1.0 * _Complex_I) / (pole.MP_EA - sqrt(E));
+						//CDUM = PSIIKI / E;
+						//sigT += creal(pole.MP_RT * CDUM * sigTfactors[pole.l_value]);
+						//sigA += creal(pole.MP_RA * CDUM);
+						//sigF += creal(pole.MP_RF * CDUM);
+						Complex tmp, t, a, f;
+						PSIIKI.real = 0.0;
+						PSIIKI.imag = 1.0;
+						tmp.real = pole.MP_EA.real - sqrt(E);
+						tmp.imag = pole.MP_EA.imag;
+						PSIIKI = cdivide(PSIIKI, tmp);
+						tmp.real = E;
+						tmp.imag = 0;
+						CDUM = cdivide(PSIIKI, tmp);
+						tmp = cmultiply(pole.MP_RT, CDUM);
+						t = cmultiply(tmp, sigTfactors[pole.l_value]);
+						sigT += t.real;
+						a = cmultiply(pole.MP_RA, CDUM);
+						sigA += a.real;
+						f = cmultiply(pole.MP_RF, CDUM);
+						sigF += f.real;
 					}
 
 					sigE = sigT - sigA;

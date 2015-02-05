@@ -65,8 +65,11 @@ Input read_CLI( int argc, char * argv[] )
 {
 	Input input;
 	
-	// defaults to max threads on the system	
-	input.nthreads = omp_get_num_procs();
+	// defaults to max threads on the system
+	if (getenv("OMP_NUM_THREADS") != NULL)
+		input.nthreads = atoi(getenv("OMP_NUM_THREADS"));
+	else
+		input.nthreads = omp_get_num_procs();
 	// defaults to 355 (corresponding to H-M Large benchmark)
 	input.n_nuclides = 355;
 	// defaults to 10,000,000
@@ -81,7 +84,19 @@ Input read_CLI( int argc, char * argv[] )
 	input.numL = 4;
 	// defaults to temperature dependence (Doppler broadening)
 	input.doppler = 1;
-	
+	// defaults to 312500
+	input.outer_dim = 312500; 
+	// defaults to 32
+	input.inner_dim = 32;
+	// defaults to OpenMP mode
+	input.mode = (char *) malloc(128 * sizeof(char));
+	strcpy(input.mode, "OpenMP");
+	// defaults to hybrid kernel
+	input.kernel = (char *) malloc(128 * sizeof(char));
+	strcpy(input.kernel, "lookup_kernel.okl");
+	// defaults to device_id 0
+	input.device_id = 0;
+
 	// Collect Raw Input
 	for( int i = 1; i < argc; i++ )
 	{
@@ -147,9 +162,48 @@ Input read_CLI( int argc, char * argv[] )
 			else
 				print_CLI_error();
 		}
+		else if( strcmp(arg, "-o") == 0 )
+		{	
+			if( ++i < argc )
+				input.outer_dim = atol(argv[i]);
+			else
+				print_CLI_error();
+		}
+		else if( strcmp(arg, "-i") == 0 )
+		{	
+			if( ++i < argc )
+				input.inner_dim = atol(argv[i]);
+			else
+				print_CLI_error();
+		}
+		else if( strcmp(arg, "-v") == 0 )
+		{	
+			if( ++i < argc )
+				input.device_id = atoi(argv[i]);
+			else
+				print_CLI_error();
+		}
+		else if( strcmp(arg, "-m") == 0 )
+		{	
+			if( ++i < argc )
+				strcpy(input.mode, argv[i]);
+			else
+				print_CLI_error();
+		}
+		else if( strcmp(arg, "-k") == 0 )
+		{	
+			if( ++i < argc )
+				strcpy(input.kernel, argv[i]);
+			else
+				print_CLI_error();
+		}
 		else
 			print_CLI_error();
 	}
+
+	// Construct device_info string
+	input.device_info = (char *) malloc(256 * sizeof(char));
+	sprintf(input.device_info, "mode = %s, deviceID = %d", input.mode, input.device_id);
 
 	// Validate Input
 
@@ -190,6 +244,11 @@ void print_CLI_error(void)
 	printf("  -p <poles>       Average Number of Poles per Nuclide\n");
 	printf("  -w <poles>       Average Number of Windows per Nuclide\n");
 	printf("  -d               Disables Temperature Dependence (Doppler Broadening)\n");
+	printf("  -o <outer_dim>   OCCA outer dimension\n");
+	printf("  -i <inner_dim>   OCCA inner dimension\n");
+	printf("  -m <mode>        OCCA mode\n");
+	printf("  -v <device_id>   OCCA device ID\n");
+	printf("  -k <kernel>      Source file for OCCA XS lookup kernel\n");
 	printf("Default is equivalent to: -s large -l 10000000 -p 1000 -w 100\n");
 	printf("See readme for full description of default run values\n");
 	exit(4);
@@ -200,6 +259,10 @@ void print_input_summary(Input input)
 	// Calculate Estimate of Memory Usage
 	size_t mem = get_mem_estimate(input);
 
+	printf("OCCA device info:            %s\n", input.device_info);
+	printf("OCCA kernel:                 %s\n", input.kernel);
+	printf("OCCA inner dimension:        "); fancy_int(input.inner_dim);
+	printf("OCCA outer dimension:        "); fancy_int(input.outer_dim);
 	printf("Materials:                   12\n");
 	printf("H-M Benchmark Size:          ");
 	if( input.HM == 0 )

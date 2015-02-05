@@ -1,7 +1,6 @@
 #include "rsbench.h"
 
 // Reviewed
-//void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ) 
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, Complex * sigTfactors ) 
 {
 	// zero out macro vector
@@ -12,7 +11,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	for( int i = 0; i < (data.materials).num_nucs[mat]; i++ )
 	{
 		double micro_xs[4];
-		int nuc = (data.materials).mats[(data.materials).mats_idx[mat] + i];
+		int nuc = (data.materials).mats[mat][i];
 
 		if( input.doppler == 1 )
 			calculate_micro_xs_doppler( micro_xs, nuc, E, input, data, sigTfactors);
@@ -21,7 +20,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 
 		for( int j = 0; j < 4; j++ )
 		{
-			macro_xs[j] += micro_xs[j] * (data.materials).concs[(data.materials).mats_idx[mat] + i];
+			macro_xs[j] += micro_xs[j] * data.materials.concs[mat][i];
 		}
 	}
 
@@ -32,7 +31,38 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	
 }
 
-//void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors)
+Complex cadd(Complex a, Complex b)
+{
+	Complex c;
+	c.real = a.real + b.real;
+	c.imag = a.imag + b.imag;
+	return c;
+}
+
+Complex csubtract(Complex a, Complex b)
+{
+	Complex c;
+	c.real = a.real - b.real;
+	c.imag = a.imag - b.imag;
+	return c;
+}
+
+Complex cmultiply(Complex a, Complex b)
+{
+	Complex c;
+	c.real = a.real*b.real - a.imag*b.imag;
+	c.imag = a.imag*b.real + a.real*b.imag;
+	return c;
+}
+
+Complex cdivide(Complex a, Complex b)
+{
+	Complex c;
+	c.real = (a.real*b.real + a.imag*b.imag)/(b.real*b.real + b.imag*b.imag);
+	c.imag = (a.imag*b.real - a.real*b.imag)/(b.real*b.real + b.imag*b.imag);
+	return c;
+}
+
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, Complex * sigTfactors)
 {
 	// MicroScopic XS's to Calculate
@@ -59,8 +89,6 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	// Loop over Poles within window, add contributions
 	for( int i = w.start; i < w.end; i++ )
 	{
-		//complex double PSIIKI;
-		//complex double CDUM;
 		Complex PSIIKI;
 		Complex CDUM;
 		Pole pole = data.poles[nuc][i];
@@ -69,6 +97,17 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 		//sigT += creal( pole.MP_RT * CDUM * sigTfactors[pole.l_value] );
 		//sigA += creal( pole.MP_RA * CDUM);
 		//sigF += creal( pole.MP_RF * CDUM);
+/*		double d = (pole.MP_EA.real - sqrt(E)) * (pole.MP_EA.real - sqrt(E)) \
+		     + (pole.MP_EA.imag * pole.MP_EA.imag);
+		PSIIKI.real = pole.MP_EA.imag / d;
+		PSIIKI.imag = sqrt(E) - pole.MP_EA.real / d;
+		CDUM.real = PSIIKI.real / E;
+		CDUM.imag = PSIIKI.imag / E;
+		sigT += (pole.MP_RT.real * CDUM.real - pole.MP_RT.imag * CDUM.imag) * sigTfactors[pole.l_value].real \
+		     - (pole.MP_RT.imag * CDUM.real + pole.MP_RT.real * CDUM.imag) * sigTfactors[pole.l_value].imag;
+		sigA += pole.MP_RA.real * CDUM.real - pole.MP_RA.imag * CDUM.imag;
+		sigF += pole.MP_RF.real * CDUM.real - pole.MP_RF.imag * CDUM.imag;
+*/
 		Complex tmp, t, a, f;
 		PSIIKI.real = 0.0;
 		PSIIKI.imag = 1.0;
@@ -98,7 +137,6 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 // Temperature Dependent Variation of Kernel
 // (This involves using the Faddeeva function to
 // Doppler broaden the poles within the window)
-//void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors)
 void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, Complex * sigTfactors)
 {
 	// MicroScopic XS's to Calculate
@@ -128,18 +166,18 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 	for( int i = w.start; i < w.end; i++ )
 	{
 		Pole pole = data.poles[nuc][i];
-/*
+
 		// Prep Z
-		double Z = (E - creal(pole.MP_EA)) * dopp;
+//		double Z = (E - creal(pole.MP_EA)) * dopp;
 
 		// Evaluate Fadeeva Function
-		double faddeeva = exp(-1.0 * creal(Z * Z)) * erfc(-1.0 * creal(Z * I));
+//		double faddeeva = exp(-1.0 * creal(Z * Z)) * erfc(-1.0 * creal(Z * I));
 
 		// Update W
-		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );
-		sigA += creal( pole.MP_RA * faddeeva);
-		sigF += creal( pole.MP_RF * faddeeva);
-*/	}
+//		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );
+//		sigA += creal( pole.MP_RA * faddeeva);
+//		sigF += creal( pole.MP_RF * faddeeva);
+	}
 
 	sigE = sigT - sigA;
 
@@ -149,7 +187,6 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 	micro_xs[3] = sigE;
 }
 
-//void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors )
 void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, Complex * sigTfactors )
 {
 	double phi;

@@ -53,3 +53,35 @@ size_t get_mem_estimate( Input input )
 	
 	return total;
 }
+
+Complex cadd(Complex a, Complex b)
+{
+	Complex c;
+	c.real = a.real + b.real;
+	c.imag = a.imag + b.imag;
+	return c;
+}
+
+Complex csubtract(Complex a, Complex b)
+{
+	Complex c;
+	c.real = a.real - b.real;
+	c.imag = a.imag - b.imag;
+	return c;
+}
+
+Complex cmultiply(Complex a, Complex b)
+{
+	Complex c;
+	c.real = a.real*b.real - a.imag*b.imag;
+	c.imag = a.imag*b.real + a.real*b.imag;
+	return c;
+}
+
+Complex cdivide(Complex a, Complex b)
+{
+	Complex c;
+	c.real = (a.real*b.real + a.imag*b.imag)/(b.real*b.real + b.imag*b.imag);
+	c.imag = (a.imag*b.real - a.real*b.imag)/(b.real*b.real + b.imag*b.imag);
+	return c;
+}

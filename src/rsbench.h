@@ -4,7 +4,7 @@
 #include<time.h>
 #include<string.h>
 #include<math.h>
-#include<complex.h>
+//#include<complex.h>
 #include<sys/time.h>
 #include"occa_c.h"
 
@@ -18,6 +18,11 @@
 typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
 
 typedef struct{
+	double real;
+	double imag;
+} Complex;
+
+typedef struct{
 	int nthreads;
 	int n_nuclides;
 	int lookups;
@@ -26,6 +31,12 @@ typedef struct{
 	int avg_n_windows;
 	int numL;
 	int doppler;
+	char * mode;        // OCCA mode
+	int device_id;      // OCCA deviceID
+	char * device_info; // OCCA deviceInfo
+	char * kernel;      // OCCA kernel
+	long outer_dim;     // OCCA outer dimension
+	long inner_dim;     // OCCA inner dimension
 } Input;
 
 typedef struct{
@@ -37,10 +48,14 @@ typedef struct{
 } Materials;
 
 typedef struct{
-	complex double MP_EA;
-	complex double MP_RT;
-	complex double MP_RA;
-	complex double MP_RF;
+	//complex double MP_EA;
+	//complex double MP_RT;
+	//complex double MP_RA;
+	//complex double MP_RF;
+	Complex MP_EA;
+	Complex MP_RT;
+	Complex MP_RA;
+	Complex MP_RF;
 	short int l_value;
 } Pole;
 
@@ -91,12 +106,20 @@ double rn(unsigned long * seed);
 double rn_v(void);
 unsigned int hash(unsigned char *str, int nbins);
 size_t get_mem_estimate( Input input );
+Complex cadd(Complex a, Complex b);
+Complex csubtract(Complex a, Complex b);
+Complex cmultiply(Complex a, Complex b);
+Complex cdivide(Complex a, Complex b);
 
 // xs_kernel.c
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ); 
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors);
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors);
-void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors );
+//void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ); 
+//void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors);
+//void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors);
+//void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors );
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, Complex * sigTfactors ); 
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, Complex * sigTfactors);
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, Complex * sigTfactors);
+void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, Complex * sigTfactors );
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );

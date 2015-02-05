@@ -68,10 +68,18 @@ Pole ** generate_poles( Input input, int * n_poles )
 	{
 		for( int j = 0; j < n_poles[i]; j++ )
 		{
-			R[i][j].MP_EA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
-			R[i][j].MP_RT = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
-			R[i][j].MP_RA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
-			R[i][j].MP_RF = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
+			//R[i][j].MP_EA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
+			//R[i][j].MP_RT = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
+			//R[i][j].MP_RA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
+			//R[i][j].MP_RF = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
+			R[i][j].MP_EA.real = (double) rand() / RAND_MAX;
+			R[i][j].MP_EA.imag = (double) rand() / RAND_MAX;
+			R[i][j].MP_RT.real = (double) rand() / RAND_MAX;
+			R[i][j].MP_RT.imag = (double) rand() / RAND_MAX;
+			R[i][j].MP_RA.real = (double) rand() / RAND_MAX;
+			R[i][j].MP_RA.imag = (double) rand() / RAND_MAX;
+			R[i][j].MP_RF.real = (double) rand() / RAND_MAX;
+			R[i][j].MP_RF.imag = (double) rand() / RAND_MAX;
 			R[i][j].l_value = rand() % input.numL;
 		}
 	}
