@@ -145,6 +145,8 @@ occaKernel void lookup_kernel(
      double * pseudo_K0RS,
      const int * const restrict n_poles,
      const int * const restrict n_windows,
+     const int * const restrict poles_idx,
+     const int * const restrict windows_idx,
      const int * const restrict num_nucs,
      const int * const restrict mats,
      const int * const restrict mats_idx,
@@ -202,7 +204,7 @@ occaKernel void lookup_kernel(
 					calculate_sig_T(nuc, E, numL, pseudo_K0RS, sigTfactors);
 
 					// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
-					Window w = windows[nuc*n_windows[nuc] + window];
+					Window w = windows[windows_idx[nuc] + window];
 					sigT = E * w.T;
 					sigA = E * w.A;
 					sigF = E * w.F;
@@ -213,7 +215,7 @@ occaKernel void lookup_kernel(
 						//complex double CDUM;
 						Complex PSIIKI;
 						Complex CDUM;
-						Pole pole = poles[nuc*n_poles[nuc] + k];
+						Pole pole = poles[poles_idx[nuc] + k];
 						//PSIIKI = -(0.0 - 1.0 * _Complex_I) / (pole.MP_EA - sqrt(E));
 						//CDUM = PSIIKI / E;
 						//sigT += creal(pole.MP_RT * CDUM * sigTfactors[pole.l_value]);

@@ -143,3 +143,31 @@ double ** generate_pseudo_K0RS( Input input )
 
 	return R;
 }
+
+int * load_poles_idx( int n_nuclides, int * n_poles )
+{
+	int * poles_idx = (int *) malloc(n_nuclides * sizeof(int));
+
+	int j = 0;
+	for (int i=0; i<n_nuclides; i++)
+	{
+		poles_idx[i] = j;
+		j += n_poles[i];
+	}
+
+	return poles_idx;
+}
+
+int * load_windows_idx( int n_nuclides, int * n_windows )
+{
+	int * windows_idx = (int *) malloc(n_nuclides * sizeof(int));
+
+	int j = 0;
+	for (int i=0; i<n_nuclides; i++)
+	{
+		windows_idx[i] = j;
+		j += n_windows[i];
+	}
+
+	return windows_idx;
+}

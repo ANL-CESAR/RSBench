@@ -74,6 +74,8 @@ typedef struct{
 	Pole ** poles;
 	Window ** windows;
 	double ** pseudo_K0RS;
+	int * poles_idx;
+	int * windows_idx;
 } CalcDataPtrs;
 
 
@@ -92,6 +94,8 @@ int * generate_n_windows( Input input );
 Pole ** generate_poles( Input input, int * n_poles );
 Window ** generate_window_params( Input input, int * n_windows, int * n_poles );
 double ** generate_pseudo_K0RS( Input input );
+int * load_poles_idx( int n_nuclides, int * n_poles );
+int * load_windows_idx( int n_nuclides, int * n_windows );
 
 // material.c
 int * load_num_nucs(Input input);

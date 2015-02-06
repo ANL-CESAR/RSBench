@@ -32,7 +32,8 @@ int main(int argc, char * argv[])
 	occaDevice device;
 
 	occaMemory dev_poles, dev_windows, dev_pseudo_K0RS, dev_n_poles,
-	     dev_n_windows, dev_num_nucs, dev_mats, dev_mats_idx, dev_concs;
+	     dev_n_windows, dev_num_nucs, dev_mats, dev_mats_idx, dev_concs,
+	     dev_poles_idx, dev_windows_idx;
 
 	occaMemory dev_V_sums;
 
@@ -106,6 +107,12 @@ int main(int argc, char * argv[])
 	printf("Generating 0K l_value data...\n");
 	double ** pseudo_K0RS = generate_pseudo_K0RS( input );
 
+	// Get poles indices
+	int * poles_idx = load_poles_idx(input.n_nuclides, n_poles);
+
+	// Get windows indices
+	int * windows_idx = load_windows_idx(input.n_nuclides, n_windows);
+
 	CalcDataPtrs data;
 	data.n_poles = n_poles;
 	data.n_windows = n_windows;
@@ -113,6 +120,8 @@ int main(int argc, char * argv[])
 	data.poles = poles;
 	data.windows = windows;
 	data.pseudo_K0RS = pseudo_K0RS;
+	data.poles_idx = poles_idx;
+	data.windows_idx = windows_idx;
 
 	// Prepare verification arrays
 	V_sums = (double *) calloc( 4 * input.lookups, sizeof(double) );
@@ -134,6 +143,8 @@ int main(int argc, char * argv[])
 	dev_pseudo_K0RS = occaDeviceWrapMemory(device, data.pseudo_K0RS[0], input.n_nuclides*input.numL*sizeof(double));
 	dev_n_poles = occaDeviceWrapMemory(device, data.n_poles, input.n_nuclides*sizeof(int));
 	dev_n_windows = occaDeviceWrapMemory(device, data.n_windows, input.n_nuclides*sizeof(int));
+	dev_poles_idx = occaDeviceWrapMemory(device, data.poles_idx, input.n_nuclides*sizeof(int));
+	dev_windows_idx = occaDeviceWrapMemory(device, data.windows_idx, input.n_nuclides*sizeof(int));
 	dev_num_nucs = occaDeviceWrapMemory(device, materials.num_nucs, 12*sizeof(int));
 	dev_mats = occaDeviceWrapMemory(device, materials.mats, materials.mats_sz*sizeof(int));
 	dev_mats_idx = occaDeviceWrapMemory(device, materials.mats_idx, 12*sizeof(int));
@@ -149,6 +160,8 @@ int main(int argc, char * argv[])
 	dev_pseudo_K0RS = occaDeviceMalloc(device, input.n_nuclides*input.numL*sizeof(double), data.pseudo_K0RS[0]);
 	dev_n_poles = occaDeviceMalloc(device, input.n_nuclides*sizeof(int), data.n_poles);
 	dev_n_windows = occaDeviceMalloc(device, input.n_nuclides*sizeof(int), data.n_windows);
+	dev_poles_idx = occaDeviceMalloc(device, input.n_nuclides*sizeof(int), data.poles_idx);
+	dev_windows_idx = occaDeviceMalloc(device, input.n_nuclides*sizeof(int), data.windows_idx);
 	dev_num_nucs = occaDeviceMalloc(device, 12*sizeof(int), materials.num_nucs);
 	dev_mats = occaDeviceMalloc(device, materials.mats_sz*sizeof(int), materials.mats);
 	dev_mats_idx = occaDeviceMalloc(device, 12*sizeof(int), materials.mats_idx);
@@ -190,6 +203,8 @@ int main(int argc, char * argv[])
 	     dev_pseudo_K0RS,
 	     dev_n_poles,
 	     dev_n_windows,
+	     dev_poles_idx,
+	     dev_windows_idx,
 	     dev_num_nucs,
 	     dev_mats,
 	     dev_mats_idx,
