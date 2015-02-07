@@ -8,7 +8,7 @@ DEBUG     = no
 PROFILE   = no
 STATUS    = no
 PAPI      = no
-VERIFY    = no
+VERIFY    = yes
 
 #===============================================================================
 # Program name & source code list

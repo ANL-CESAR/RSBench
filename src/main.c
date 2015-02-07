@@ -249,7 +249,7 @@ int main(int argc, char * argv[])
 	printf("Runtime:     %.3lf seconds\n", wall_time);
 	printf("Lookups:     "); fancy_int(input.lookups);
 	printf("Lookups/s:   "); fancy_int((double) input.lookups / wall_time);
-	printf("Verification: %f\n", V_total_sum);
+	printf("Verification: %f\n", V_total_sum / input.lookups);
 	#ifdef VERIFICATION
 	printf("Verification checksum: %llu\n", vhash);
 	#endif
