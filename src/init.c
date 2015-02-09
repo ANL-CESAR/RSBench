@@ -141,6 +141,14 @@ double ** generate_pseudo_K0RS( Input input )
 	for( int i = 0; i < input.n_nuclides; i++ )
 		R[i] = &contiguous[i*input.numL];
 
+	for( int i = 0; i < input.n_nuclides; i++ )
+	{
+		for( int j = 0; j < input.numL; j++ )
+		{
+			R[i][j] = (double) rand() / RAND_MAX;
+		}
+	}
+
 	return R;
 }
 
