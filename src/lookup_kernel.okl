@@ -162,18 +162,14 @@ occaKernel void lookup_kernel(
 
 		double inner_V_sum[4];
 		//complex double * sigTfactors = (complex double *) malloc(numL * sizeof(complex double));
-		Complex * sigTfactors = (Complex *) malloc(numL * sizeof(Complex));
+		//Complex * sigTfactors = (Complex *) malloc(numL * sizeof(Complex));
+		Complex sigTfactors[4]; //numL = 4
 
 		for (int inner_id=0; inner_id<inner_dim; ++inner_id; inner0) {
 
 			// Variables declared in the scope of an InnerFor loop are register variables
 			const int global_id = outer_id*inner_dim + inner_id;
 			unsigned long int seed = global_id*10000 + 1;
-
-			inner_V_sum[0] = 0;
-			inner_V_sum[1] = 0;
-			inner_V_sum[2] = 0;
-			inner_V_sum[3] = 0;
 
 			if(global_id < lookups){
 
@@ -186,7 +182,7 @@ occaKernel void lookup_kernel(
 
 				// for nuclide in mat
 				for(int j=0; j<nucs_idx; j++){
-					int nuc = mats[mat_idx + j];
+					const int nuc = mats[mat_idx + j];
 
 					// MicroScopic XS's to Calculate
 					double sigT;
@@ -195,7 +191,7 @@ occaKernel void lookup_kernel(
 					double sigE;
 
 					// Calculate Window Index
-					double spacing = 1.0 / n_windows[nuc];
+					const double spacing = 1.0 / n_windows[nuc];
 					int window = (int) (E / spacing);
 					if(window == n_windows[nuc])
 						window--;
@@ -204,7 +200,7 @@ occaKernel void lookup_kernel(
 					calculate_sig_T(nuc, E, numL, pseudo_K0RS, sigTfactors);
 
 					// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
-					Window w = windows[windows_idx[nuc] + window];
+					const Window w = windows[windows_idx[nuc] + window];
 					sigT = E * w.T;
 					sigA = E * w.A;
 					sigF = E * w.F;
@@ -213,14 +209,14 @@ occaKernel void lookup_kernel(
 					for(int k=w.start; k<w.end; k++){
 						//complex double PSIIKI;
 						//complex double CDUM;
-						Complex PSIIKI;
-						Complex CDUM;
-						Pole pole = poles[poles_idx[nuc] + k];
 						//PSIIKI = -(0.0 - 1.0 * _Complex_I) / (pole.MP_EA - sqrt(E));
 						//CDUM = PSIIKI / E;
 						//sigT += creal(pole.MP_RT * CDUM * sigTfactors[pole.l_value]);
 						//sigA += creal(pole.MP_RA * CDUM);
 						//sigF += creal(pole.MP_RF * CDUM);
+						Complex PSIIKI;
+						Complex CDUM;
+						Pole pole = poles[poles_idx[nuc] + k];
 						Complex tmp, t, a, f;
 						PSIIKI.real = 0.0;
 						PSIIKI.imag = 1.0;
@@ -253,6 +249,6 @@ occaKernel void lookup_kernel(
 				V_sums[4*global_id + 3] = inner_V_sum[3];
 			} // Lookups loop
 		} // inner0
-		free(sigTfactors);
+		//free(sigTfactors);
 	} // outer0
 }
