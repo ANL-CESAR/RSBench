@@ -61,14 +61,14 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	{
 		//complex double PSIIKI;
 		//complex double CDUM;
-		Complex PSIIKI;
-		Complex CDUM;
-		Pole pole = data.poles[nuc][i];
 		//PSIIKI = -(0.0 - 1.0 * _Complex_I ) / ( pole.MP_EA - sqrt(E) );
 		//CDUM = PSIIKI / E;
 		//sigT += creal( pole.MP_RT * CDUM * sigTfactors[pole.l_value] );
 		//sigA += creal( pole.MP_RA * CDUM);
 		//sigF += creal( pole.MP_RF * CDUM);
+		Complex PSIIKI;
+		Complex CDUM;
+		Pole pole = data.poles[nuc][i];
 		Complex tmp, t, a, f;
 		PSIIKI.real = 0.0;
 		PSIIKI.imag = 1.0;
@@ -122,13 +122,13 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 	sigA = E * w.A;
 	sigF = E * w.F;
 
-	double dopp = 0.5;
+/*	double dopp = 0.5;
 
 	// Loop over Poles within window, add contributions
 	for( int i = w.start; i < w.end; i++ )
 	{
 		Pole pole = data.poles[nuc][i];
-/*
+
 		// Prep Z
 		double Z = (E - creal(pole.MP_EA)) * dopp;
 
@@ -139,8 +139,8 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );
 		sigA += creal( pole.MP_RA * faddeeva);
 		sigF += creal( pole.MP_RF * faddeeva);
-*/	}
-
+	}
+*/
 	sigE = sigT - sigA;
 
 	micro_xs[0] = sigT;

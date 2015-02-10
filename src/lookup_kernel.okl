@@ -163,13 +163,18 @@ occaKernel void lookup_kernel(
 		double inner_V_sum[4];
 		//complex double * sigTfactors = (complex double *) malloc(numL * sizeof(complex double));
 		//Complex * sigTfactors = (Complex *) malloc(numL * sizeof(Complex));
-		Complex sigTfactors[4]; //numL = 4
+		Complex sigTfactors[4]; //hardcoding to 4 for now...
 
 		for (int inner_id=0; inner_id<inner_dim; ++inner_id; inner0) {
 
 			// Variables declared in the scope of an InnerFor loop are register variables
 			const int global_id = outer_id*inner_dim + inner_id;
 			unsigned long int seed = global_id*10000 + 1;
+
+			inner_V_sum[0] = 0;
+			inner_V_sum[1] = 0;
+			inner_V_sum[2] = 0;
+			inner_V_sum[3] = 0;
 
 			if(global_id < lookups){
 
@@ -183,6 +188,7 @@ occaKernel void lookup_kernel(
 				// for nuclide in mat
 				for(int j=0; j<nucs_idx; j++){
 					const int nuc = mats[mat_idx + j];
+          				const double conc = concs[mat_idx + j];
 
 					// MicroScopic XS's to Calculate
 					double sigT;
@@ -207,6 +213,9 @@ occaKernel void lookup_kernel(
 
 					// Loop over Poles within window, add contributions
 					for(int k=w.start; k<w.end; k++){
+
+						Pole pole = poles[poles_idx[nuc] + k];
+
 						//complex double PSIIKI;
 						//complex double CDUM;
 						//PSIIKI = -(0.0 - 1.0 * _Complex_I) / (pole.MP_EA - sqrt(E));
@@ -216,7 +225,6 @@ occaKernel void lookup_kernel(
 						//sigF += creal(pole.MP_RF * CDUM);
 						Complex PSIIKI;
 						Complex CDUM;
-						Pole pole = poles[poles_idx[nuc] + k];
 						Complex tmp, t, a, f;
 						PSIIKI.real = 0.0;
 						PSIIKI.imag = 1.0;
@@ -237,10 +245,10 @@ occaKernel void lookup_kernel(
 
 					sigE = sigT - sigA;
 
-					inner_V_sum[0] = sigT;
-					inner_V_sum[1] = sigA;
-					inner_V_sum[2] = sigF;
-					inner_V_sum[3] = sigE;
+					inner_V_sum[0] += sigT * conc;
+					inner_V_sum[1] += sigA * conc;
+					inner_V_sum[2] += sigF * conc;
+					inner_V_sum[3] += sigE * conc;
 				} // Materials loop
 
 				V_sums[4*global_id + 0] = inner_V_sum[0];

@@ -82,8 +82,8 @@ Input read_CLI( int argc, char * argv[] )
 	input.avg_n_windows = 100;
 	// defaults to 4;
 	input.numL = 4;
-	// defaults to temperature dependence (Doppler broadening)
-	input.doppler = 1;
+	// defaults to no temperature dependence (Doppler broadening)
+	input.doppler = 0;
 	// defaults to 312500
 	input.outer_dim = 312500; 
 	// defaults to 32
