@@ -28,7 +28,7 @@ int main(int argc, char * argv[])
 	// =====================================================================
 
 	occaKernelInfo lookupInfo;
-	occaKernel lookup_kernel;
+	occaKernel lookup_kernel, lookup_kernel_doppler;
 	occaDevice device;
 
 	occaMemory dev_poles, dev_windows, dev_pseudo_K0RS, dev_n_poles,
@@ -64,6 +64,8 @@ int main(int argc, char * argv[])
 	//     "lookup_kernel.okl", "lookup_touch", lookupInfo);
 	lookup_kernel = occaBuildKernelFromSource(device,
 	     input.kernel, "lookup_kernel", lookupInfo);
+	lookup_kernel_doppler = occaBuildKernelFromSource(device,
+	     input.kernel, "lookup_kernel_doppler", lookupInfo);
 
 	// =====================================================================
 	// Initialize RNG
@@ -197,24 +199,46 @@ int main(int argc, char * argv[])
 	occaDeviceFinish(device);
 	gettimeofday(&start, NULL);
 
-	occaKernelRun(lookup_kernel,
-	     dev_poles,
-	     dev_windows,
-	     dev_pseudo_K0RS,
-	     dev_n_poles,
-	     dev_n_windows,
-	     dev_poles_idx,
-	     dev_windows_idx,
-	     dev_num_nucs,
-	     dev_mats,
-	     dev_mats_idx,
-	     dev_concs,
-	     occaInt(input.lookups),
-	     occaInt(input.n_nuclides),
-	     occaInt(input.avg_n_poles),
-	     occaInt(input.avg_n_windows),
-	     occaInt(input.numL),
-	     dev_V_sums);
+	if(input.doppler == 1){
+		occaKernelRun(lookup_kernel_doppler,
+		     dev_poles,
+		     dev_windows,
+		     dev_pseudo_K0RS,
+		     dev_n_poles,
+		     dev_n_windows,
+		     dev_poles_idx,
+		     dev_windows_idx,
+		     dev_num_nucs,
+		     dev_mats,
+		     dev_mats_idx,
+		     dev_concs,
+		     occaInt(input.lookups),
+		     occaInt(input.n_nuclides),
+		     occaInt(input.avg_n_poles),
+		     occaInt(input.avg_n_windows),
+		     occaInt(input.numL),
+		     dev_V_sums);
+	}
+	else{
+		occaKernelRun(lookup_kernel,
+		     dev_poles,
+		     dev_windows,
+		     dev_pseudo_K0RS,
+		     dev_n_poles,
+		     dev_n_windows,
+		     dev_poles_idx,
+		     dev_windows_idx,
+		     dev_num_nucs,
+		     dev_mats,
+		     dev_mats_idx,
+		     dev_concs,
+		     occaInt(input.lookups),
+		     occaInt(input.n_nuclides),
+		     occaInt(input.avg_n_poles),
+		     occaInt(input.avg_n_windows),
+		     occaInt(input.numL),
+		     dev_V_sums);
+	}
 
 	occaDeviceFinish(device);
 	gettimeofday(&end, NULL);
