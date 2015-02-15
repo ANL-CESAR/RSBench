@@ -1,3 +1,12 @@
+// Original          : 12.3   sec
+// Base              : 19.7   sec
+// sqrt(E)           : 17.4   sec
+// calculate_sig_T   : 16.4   sec
+// Manual div/mult   : 16.1   sec
+// Optimization Flags: 13.479 sec
+
+// Verification: 3009.471282
+
 typedef struct{
 	double real;
 	double imag;
@@ -84,30 +93,35 @@ occaFunction int pick_mat( unsigned long int * seed ) {
 }
 
 //occaFunction void calculate_sig_T( int nuc, double E, int numL, double * pseudo_K0RS, complex double * sigTfactors )
-occaFunction void calculate_sig_T( int nuc, double E, int numL, const double * pseudo_K0RS, Complex * sigTfactors)
-{
-	double phi;
+occaFunction void calculate_sig_T( int nuc, double sqrtE, int numL, const double * pseudo_K0RS, Complex * sigTfactors){
 
-	for( int i = 0; i < numL; i++ )
-	{
-		phi = pseudo_K0RS[nuc*numL + i] * sqrt(E);
+	for( int i = 0; i < numL; i++ ){
+    double phi = pseudo_K0RS[nuc*numL + i] * sqrtE;
 
-		if( i == 1 )
-			phi -= - atan( phi );
-		else if( i == 2 )
-			phi -= atan( 3.0 * phi / (3.0 - phi*phi));
-		else if( i == 3 )
-			phi -= atan(phi*(15.0-phi*phi)/(15.0-6.0*phi*phi));
+    const double phi2  = phi*phi;
 
-		phi *= 2.0;
+    double theta = phi;
 
-		//sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
-		sigTfactors[i].real = cos(phi);
-		sigTfactors[i].imag = -sin(phi);
-	}
+    if( i == 2 )
+      theta = (3.0 * phi / (3.0 - phi2));
+    else if( i == 3 )
+      theta = (phi*(15.0-phi2)/(15.0-6.0*phi2));
+
+    // cos(2*(phi - atan(theta)))
+    // sin(2*(phi - atan(theta))
+    // + Wolfram Alpha
+
+    const double cos2Phi = cos(2*phi);
+    const double sin2Phi = sin(2*phi);
+
+    const double factor = 1.0/(1.0 + theta*theta);
+
+    sigTfactors[i].real =  factor*((1 - theta*theta)*cos2Phi + 2*theta*sin2Phi);
+    sigTfactors[i].imag = -factor*((1 - theta*theta)*sin2Phi - 2*theta*cos2Phi);
+  }
 }
 
-occaFunction Complex cadd(Complex a, Complex b)
+occaFunction inline Complex cadd(Complex a, Complex b)
 {
 	Complex c;
 	c.real = a.real + b.real;
@@ -115,7 +129,7 @@ occaFunction Complex cadd(Complex a, Complex b)
 	return c;
 }
 
-occaFunction Complex csubtract(Complex a, Complex b)
+occaFunction inline Complex csubtract(Complex a, Complex b)
 {
 	Complex c;
 	c.real = a.real - b.real;
@@ -123,7 +137,7 @@ occaFunction Complex csubtract(Complex a, Complex b)
 	return c;
 }
 
-occaFunction Complex cmultiply(Complex a, Complex b)
+occaFunction inline Complex cmultiply(Complex a, Complex b)
 {
 	Complex c;
 	c.real = a.real*b.real - a.imag*b.imag;
@@ -131,45 +145,46 @@ occaFunction Complex cmultiply(Complex a, Complex b)
 	return c;
 }
 
-occaFunction Complex cdivide(Complex a, Complex b)
+occaFunction inline Complex cdivide(Complex a, Complex b)
 {
+  const double invNorm_ = 1.0/(b.real*b.real + b.imag*b.imag);
+
 	Complex c;
-	c.real = (a.real*b.real + a.imag*b.imag)/(b.real*b.real + b.imag*b.imag);
-	c.imag = (a.imag*b.real - a.real*b.imag)/(b.real*b.real + b.imag*b.imag);
+	c.real = invNorm_*(a.real*b.real + a.imag*b.imag);
+	c.imag = invNorm_*(a.imag*b.real - a.real*b.imag);
 	return c;
 }
 
-occaKernel void lookup_kernel(
-		const Pole * const restrict poles,
-		const Window * const restrict windows,
-		const double * const restrict pseudo_K0RS,
-		const int * const restrict n_poles,
-		const int * const restrict n_windows,
-		const int * const restrict poles_idx,
-		const int * const restrict windows_idx,
-		const int * const restrict num_nucs,
-		const int * const restrict mats,
-		const int * const restrict mats_idx,
-		const double * const restrict concs,
-		const int lookups,
-		const int n_nuclides,
-		const int avg_n_poles,
-		const int avg_n_windows,
-		const int numL,
-		double * restrict V_sums)
+occaKernel void lookup_kernel(const Pole   * const restrict poles,
+                              const Window * const restrict windows,
+                              const double * const restrict pseudo_K0RS,
+                              const int    * const restrict n_poles,
+                              const int    * const restrict n_windows,
+                              const int    * const restrict poles_idx,
+                              const int    * const restrict windows_idx,
+                              const int    * const restrict num_nucs,
+                              const int    * const restrict mats,
+                              const int    * const restrict mats_idx,
+                              const double * const restrict concs,
+                              const int lookups,
+                              const int n_nuclides,
+                              const int avg_n_poles,
+                              const int avg_n_windows,
+                              const int numL,
+                              double * restrict V_sums)
 {
-	for(int outer_id=0; outer_id<outer_dim; ++outer_id; outer0) {
+	for(int outer_id = 0; outer_id < outer_dim; ++outer_id; outer0) {
 
-		double inner_V_sum[4];
-		//complex double * sigTfactors = (complex double *) malloc(numL * sizeof(complex double));
-		//Complex * sigTfactors = (Complex *) malloc(numL * sizeof(Complex));
-		Complex sigTfactors[4]; //hardcoding to 4 for now...
-
-		for (int inner_id=0; inner_id<inner_dim; ++inner_id; inner0) {
-
+		for(int inner_id = 0; inner_id < inner_dim; ++inner_id; inner0) {
 			// Variables declared in the scope of an InnerFor loop are register variables
 			const int global_id = outer_id*inner_dim + inner_id;
 			unsigned long int seed = global_id*10000 + 1;
+
+      //complex double * sigTfactors = (complex double *) malloc(numL * sizeof(complex double));
+      //Complex * sigTfactors = (Complex *) malloc(numL * sizeof(Complex));
+      Complex sigTfactors[4]; //hardcoding to 4 for now...
+
+      double inner_V_sum[4];
 
 			inner_V_sum[0] = 0;
 			inner_V_sum[1] = 0;
@@ -179,16 +194,22 @@ occaKernel void lookup_kernel(
 			if(global_id < lookups){
 
 				// Randomly pick energy and material
-				const int mat = pick_mat(&seed);
+				const int mat  = pick_mat(&seed);
 				const double E = rn(&seed);
+
+        const double sqrtE = sqrt(E);
 
 				const int nucs_idx = num_nucs[mat];
 				const int mat_idx  = mats_idx[mat];
 
 				// for nuclide in mat
-				for(int j=0; j<nucs_idx; j++){
-					const int nuc = mats[mat_idx + j];
-          				const double conc = concs[mat_idx + j];
+				for(int j = 0; j < nucs_idx; j++){
+					const int nuc     = mats[mat_idx + j];
+          const double conc = concs[mat_idx + j];
+
+          const int nuc_pole    = poles_idx[nuc];
+          const int nuc_windows = n_windows[nuc];
+          const int nuc_window  = windows_idx[nuc];
 
 					// MicroScopic XS's to Calculate
 					double sigT;
@@ -197,49 +218,63 @@ occaKernel void lookup_kernel(
 					double sigE;
 
 					// Calculate Window Index
-					const double spacing = 1.0 / n_windows[nuc];
+					const double spacing = 1.0 / ((double) nuc_windows);
+
 					int window = (int) (E / spacing);
-					if(window == n_windows[nuc])
-						window--;
+
+					if(window == nuc_windows)
+						--window;
 
 					// Calculate sigTfactors
-					calculate_sig_T(nuc, E, numL, pseudo_K0RS, sigTfactors);
+          calculate_sig_T(nuc, sqrtE, numL, pseudo_K0RS, sigTfactors); // 9.2 sec
 
 					// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
-					const Window w = windows[windows_idx[nuc] + window];
+					const Window w = windows[nuc_window + window];
+
 					sigT = E * w.T;
 					sigA = E * w.A;
 					sigF = E * w.F;
 
 					// Loop over Poles within window, add contributions
-					for(int k=w.start; k<w.end; k++){
+					for(int k = w.start; k < w.end; k++){
 
-						Pole pole = poles[poles_idx[nuc] + k];
+						const Pole pole = poles[nuc_pole + k];
 
-						//complex double PSIIKI;
-						//complex double CDUM;
-						//PSIIKI = -(0.0 - 1.0 * _Complex_I) / (pole.MP_EA - sqrt(E));
-						//CDUM = PSIIKI / E;
-						//sigT += creal(pole.MP_RT * CDUM * sigTfactors[pole.l_value]);
-						//sigA += creal(pole.MP_RA * CDUM);
-						//sigF += creal(pole.MP_RF * CDUM);
+						// complex double PSIIKI;
+						// complex double CDUM;
+						// PSIIKI = -(0.0 - 1.0 * _Complex_I) / (pole.MP_EA - sqrt(E));
+						// CDUM = PSIIKI / E;
+						// sigT += creal(pole.MP_RT * CDUM * sigTfactors[pole.l_value]);
+						// sigA += creal(pole.MP_RA * CDUM);
+						// sigF += creal(pole.MP_RF * CDUM);
+
 						Complex PSIIKI;
 						Complex CDUM;
 						Complex tmp, t, a, f;
+
 						PSIIKI.real = 0.0;
 						PSIIKI.imag = 1.0;
-						tmp.real = pole.MP_EA.real - sqrt(E);
+
+						tmp.real = pole.MP_EA.real - sqrtE;
 						tmp.imag = pole.MP_EA.imag;
-						PSIIKI = cdivide(PSIIKI, tmp);
-						tmp.real = E;
-						tmp.imag = 0;
-						CDUM = cdivide(PSIIKI, tmp);
+
+            // PSIIKI = cdivide(PSIIKI, tmp);
+            const double tmpNorm = 1.0/(tmp.real*tmp.real + tmp.imag*tmp.imag);
+
+            PSIIKI.real = tmpNorm * tmp.imag;
+            PSIIKI.imag = tmpNorm * tmp.real;
+
+						// CDUM = cdivide(PSIIKI, tmp);
+            CDUM.real = (PSIIKI.real / E);
+            CDUM.imag = (PSIIKI.imag / E);
+
 						tmp = cmultiply(pole.MP_RT, CDUM);
-						t = cmultiply(tmp, sigTfactors[pole.l_value]);
+						t   = cmultiply(tmp, sigTfactors[pole.l_value]);
+						a   = cmultiply(pole.MP_RA, CDUM);
+						f   = cmultiply(pole.MP_RF, CDUM);
+
 						sigT += t.real;
-						a = cmultiply(pole.MP_RA, CDUM);
 						sigA += a.real;
-						f = cmultiply(pole.MP_RF, CDUM);
 						sigF += f.real;
 					}
 
@@ -261,37 +296,36 @@ occaKernel void lookup_kernel(
 	} // outer0
 }
 
-occaKernel void lookup_kernel_doppler(
-		const Pole * const restrict poles,
-		const Window * const restrict windows,
-		const double * const restrict pseudo_K0RS,
-		const int * const restrict n_poles,
-		const int * const restrict n_windows,
-		const int * const restrict poles_idx,
-		const int * const restrict windows_idx,
-		const int * const restrict num_nucs,
-		const int * const restrict mats,
-		const int * const restrict mats_idx,
-		const double * const restrict concs,
-		const int lookups,
-		const int n_nuclides,
-		const int avg_n_poles,
-		const int avg_n_windows,
-		const int numL,
-		double * restrict V_sums)
+occaKernel void lookup_kernel_doppler(const Pole   * const restrict poles,
+                                      const Window * const restrict windows,
+                                      const double * const restrict pseudo_K0RS,
+                                      const int    * const restrict n_poles,
+                                      const int    * const restrict n_windows,
+                                      const int    * const restrict poles_idx,
+                                      const int    * const restrict windows_idx,
+                                      const int    * const restrict num_nucs,
+                                      const int    * const restrict mats,
+                                      const int    * const restrict mats_idx,
+                                      const double * const restrict concs,
+                                      const int lookups,
+                                      const int n_nuclides,
+                                      const int avg_n_poles,
+                                      const int avg_n_windows,
+                                      const int numL,
+                                      double * restrict V_sums)
 {
-	for(int outer_id=0; outer_id<outer_dim; ++outer_id; outer0) {
+	for(int outer_id = 0; outer_id < outer_dim; ++outer_id; outer0) {
 
-		double inner_V_sum[4];
-		//complex double * sigTfactors = (complex double *) malloc(numL * sizeof(complex double));
-		//Complex * sigTfactors = (Complex *) malloc(numL * sizeof(Complex));
-		Complex sigTfactors[4]; //hardcoding to 4 for now...
-
-		for (int inner_id=0; inner_id<inner_dim; ++inner_id; inner0) {
-
+		for(int inner_id = 0; inner_id < inner_dim; ++inner_id; inner0) {
 			// Variables declared in the scope of an InnerFor loop are register variables
 			const int global_id = outer_id*inner_dim + inner_id;
 			unsigned long int seed = global_id*10000 + 1;
+
+      //complex double * sigTfactors = (complex double *) malloc(numL * sizeof(complex double));
+      //Complex * sigTfactors = (Complex *) malloc(numL * sizeof(Complex));
+      Complex sigTfactors[4]; //hardcoding to 4 for now...
+
+      double inner_V_sum[4];
 
 			inner_V_sum[0] = 0;
 			inner_V_sum[1] = 0;
@@ -301,16 +335,19 @@ occaKernel void lookup_kernel_doppler(
 			if(global_id < lookups){
 
 				// Randomly pick energy and material
-				const int mat = pick_mat(&seed);
+				const int mat  = pick_mat(&seed);
 				const double E = rn(&seed);
 
 				const int nucs_idx = num_nucs[mat];
 				const int mat_idx  = mats_idx[mat];
 
 				// for nuclide in mat
-				for(int j=0; j<nucs_idx; j++){
-					const int nuc = mats[mat_idx + j];
-          				const double conc = concs[mat_idx + j];
+				for(int j = 0; j < nucs_idx; j++){
+					const int nuc     = mats[mat_idx + j];
+          const double conc = concs[mat_idx + j];
+
+          const int nuc_pole    = poles_idx[nuc];
+          const int nuc_windows = n_windows[nuc];
 
 					// MicroScopic XS's to Calculate
 					double sigT;
@@ -319,10 +356,12 @@ occaKernel void lookup_kernel_doppler(
 					double sigE;
 
 					// Calculate Window Index
-					const double spacing = 1.0 / n_windows[nuc];
+					const double spacing = 1.0 / ((double) nuc_windows);
+
 					int window = (int) (E / spacing);
-					if(window == n_windows[nuc])
-						window--;
+
+					if(window == nuc_windows)
+						--window;
 
 					// Calculate sigTfactors
 					calculate_sig_T(nuc, E, numL, pseudo_K0RS, sigTfactors);
@@ -336,7 +375,7 @@ occaKernel void lookup_kernel_doppler(
 					const double dopp = 0.5;
 
 					// Loop over Poles within window, add contributions
-					for(int k=w.start; k<w.end; k++){
+					for(int k = w.start; k < w.end; k++){
 						Pole pole = poles[poles_idx[nuc] + k];
 
 						// Prep Z
