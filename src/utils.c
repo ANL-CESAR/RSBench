@@ -34,10 +34,9 @@ double rn_v(void)
 unsigned int hash(unsigned char *str, int nbins)
 {
 	unsigned int hash = 5381;
-	int c;
 
-	while (c = *str++)
-		hash = ((hash << 5) + hash) + c;
+	while(*str != '\0')
+		hash = ((hash << 5) + hash) + ((int) *(str++));
 
 	return hash % nbins;
 }
@@ -50,7 +49,7 @@ size_t get_mem_estimate( Input input )
 	size_t other = input.n_nuclides * 2 * sizeof(int);
 
 	size_t total = poles + windows + pseudo_K0RS + other;
-	
+
 	return total;
 }
 

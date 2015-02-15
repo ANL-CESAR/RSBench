@@ -37,6 +37,7 @@ typedef struct{
 	char * kernel;      // OCCA kernel
 	long outer_dim;     // OCCA outer dimension
 	long inner_dim;     // OCCA inner dimension
+	long batch_dim;     // OCCA batch dimension
 } Input;
 
 typedef struct{
@@ -116,11 +117,11 @@ Complex cmultiply(Complex a, Complex b);
 Complex cdivide(Complex a, Complex b);
 
 // xs_kernel.c
-//void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ); 
+//void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors );
 //void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors);
 //void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors);
 //void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors );
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, Complex * sigTfactors ); 
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, Complex * sigTfactors );
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, Complex * sigTfactors);
 void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, Complex * sigTfactors);
 void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, Complex * sigTfactors );

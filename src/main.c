@@ -10,7 +10,7 @@ int main(int argc, char * argv[])
 	unsigned long long vhash = 0;
 	struct timeval start, end;
 	double wall_time;
-	
+
 	// These are the sum of the function values, evaluated in kernel.
 	// They are the cumulative result of the random lookups.
 
@@ -51,6 +51,7 @@ int main(int argc, char * argv[])
 	// Initialize OCCA
 	// =====================================================================
 	lookupInfo = occaCreateKernelInfo();
+	occaKernelInfoAddDefine(lookupInfo, "batch_dim", occaLong(input.batch_dim));
 	occaKernelInfoAddDefine(lookupInfo, "inner_dim", occaLong(input.inner_dim));
 	occaKernelInfoAddDefine(lookupInfo, "outer_dim", occaLong(input.outer_dim));
 
@@ -82,9 +83,9 @@ int main(int argc, char * argv[])
 	border_print();
 	center_print("INITIALIZATION", 79);
 	border_print();
-	
+
 	gettimeofday(&start, NULL);
-	
+
 	// Allocate & fill energy grids
 	printf("Generating resonance distributions...\n");
 	int * n_poles = generate_n_poles( input );
@@ -95,7 +96,7 @@ int main(int argc, char * argv[])
 
 	// Get material data
 	printf("Loading Hoogenboom-Martin material data...\n");
-	Materials materials = get_materials( input ); 
+	Materials materials = get_materials( input );
 
 	// Prepare full resonance grid
 	printf("Generating resonance parameter grid...\n");
@@ -131,7 +132,7 @@ int main(int argc, char * argv[])
 	gettimeofday(&end, NULL);
 	wall_time = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)/1000000.;
 	printf("Initialization Complete. (%.3lf seconds)\n", wall_time);
-	
+
 	// =====================================================================
 	// OCCA mallocs and memcopies
 	// =====================================================================
@@ -192,10 +193,10 @@ int main(int argc, char * argv[])
 	border_print();
 	center_print("SIMULATION", 79);
 	border_print();
-	
+
 	printf("Beginning Kernel...\n");
 	printf("Calculating XS's...\n");
-	
+
 	occaDeviceFinish(device);
 	gettimeofday(&start, NULL);
 

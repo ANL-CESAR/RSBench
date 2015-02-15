@@ -64,7 +64,7 @@ void fancy_int( int a )
 Input read_CLI( int argc, char * argv[] )
 {
 	Input input;
-	
+
 	// defaults to max threads on the system
 	if (getenv("OMP_NUM_THREADS") != NULL)
 		input.nthreads = atoi(getenv("OMP_NUM_THREADS"));
@@ -84,10 +84,10 @@ Input read_CLI( int argc, char * argv[] )
 	input.numL = 4;
 	// defaults to no temperature dependence (Doppler broadening)
 	input.doppler = 1;
-	// defaults to 312500
-	input.outer_dim = 312500; 
 	// defaults to 32
-	input.inner_dim = 32;
+	input.inner_dim = 128;
+	// defaults to 32
+	input.batch_dim = 256;
 	// defaults to OpenMP mode
 	input.mode = (char *) malloc(128 * sizeof(char));
 	strcpy(input.mode, "OpenMP");
@@ -128,7 +128,7 @@ Input read_CLI( int argc, char * argv[] )
 		}
 		// HM (-s)
 		else if( strcmp(arg, "-s") == 0 )
-		{	
+		{
 			if( ++i < argc )
 			{
 				if( strcmp(argv[i], "small") == 0 )
@@ -143,7 +143,7 @@ Input read_CLI( int argc, char * argv[] )
 		}
 		// Doppler Broadening (Temperature Dependence)
 		else if( strcmp(arg, "-d") == 0 )
-		{	
+		{
 			input.doppler = 0;
 		}
 		// Avg number of windows per nuclide (-w)
@@ -162,36 +162,36 @@ Input read_CLI( int argc, char * argv[] )
 			else
 				print_CLI_error();
 		}
-		else if( strcmp(arg, "-o") == 0 )
-		{	
-			if( ++i < argc )
-				input.outer_dim = atol(argv[i]);
-			else
-				print_CLI_error();
-		}
 		else if( strcmp(arg, "-i") == 0 )
-		{	
+		{
 			if( ++i < argc )
 				input.inner_dim = atol(argv[i]);
 			else
 				print_CLI_error();
 		}
+		else if( strcmp(arg, "-b") == 0 )
+		{
+			if( ++i < argc )
+				input.batch_dim = atol(argv[i]);
+			else
+				print_CLI_error();
+		}
 		else if( strcmp(arg, "-v") == 0 )
-		{	
+		{
 			if( ++i < argc )
 				input.device_id = atoi(argv[i]);
 			else
 				print_CLI_error();
 		}
 		else if( strcmp(arg, "-m") == 0 )
-		{	
+		{
 			if( ++i < argc )
 				strcpy(input.mode, argv[i]);
 			else
 				print_CLI_error();
 		}
 		else if( strcmp(arg, "-k") == 0 )
-		{	
+		{
 			if( ++i < argc )
 				strcpy(input.kernel, argv[i]);
 			else
@@ -200,6 +200,8 @@ Input read_CLI( int argc, char * argv[] )
 		else
 			print_CLI_error();
 	}
+
+  input.outer_dim = 1 + (input.lookups / (input.inner_dim*input.batch_dim));
 
 	// Construct device_info string
 	input.device_info = (char *) malloc(256 * sizeof(char));
@@ -210,23 +212,23 @@ Input read_CLI( int argc, char * argv[] )
 	// Validate nthreads
 	if( input.nthreads < 1 )
 		print_CLI_error();
-	
+
 	// Validate n_isotopes
 	if( input.n_nuclides < 1 )
 		print_CLI_error();
-	
+
 	// Validate lookups
 	if( input.lookups < 1 )
 		print_CLI_error();
-	
+
 	// Validate lookups
 	if( input.avg_n_poles < 1 )
 		print_CLI_error();
-	
+
 	// Validate lookups
 	if( input.avg_n_windows < 1 )
 		print_CLI_error();
-	
+
 	// Set HM size specific parameters
 	// (defaults to large)
 
@@ -244,8 +246,8 @@ void print_CLI_error(void)
 	printf("  -p <poles>       Average Number of Poles per Nuclide\n");
 	printf("  -w <poles>       Average Number of Windows per Nuclide\n");
 	printf("  -d               Disables Temperature Dependence (Doppler Broadening)\n");
-	printf("  -o <outer_dim>   OCCA outer dimension\n");
 	printf("  -i <inner_dim>   OCCA inner dimension\n");
+	printf("  -b <batch_dim>   OCCA batch dimension\n");
 	printf("  -m <mode>        OCCA mode\n");
 	printf("  -v <device_id>   OCCA device ID\n");
 	printf("  -k <kernel>      Source file for OCCA XS lookup kernel\n");
@@ -261,8 +263,9 @@ void print_input_summary(Input input)
 
 	printf("OCCA device info:            %s\n", input.device_info);
 	printf("OCCA kernel:                 %s\n", input.kernel);
-	printf("OCCA inner dimension:        "); fancy_int(input.inner_dim);
 	printf("OCCA outer dimension:        "); fancy_int(input.outer_dim);
+	printf("OCCA inner dimension:        "); fancy_int(input.inner_dim);
+	printf("OCCA batch dimension:        "); fancy_int(input.batch_dim);
 	printf("Materials:                   12\n");
 	printf("H-M Benchmark Size:          ");
 	if( input.HM == 0 )
