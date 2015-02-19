@@ -175,6 +175,8 @@ Input read_CLI( int argc, char * argv[] )
 	
 	// Set HM size specific parameters
 	// (defaults to large)
+	if( input.HM == SMALL )
+		input.n_nuclides = 68;
 
 	// Return input struct
 	return input;
