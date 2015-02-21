@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER  = intel
+COMPILER  = gnu
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
@@ -21,7 +21,8 @@ xs_kernel.c \
 io.c \
 init.c \
 material.c \
-utils.c
+utils.c \
+Faddeeva.c
 
 obj = $(source:.c=.o)
 

@@ -109,10 +109,10 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 		Pole pole = data.poles[nuc][i];
 
 		// Prep Z
-		double Z = (E - creal(pole.MP_EA)) * dopp;
+		double complex Z = (E - pole.MP_EA) * dopp;
 
 		// Evaluate Fadeeva Function
-		double faddeeva = exp(-1.0 * creal(Z * Z)) * erfc(-1.0 * creal(Z * I));
+		double faddeeva = Faddeeva_w(Z, 0.0);
 
 		// Update W
 		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );
