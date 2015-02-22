@@ -11,7 +11,7 @@ NEW IN VERSION 6
   computation of the complex version, but in reality it has been
   found to be siginificantly more computationally difficult to compute
   this function when complex space is added. As a result, this slows
-  down computation approximately 10x.
+  down computation significantly.
 
 - Note that the new source files and Temperature dependence changes
   DO NOT AFFECT the single temp (no Doppler) mode.
