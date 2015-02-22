@@ -1,6 +1,5 @@
 #include "rsbench.h"
 
-// Reviewed
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ) 
 {
 	// zero out macro vector
@@ -31,6 +30,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	
 }
 
+// No Temperature dependence (i.e., 0K evaluation)
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors)
 {
 	// MicroScopic XS's to Calculate
@@ -76,7 +76,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 }
 
 // Temperature Dependent Variation of Kernel
-// (This involves using the Faddeeva function to
+// (This involves using the Complex Faddeeva function to
 // Doppler broaden the poles within the window)
 void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors)
 {
@@ -109,10 +109,10 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 		Pole pole = data.poles[nuc][i];
 
 		// Prep Z
-		double Z = (E - creal(pole.MP_EA)) * dopp;
+		double complex Z = (E - pole.MP_EA) * dopp;
 
 		// Evaluate Fadeeva Function
-		double faddeeva = exp(-1.0 * creal(Z * Z)) * erfc(-1.0 * creal(Z * I));
+		double faddeeva = Faddeeva_w(Z, 0.1);
 
 		// Update W
 		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );

@@ -21,7 +21,8 @@ xs_kernel.c \
 io.c \
 init.c \
 material.c \
-utils.c
+utils.c \
+Faddeeva/Faddeeva.c
 
 obj = $(source:.c=.o)
 
