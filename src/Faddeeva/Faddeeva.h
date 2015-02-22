@@ -19,6 +19,8 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
  */
+// Written by Steven G. Johnson
+// http://ab-initio.mit.edu/wiki/index.php/Faddeeva_Package
 
 /* Available at: http://ab-initio.mit.edu/Faddeeva
 

@@ -21,6 +21,8 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
  */
+// Written by Steven G. Johnson
+// http://ab-initio.mit.edu/wiki/index.php/Faddeeva_Package
 
 /* (Note that this file can be compiled with either C++, in which
     case it uses C++ std::complex<double>, or C, in which case it

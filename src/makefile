@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER  = gnu
+COMPILER  = intel
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
@@ -22,7 +22,7 @@ io.c \
 init.c \
 material.c \
 utils.c \
-Faddeeva.c
+Faddeeva/Faddeeva.c
 
 obj = $(source:.c=.o)
 

@@ -1,4 +1,22 @@
 =====================================================================
+NEW IN VERSION 6
+=====================================================================
+- Temperature dependence has now been changed to off by default
+
+- The Faddeeva function evaluation has now been moved to an open
+  source library (included in this repo). This allows for true
+  complex evaluation of the pole data rather than the real conjugate
+  error function approximation previously used. It was previously
+  assumed that real erfc() could be used to approximate the full
+  computation of the complex version, but in reality it has been
+  found to be siginificantly more computationally difficult to compute
+  this function when complex space is added. As a result, this slows
+  down computation approximately 10x.
+
+- Note that the new source files and Temperature dependence changes
+  DO NOT AFFECT the single temp (no Doppler) mode.
+
+=====================================================================
 NEW IN VERSION 5
 =====================================================================
 - Added a new temperature dependence feature that

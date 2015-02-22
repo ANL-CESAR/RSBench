@@ -5,7 +5,7 @@
 #include<string.h>
 #include<math.h>
 #include<complex.h>
-#include "Faddeeva.h"
+#include "Faddeeva/Faddeeva.h"
 
 #ifdef PAPI
 #include "papi.h"
