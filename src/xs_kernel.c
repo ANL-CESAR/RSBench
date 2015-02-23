@@ -1,5 +1,82 @@
 #include "rsbench.h"
 
+#define N 10
+#define Tm 12.0
+#define Tm2 144.0
+// This one works!
+double complex Abrarov_W( double complex Z )
+{
+	// Precomputed parts for speeding things up
+	// (N = 10, Tm = 12.0)
+	double complex prefactor = 8.124330e+01 * I;
+	const double an[N] = {
+		2.758402e-01,
+		2.245740e-01,
+		1.594149e-01,
+		9.866577e-02,
+		5.324414e-02,
+		2.505215e-02,
+		1.027747e-02,
+		3.676164e-03,
+		1.146494e-03,
+		3.117570e-04
+	};
+	const double neg_1n[N] = {
+		-1.0,
+		1.0,
+		-1.0,
+		1.0,
+		-1.0,
+		1.0,
+		-1.0,
+		1.0,
+		-1.0,
+		1.0
+	};
+
+	const double denominator_left[N] = {
+		9.869604e+00,
+		3.947842e+01,
+		8.882644e+01,
+		1.579137e+02,
+		2.467401e+02,
+		3.553058e+02,
+		4.836106e+02,
+		6.316547e+02,
+		7.994380e+02,
+		9.869604e+02
+	};
+
+	double complex W = I * ( 1 - cexp(I*Tm*Z) ) / (Tm * Z );
+	double complex sum = 0;
+	#pragma simd
+	for( int n = 1; n <= N; n++ )
+	{
+		int idx = n-1;
+		complex double top = neg_1n[idx] * cexp(I*Tm*Z) - 1.0;
+		complex double bot = denominator_left[idx] - Tm2*Z*Z;
+		sum += an[idx] * (top/bot);
+	}
+	W += prefactor * Z  * sum;
+	return W;
+}
+// This one works!
+double complex tramm_faddeeva2( double complex Z )
+{
+	double complex W = I * ( 1 - cexp(I*Tm*Z) ) / (Tm * Z );
+	double complex sum = 0;
+	for( int n = 1; n <= N; n++ )
+	{
+		double an = 2.0 * sqrt(M_PI) / Tm * exp( - n*n * M_PI * M_PI / (Tm * Tm));
+		complex double top = pow(-1,n) * cexp(I*Tm*Z) - 1.0;
+		complex double bot = n*n * M_PI*M_PI - Tm*Tm*Z*Z;
+		sum += an * (top/bot);
+	}
+	W += I * Tm*Tm * Z / sqrt(M_PI) * sum;
+	return W;
+}
+
+
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ) 
 {
 	// zero out macro vector
@@ -112,7 +189,9 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 		double complex Z = (E - pole.MP_EA) * dopp;
 
 		// Evaluate Fadeeva Function
-		double faddeeva = Faddeeva_w(Z, 0.1);
+		//double faddeeva = Faddeeva_w(Z, 0.1);
+		//double faddeeva = tramm_faddeeva2( Z );
+		double faddeeva = Abrarov_W( Z );
 
 		// Update W
 		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );

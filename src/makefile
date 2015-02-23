@@ -36,7 +36,7 @@ CFLAGS := -std=gnu99
 # gcc Compiler
 ifeq ($(COMPILER),gnu)
   CC = gcc
-  CFLAGS += -fopenmp -ffast-math
+  CFLAGS += -fopenmp -ffast-math -ftree-vectorizer-verbose=2
 endif
 
 # intel compiler
