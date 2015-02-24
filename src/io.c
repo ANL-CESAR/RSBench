@@ -80,7 +80,7 @@ Input read_CLI( int argc, char * argv[] )
 	// defaults to 4;
 	input.numL = 4;
 	// defaults to no temperature dependence (Doppler broadening)
-	input.doppler = 0;
+	input.doppler = 1;
 	
 	// Collect Raw Input
 	for( int i = 1; i < argc; i++ )
@@ -129,7 +129,7 @@ Input read_CLI( int argc, char * argv[] )
 		// Doppler Broadening (Temperature Dependence)
 		else if( strcmp(arg, "-d") == 0 )
 		{	
-			input.doppler = 1;
+			input.doppler = 0;
 		}
 		// Avg number of windows per nuclide (-w)
 		else if( strcmp(arg, "-w") == 0 )
@@ -191,7 +191,7 @@ void print_CLI_error(void)
 	printf("  -l <lookups>     Number of Cross-section (XS) lookups\n");
 	printf("  -p <poles>       Average Number of Poles per Nuclide\n");
 	printf("  -w <poles>       Average Number of Windows per Nuclide\n");
-	printf("  -d               Enables Temperature Dependence (Doppler Broadening)\n");
+	printf("  -d               Disables Temperature Dependence (Doppler Broadening)\n");
 	printf("Default is equivalent to: -s large -l 10000000 -p 1000 -w 100\n");
 	printf("See readme for full description of default run values\n");
 	exit(4);
