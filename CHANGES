@@ -1,4 +1,28 @@
 =====================================================================
+NEW IN VERSION 7
+=====================================================================
+- Temperature dependence default status has been reverted. Doppler
+  broadening / temperature dependence is now ON by default. This
+  means the Faddeeva function will be called by default.
+
+- The MIT Open Source Faddeeva function library used in Version
+  6 is no longer used, and that code has been removed. While accurate,
+  it was very slow, so we are using a much faster approximation.
+  This approximation loosens some of the restrictions due to the
+  nature of actual reactor physics calculations not needing full
+  machine precision.  The new algorithm now uses a fast three term
+  asymptotic approximation when the absolute value of Z is less
+  than 6.0.  For |z| < 6, a much higher precision computation is
+  done using the Abrarov approximation. Required use of the slower
+  Abrarov region of complex space is only expected to be hit 0.5%
+  of the time. The randomized resonance data in RSBench has been
+  tuned to approximate this frequency of usage.
+
+- Added counters and a printout to calculate the percentage of
+  faddeeva calls that have |z| < 6, thus requiring the higher
+  fidelity and slower calculation.
+
+=====================================================================
 NEW IN VERSION 6
 =====================================================================
 - Temperature dependence has now been changed to off by default

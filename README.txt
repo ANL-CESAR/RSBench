@@ -6,7 +6,7 @@
                    | | \ \ ____) | |_) |  __/ | | | (__| | | |
                    |_|  \_\_____/|____/ \___|_| |_|\___|_| |_|
                          
-                                   Version 6
+                                   Version 7
 
 ==============================================================================
 Contact Information
@@ -76,7 +76,7 @@ Running RSBench---------------------------------------------------------------
 	  -l <lookups>     Number of Cross-section (XS) lookups
 	  -p <poles>       Average Number of Poles per Nuclide
 	  -w <windows>     Average Number of Windows per Nuclide
-	  -d               Enables Temperature Dependence (Doppler Broadening)
+	  -d               Disables Temperature Dependence (Doppler Broadening)
 	Default is equivalent to: -s large -l 10000000 -p 1000 -w 100
 
 	-t <threads>
@@ -123,13 +123,13 @@ Running RSBench---------------------------------------------------------------
 		100.
 
 	-d
-		This flag enables temperature dependence in the calculation (i.e.,
-		Doppler broadening). This represents a calculation where the
+		This flag disables Doppler broadening (temperature dependence) in the
+	    calculation. Doppler broadening represents a calculation where the
 		temperature of the materials in the reactor are considered and
 		Doppler broadening is accomplished via the evaluation of the Faddeeva
 		function for each pole within a window, which is accomplished by using
-		an open source Faddeeva function library, included in the Faddeeva
-	    folder.
+	    a fast approximation method for the Faddeeva function. Disabling
+	    this feature represents a neutronics calculation done at 0K.
 
 ==============================================================================
 Debugging, Optimization & Profiling
@@ -154,15 +154,5 @@ STATUS    = yes
 -> STATUS enables calculation completion % printout status text.
    You may want to disable this if doing batch or scripted runs.
    Does not affect performance.
-
-==============================================================================
-Faddeeva Library
-==============================================================================
-All credit to the Complex Faddeeva function library included in this app
-(Faddeeva.cc, Faddeeva.c, and Faddeeva.h) goes to Steven G. Johnson.
-
-This library is available online at:
-
-http://ab-initio.mit.edu/wiki/index.php/Faddeeva_Package
 
 ==============================================================================

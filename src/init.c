@@ -48,6 +48,10 @@ int * generate_n_windows( Input input )
 // 
 Pole ** generate_poles( Input input, int * n_poles )
 {
+	// Pole Scaling Factor -- Used to bias hitting of the fast Faddeeva
+	// region to approximately 99.5% (i.e., only 0.5% of lookups should
+	// require the full eval).
+	double f = 152.5;
 	// Allocating 2D contiguous matrix
 	Pole ** R = (Pole **) malloc( input.n_nuclides * sizeof( Pole *));
 	Pole * contiguous = (Pole *) malloc( input.n_nuclides * input.avg_n_poles * sizeof(Pole));
@@ -63,10 +67,10 @@ Pole ** generate_poles( Input input, int * n_poles )
 	for( int i = 0; i < input.n_nuclides; i++ )
 		for( int j = 0; j < n_poles[i]; j++ )
 		{
-			R[i][j].MP_EA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
-			R[i][j].MP_RT = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
-			R[i][j].MP_RA = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
-			R[i][j].MP_RF = (double) rand() / RAND_MAX + (double) rand() / RAND_MAX * _Complex_I;
+			R[i][j].MP_EA = f*((double) rand() / RAND_MAX + (double) rand() / RAND_MAX * I);
+			R[i][j].MP_RT = f*(double) rand() / RAND_MAX + (double) rand() / RAND_MAX * I;
+			R[i][j].MP_RA = f*(double) rand() / RAND_MAX + (double) rand() / RAND_MAX * I;
+			R[i][j].MP_RF = f*(double) rand() / RAND_MAX + (double) rand() / RAND_MAX * I;
 			R[i][j].l_value = rand() % input.numL;
 		}
 	
