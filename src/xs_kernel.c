@@ -1,12 +1,9 @@
 #include "rsbench.h"
 
-#define N 10
-#define Tm 12.0
-#define Tm2 144.0
 // This function uses a combination of the Abrarov Approximation
 // and the QUICK_W three term asymptotic expansion.
 // Only expected to use Abrarov ~0.5% of the time.
-double complex Tramm_W( double complex Z )
+double complex fast_nuclear_W( double complex Z )
 {
 	// Abrarov 
 	if( cabs(Z) < 6.0 )
@@ -14,7 +11,7 @@ double complex Tramm_W( double complex Z )
 		// Precomputed parts for speeding things up
 		// (N = 10, Tm = 12.0)
 		double complex prefactor = 8.124330e+01 * I;
-		double an[N] = {
+		double an[10] = {
 			2.758402e-01,
 			2.245740e-01,
 			1.594149e-01,
@@ -26,7 +23,7 @@ double complex Tramm_W( double complex Z )
 			1.146494e-03,
 			3.117570e-04
 		};
-		double neg_1n[N] = {
+		double neg_1n[10] = {
 			-1.0,
 			1.0,
 			-1.0,
@@ -39,7 +36,7 @@ double complex Tramm_W( double complex Z )
 			1.0
 		};
 
-		double denominator_left[N] = {
+		double denominator_left[10] = {
 			9.869604e+00,
 			3.947842e+01,
 			8.882644e+01,
@@ -52,13 +49,13 @@ double complex Tramm_W( double complex Z )
 			9.869604e+02
 		};
 
-		double complex W = I * ( 1 - cexp(I*Tm*Z) ) / (Tm * Z );
+		double complex W = I * ( 1 - cexp(I*12.*Z) ) / (12. * Z );
 		double complex sum = 0;
-		for( int n = 1; n <= N; n++ )
+		for( int n = 1; n <= 10; n++ )
 		{
 			int idx = n-1;
-			complex double top = neg_1n[idx] * cexp(I*Tm*Z) - 1.0;
-			complex double bot = denominator_left[idx] - Tm2*Z*Z;
+			complex double top = neg_1n[idx] * cexp(I*12.*Z) - 1.;
+			complex double bot = denominator_left[idx] - 144.*Z*Z;
 			sum += an[idx] * (top/bot);
 		}
 		W += prefactor * Z  * sum;
@@ -188,15 +185,9 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 
 		// Prep Z
 		double complex Z = (E - pole.MP_EA) * dopp;
-		if( cabs(Z) < 6 )
-			(*abrarov)++;
-		(*alls)++;
 
 		// Evaluate Fadeeva Function
-		//double faddeeva = Faddeeva_w(Z, 0.1);
-		//double faddeeva = tramm_faddeeva2( Z );
-		//double faddeeva = Abrarov_W( Z );
-		double faddeeva = Tramm_W( Z );
+		double faddeeva = fast_nuclear_W( Z );
 
 		// Update W
 		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );
