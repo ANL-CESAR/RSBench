@@ -14,9 +14,9 @@ NEW IN VERSION 7
   asymptotic approximation when the absolute value of Z is
   less than 6.  For |z| > 6, a much higher precision computation
   is done using the Abrarov approximation. The slower Abrarov region
-  of complex space is only expected to be hit 0.5% of the time. The
-  randomized resonance data in RSBench has been tuned to approximate
-  this frequency of usage.
+  of complex space is only expected to be hit 0.0027% to 0.5% of the
+  time. The randomized resonance data in RSBench has been tuned to
+  approximate this frequency (assuming worst case 0.5%) of usage.
 
 - Added counters and a printout to calculate the percentage of
   faddeeva calls that have |z| < 6, thus requiring the higher
