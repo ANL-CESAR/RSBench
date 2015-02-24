@@ -185,6 +185,9 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 
 		// Prep Z
 		double complex Z = (E - pole.MP_EA) * dopp;
+		if( cabs(Z) < 6.0 )
+			(*abrarov)++;
+		(*alls)++;
 
 		// Evaluate Fadeeva Function
 		double faddeeva = fast_nuclear_W( Z );

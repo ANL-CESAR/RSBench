@@ -167,13 +167,11 @@ int main(int argc, char * argv[])
 	center_print("RESULTS", 79);
 	border_print();
 
-	printf("Threads:     %d\n", input.nthreads);
-	printf("Runtime:     %.3lf seconds\n", stop-start);
-	printf("Lookups:     "); fancy_int(input.lookups);
-	printf("Lookups/s:   "); fancy_int((double) input.lookups / (stop-start));
-	printf("arbrarov = %d\n", g_abrarov);
-	printf("alls = %d\n", g_alls);
-	printf("Percent Using Abrarov: %.2lf%%\n", (double) g_abrarov/g_alls * 100.f);
+	printf("Threads:       %d\n", input.nthreads);
+	printf("Slow Faddeeva: %.2lf%%\n", (double) g_abrarov/g_alls * 100.f);
+	printf("Runtime:       %.3lf seconds\n", stop-start);
+	printf("Lookups:       "); fancy_int(input.lookups);
+	printf("Lookups/s:     "); fancy_int((double) input.lookups / (stop-start));
 
 	border_print();
 
