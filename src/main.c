@@ -168,7 +168,8 @@ int main(int argc, char * argv[])
 	border_print();
 
 	printf("Threads:       %d\n", input.nthreads);
-	printf("Slow Faddeeva: %.2lf%%\n", (double) g_abrarov/g_alls * 100.f);
+	if( input.doppler)
+		printf("Slow Faddeeva: %.2lf%%\n", (double) g_abrarov/g_alls * 100.f);
 	printf("Runtime:       %.3lf seconds\n", stop-start);
 	printf("Lookups:       "); fancy_int(input.lookups);
 	printf("Lookups/s:     "); fancy_int((double) input.lookups / (stop-start));
