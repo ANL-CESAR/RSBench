@@ -11,16 +11,18 @@ NEW IN VERSION 7
   This approximation loosens some of the restrictions due to the
   nature of actual reactor physics calculations not needing full
   machine precision.  The new algorithm now uses a fast three term
-  asymptotic approximation when the absolute value of Z is less
-  than 6.0.  For |z| < 6, a much higher precision computation is
-  done using the Abrarov approximation. Required use of the slower
-  Abrarov region of complex space is only expected to be hit 0.5%
-  of the time. The randomized resonance data in RSBench has been
-  tuned to approximate this frequency of usage.
+  asymptotic approximation when the absolute value of Z is
+  less than 6.  For |z| > 6, a much higher precision computation
+  is done using the Abrarov approximation. The slower Abrarov region
+  of complex space is only expected to be hit 0.5% of the time. The
+  randomized resonance data in RSBench has been tuned to approximate
+  this frequency of usage.
 
 - Added counters and a printout to calculate the percentage of
   faddeeva calls that have |z| < 6, thus requiring the higher
-  fidelity and slower calculation.
+  fidelity and slower calculation. Changes made to the code during
+  porting (particularly if changing RNGs) should ensure that this
+  percentage remains approximately constant.
 
 =====================================================================
 NEW IN VERSION 6
