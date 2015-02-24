@@ -3,81 +3,82 @@
 #define N 10
 #define Tm 12.0
 #define Tm2 144.0
-// This one works!
-double complex Abrarov_W( double complex Z )
+// This function uses a combination of the Abrarov Approximation
+// and the QUICK_W three term asymptotic expansion.
+// Only expected to use Abrarov ~0.5% of the time.
+double complex Tramm_W( double complex Z )
 {
-	// Precomputed parts for speeding things up
-	// (N = 10, Tm = 12.0)
-	double complex prefactor = 8.124330e+01 * I;
-	const double an[N] = {
-		2.758402e-01,
-		2.245740e-01,
-		1.594149e-01,
-		9.866577e-02,
-		5.324414e-02,
-		2.505215e-02,
-		1.027747e-02,
-		3.676164e-03,
-		1.146494e-03,
-		3.117570e-04
-	};
-	const double neg_1n[N] = {
-		-1.0,
-		1.0,
-		-1.0,
-		1.0,
-		-1.0,
-		1.0,
-		-1.0,
-		1.0,
-		-1.0,
-		1.0
-	};
-
-	const double denominator_left[N] = {
-		9.869604e+00,
-		3.947842e+01,
-		8.882644e+01,
-		1.579137e+02,
-		2.467401e+02,
-		3.553058e+02,
-		4.836106e+02,
-		6.316547e+02,
-		7.994380e+02,
-		9.869604e+02
-	};
-
-	double complex W = I * ( 1 - cexp(I*Tm*Z) ) / (Tm * Z );
-	double complex sum = 0;
-	#pragma simd
-	for( int n = 1; n <= N; n++ )
+	// Abrarov 
+	if( cabs(Z) < 6.0 )
 	{
-		int idx = n-1;
-		complex double top = neg_1n[idx] * cexp(I*Tm*Z) - 1.0;
-		complex double bot = denominator_left[idx] - Tm2*Z*Z;
-		sum += an[idx] * (top/bot);
+		// Precomputed parts for speeding things up
+		// (N = 10, Tm = 12.0)
+		double complex prefactor = 8.124330e+01 * I;
+		double an[N] = {
+			2.758402e-01,
+			2.245740e-01,
+			1.594149e-01,
+			9.866577e-02,
+			5.324414e-02,
+			2.505215e-02,
+			1.027747e-02,
+			3.676164e-03,
+			1.146494e-03,
+			3.117570e-04
+		};
+		double neg_1n[N] = {
+			-1.0,
+			1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			1.0,
+			-1.0,
+			1.0
+		};
+
+		double denominator_left[N] = {
+			9.869604e+00,
+			3.947842e+01,
+			8.882644e+01,
+			1.579137e+02,
+			2.467401e+02,
+			3.553058e+02,
+			4.836106e+02,
+			6.316547e+02,
+			7.994380e+02,
+			9.869604e+02
+		};
+
+		double complex W = I * ( 1 - cexp(I*Tm*Z) ) / (Tm * Z );
+		double complex sum = 0;
+		for( int n = 1; n <= N; n++ )
+		{
+			int idx = n-1;
+			complex double top = neg_1n[idx] * cexp(I*Tm*Z) - 1.0;
+			complex double bot = denominator_left[idx] - Tm2*Z*Z;
+			sum += an[idx] * (top/bot);
+		}
+		W += prefactor * Z  * sum;
+		return W;
 	}
-	W += prefactor * Z  * sum;
+
+	// QUICK_2 3 Term Asymptotic Expansion (Accurate to O(1e-6)).
+	// Pre-computed parameters
+	double a = 0.512424224754768462984202823134979415014943561548661637413182;
+	double b = 0.275255128608410950901357962647054304017026259671664935783653;
+	double c = 0.051765358792987823963876628425793170829107067780337219430904;
+	double d = 2.724744871391589049098642037352945695982973740328335064216346;
+
+	// Three Term Asymptotic Expansion
+	double complex W = I * Z * (a/(Z*Z - b) + c/(Z*Z - d));
+
 	return W;
 }
-// This one works!
-double complex tramm_faddeeva2( double complex Z )
-{
-	double complex W = I * ( 1 - cexp(I*Tm*Z) ) / (Tm * Z );
-	double complex sum = 0;
-	for( int n = 1; n <= N; n++ )
-	{
-		double an = 2.0 * sqrt(M_PI) / Tm * exp( - n*n * M_PI * M_PI / (Tm * Tm));
-		complex double top = pow(-1,n) * cexp(I*Tm*Z) - 1.0;
-		complex double bot = n*n * M_PI*M_PI - Tm*Tm*Z*Z;
-		sum += an * (top/bot);
-	}
-	W += I * Tm*Tm * Z / sqrt(M_PI) * sum;
-	return W;
-}
 
-
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors ) 
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, long * abrarov, long * alls ) 
 {
 	// zero out macro vector
 	for( int i = 0; i < 4; i++ )
@@ -90,7 +91,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 		int nuc = (data.materials).mats[mat][i];
 
 		if( input.doppler == 1 )
-			calculate_micro_xs_doppler( micro_xs, nuc, E, input, data, sigTfactors);
+			calculate_micro_xs_doppler( micro_xs, nuc, E, input, data, sigTfactors, abrarov, alls);
 		else
 			calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors);
 
@@ -155,7 +156,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 // Temperature Dependent Variation of Kernel
 // (This involves using the Complex Faddeeva function to
 // Doppler broaden the poles within the window)
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors)
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, long * abrarov, long * alls)
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -187,11 +188,15 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 
 		// Prep Z
 		double complex Z = (E - pole.MP_EA) * dopp;
+		if( cabs(Z) < 6 )
+			(*abrarov)++;
+		(*alls)++;
 
 		// Evaluate Fadeeva Function
 		//double faddeeva = Faddeeva_w(Z, 0.1);
 		//double faddeeva = tramm_faddeeva2( Z );
-		double faddeeva = Abrarov_W( Z );
+		//double faddeeva = Abrarov_W( Z );
+		double faddeeva = Tramm_W( Z );
 
 		// Update W
 		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );

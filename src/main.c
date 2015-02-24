@@ -93,8 +93,11 @@ int main(int argc, char * argv[])
 	start = omp_get_wtime();
 
 
+	long g_abrarov = 0; 
+	long g_alls = 0;
 	#pragma omp parallel default(none) \
-	shared(input, data) 
+	shared(input, data) \
+	reduction(+:g_abrarov, g_alls)
 	{
 		unsigned long seed = time(NULL)+1;
 		double macro_xs[4];
@@ -102,7 +105,10 @@ int main(int argc, char * argv[])
 		seed += thread;
 		int mat;
 		double E;
-		
+		long abrarov = 0; 
+		long alls = 0;
+
+
 		#ifdef PAPI
 		int eventset = PAPI_NULL; 
 		int num_papi_events;
@@ -121,16 +127,19 @@ int main(int argc, char * argv[])
 			if( thread == 0 && i % 1000 == 0 )
 				printf("\rCalculating XS's... (%.0lf%% completed)",
 						(i / ( (double)input.lookups /
-						(double) input.nthreads )) /
+							   (double) input.nthreads )) /
 						(double) input.nthreads * 100.0);
 			#endif
 			mat = pick_mat( &seed );
 			E = rn( &seed );
-			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors ); 
+			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors, &abrarov, &alls ); 
 		}
 
 		free(sigTfactors);
-		
+
+		g_abrarov = abrarov; 
+		g_alls = alls;
+
 		#ifdef PAPI
 		if( thread == 0 )
 		{
@@ -141,7 +150,7 @@ int main(int argc, char * argv[])
 			printf("Count          \tSmybol      \tDescription\n");
 		}
 		{
-		#pragma omp barrier
+			#pragma omp barrier
 		}
 		counter_stop(&eventset, num_papi_events);
 		#endif
@@ -151,7 +160,6 @@ int main(int argc, char * argv[])
 	#ifndef PAPI
 	printf("\nSimulation Complete.\n");
 	#endif
-
 	// =====================================================================
 	// Print / Save Results and Exit
 	// =====================================================================
@@ -163,6 +171,9 @@ int main(int argc, char * argv[])
 	printf("Runtime:     %.3lf seconds\n", stop-start);
 	printf("Lookups:     "); fancy_int(input.lookups);
 	printf("Lookups/s:   "); fancy_int((double) input.lookups / (stop-start));
+	printf("arbrarov = %d\n", g_abrarov);
+	printf("alls = %d\n", g_alls);
+	printf("Percent Using Abrarov: %.2lf%%\n", (double) g_abrarov/g_alls * 100.f);
 
 	border_print();
 

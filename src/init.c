@@ -48,6 +48,7 @@ int * generate_n_windows( Input input )
 // 
 Pole ** generate_poles( Input input, int * n_poles )
 {
+	// Pole Scaling Factor
 	// Allocating 2D contiguous matrix
 	Pole ** R = (Pole **) malloc( input.n_nuclides * sizeof( Pole *));
 	Pole * contiguous = (Pole *) malloc( input.n_nuclides * input.avg_n_poles * sizeof(Pole));
