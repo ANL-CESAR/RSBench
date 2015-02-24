@@ -6,7 +6,7 @@ int main(int argc, char * argv[])
 	// Initialization & Command Line Read-In
 	// =====================================================================
 
-	int version = 6;
+	int version = 7;
 	int max_procs = omp_get_num_procs();
 	double start, stop;
 	
@@ -108,7 +108,6 @@ int main(int argc, char * argv[])
 		long abrarov = 0; 
 		long alls = 0;
 
-
 		#ifdef PAPI
 		int eventset = PAPI_NULL; 
 		int num_papi_events;
@@ -137,6 +136,7 @@ int main(int argc, char * argv[])
 
 		free(sigTfactors);
 
+		// Accumulate global counters
 		g_abrarov = abrarov; 
 		g_alls = alls;
 

@@ -6,7 +6,7 @@
                    | | \ \ ____) | |_) |  __/ | | | (__| | | |
                    |_|  \_\_____/|____/ \___|_| |_|\___|_| |_|
                          
-                                   Version 6
+                                   Version 7
 
 ==============================================================================
 Contact Information
@@ -128,8 +128,7 @@ Running RSBench---------------------------------------------------------------
 		temperature of the materials in the reactor are considered and
 		Doppler broadening is accomplished via the evaluation of the Faddeeva
 		function for each pole within a window, which is accomplished by using
-		an open source Faddeeva function library, included in the Faddeeva
-	    folder.
+	    a fast approximation method for the Faddeeva function.
 
 ==============================================================================
 Debugging, Optimization & Profiling
@@ -154,15 +153,5 @@ STATUS    = yes
 -> STATUS enables calculation completion % printout status text.
    You may want to disable this if doing batch or scripted runs.
    Does not affect performance.
-
-==============================================================================
-Faddeeva Library
-==============================================================================
-All credit to the Complex Faddeeva function library included in this app
-(Faddeeva.cc, Faddeeva.c, and Faddeeva.h) goes to Steven G. Johnson.
-
-This library is available online at:
-
-http://ab-initio.mit.edu/wiki/index.php/Faddeeva_Package
 
 ==============================================================================
