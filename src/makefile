@@ -21,8 +21,7 @@ xs_kernel.c \
 io.c \
 init.c \
 material.c \
-utils.c \
-Faddeeva/Faddeeva.c
+utils.c 
 
 obj = $(source:.c=.o)
 
@@ -36,7 +35,7 @@ CFLAGS := -std=gnu99
 # gcc Compiler
 ifeq ($(COMPILER),gnu)
   CC = gcc
-  CFLAGS += -fopenmp -ffast-math -ftree-vectorizer-verbose=2
+  CFLAGS += -fopenmp -ffast-math
 endif
 
 # intel compiler
