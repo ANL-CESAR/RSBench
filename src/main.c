@@ -101,6 +101,7 @@ int main(int argc, char * argv[])
 	{
 		unsigned long seed = time(NULL)+1;
 		double macro_xs[4];
+		double * xs = (double *) calloc(4, sizeof(double));
 		int thread = omp_get_thread_num();
 		seed += thread;
 		int mat;
@@ -132,6 +133,9 @@ int main(int argc, char * argv[])
 			mat = pick_mat( &seed );
 			E = rn( &seed );
 			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors, &abrarov, &alls ); 
+			// Results are copied onto heap to avoid some compiler
+			// flags (-flto) from optimizing out function call
+			memcpy(xs, macro_xs, 4*sizeof(double));
 		}
 
 		free(sigTfactors);
