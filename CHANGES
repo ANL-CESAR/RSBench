@@ -1,4 +1,13 @@
 =====================================================================
+NEW IN VERSION 8
+=====================================================================
+- Fixed a bug in initialization of one of the randomized arrays.
+  It was originally being allocated correctly but not properly
+  set to fully randomized values, instead just using whatever values
+  were in memory at the time (often zero). This has a very small,
+  but non-negligible, imact on performance.
+
+=====================================================================
 NEW IN VERSION 7
 =====================================================================
 - Temperature dependence default status has been reverted. Doppler
