@@ -189,7 +189,7 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 		(*alls)++;
 
 		// Evaluate Fadeeva Function
-		double faddeeva = fast_nuclear_W( Z );
+		complex double faddeeva = fast_nuclear_W( Z );
 
 		// Update W
 		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );

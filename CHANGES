@@ -1,4 +1,12 @@
 =====================================================================
+NEW IN VERSION 9
+=====================================================================
+- Changed the faddeeva function result variable in the micro_xs
+  lookup kernel to a complex double type, rather than simply a 
+  double for proper arithmetic. Has a very small (several percent)
+  change in performance.
+
+=====================================================================
 NEW IN VERSION 8
 =====================================================================
 - Fixed a bug in initialization of one of the randomized arrays.
