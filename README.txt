@@ -158,3 +158,28 @@ STATUS    = yes
    Does not affect performance.
 
 ==============================================================================
+Citing RSBench
+==============================================================================
+
+Papers citing the RSBench program in general should refer to:
+
+Tramm J.R., Siegel A.R., Forget B., Josey C, "Performance Analysis of
+a Reduced Data Movement Algorithm for Neutron Cross Section Data in
+Monte Carlo Simulations," Prsented at EASC 2014 - Solving Software
+Challenges for Exascale, Stockholm. https://doi.org/10.1007/978-3-319-15976-8_3
+
+Bibtex Entry:
+
+@inproceedings{Tramm:rs,
+author="Tramm, John R.
+and Siegel, Andrew R.
+and Forget, Benoit
+and Josey, Colin",
+title="Performance Analysis of a Reduced Data Movement Algorithm for Neutron Cross Section Data in Monte Carlo Simulations",
+booktitle = {{EASC} 2014 - Solving Software Challenges for Exascale},
+address = {Stockholm},
+year = "2014",
+url = "https://doi.org/10.1007/978-3-319-15976-8_3"
+}
+
+==============================================================================
