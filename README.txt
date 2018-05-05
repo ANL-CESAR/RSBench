@@ -15,7 +15,7 @@ Contact Information
 Organization:     Center for Exascale Simulation of Advanced Reactors (CESAR)
                   Argonne National Laboratory
 
-Development Lead: John Tramm   <jtramm@mcs.anl.gov>
+Development Lead: John Tramm   <jtramm@anl.gov>
                   Amanda Lund  <alund@anl.gov>
                   Ron Rahaman  <rahaman@anl.gov>
 
@@ -23,8 +23,14 @@ Development Lead: John Tramm   <jtramm@mcs.anl.gov>
 What is RSBench?
 ==============================================================================
 
-A mini-app to represent the multipole resonance representation lookup
-cross section algorithm.
+RSBench is mini-app to represent the multipole resonance representation lookup
+cross section algorithm for Monte Carlo neutron transport.
+
+More information can be found in the following two publications:
+
+https://doi.org/10.1007/978-3-319-15976-8_3
+
+https://doi.org/10.1109/Co-HPC.2014.9
 
 ==============================================================================
 Quick Start Guide
