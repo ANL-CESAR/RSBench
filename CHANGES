@@ -1,4 +1,99 @@
 =====================================================================
+NEW IN VERSION 10
+=====================================================================
+- In previous versions of RSBench, it was assumed that the method
+  of parallelism in the app would not be altered, as the app was
+  written to respect some loop dependencies of fully featured MC
+  applications. However, to foster more experimentation with
+  different methods of parallelizing the XS lookup kernel, we have
+  decided to add an extra loop (over particles) into RSBench so that
+  loop dependencies can be explicit in RSBench. This should make it
+  easier for people to optimize or port RSBench without worry that
+  they are breaking any implicit loop dependencies. All loop 
+  dependencies should now be apparent without requiring any knowledge
+  of full MC applications.
+
+  From a performance standpoint, the change does not really affect
+  anything regarding default performance, so performance results for
+  CPUs (run without modification of the source code) should be
+  virtually identical between v9 and v10.
+
+  RSBench now has its default OpenMP thread level parallelism
+  expressed over independent particle histories. Each particle
+  then executes 34 macro_xs lookups, which are dependent, meaning
+  that this loop cannot be parallelized as each iteration is
+  dependent on results from the previous iteration. For each
+  macro_xs, there is an independent inner loop over micro_xs lookups,
+  which is not parallelized by default in RSBench, but could be
+  if desired provided that atomic or controlled writes are used
+  for the reduction of the macroscopic XS vector.
+
+  The introduction of particles into RSBench follows a similar
+  change made in v17 of XSBench.
+
+- (Performance) To re-iterate, there is no expected performance
+  change for CPU architectures running the default code. The addition
+  of the particle loop into the code was done only to allow those
+  altering the code to more transparently see loop dependencies as
+  to avoid parallelizing or pre-processing loops in a manner which
+  would not be possible in a real MC app.
+
+  There is a slight change in performance in the smaller problem
+  size due to the OpenMP dynamic work chunk size. In v9, this was
+  set as 1 macro_xs lookup per chunk. In v10, as we are now
+  parallelizing over particle histories, the minimum chunk size
+  is now effectively 34 macro_xs lookups. For the large problem,
+  the thread work scheduling overhead is small compared to the
+  cost of a macro_xs lookup, so there isn't any difference. It's
+  just in the small problem size where the scheduling overhead
+  begins to be significant so the performance difference between
+  v9 and v10 shows up. v9 can be made equivalent in performance
+  to v10 by simply increasing the dynamic chunk size on the
+  macro_xs OpenMP loop.
+
+- (Option) In support of this change, the user now has the ability
+  to alter the number of particle histories they want to simulate.
+  This can be controlled with the "-p" command line argument.
+  By default, 300,000 particle histories will be simulated.
+  This is now the recommended argument for users to adjust if
+  the want to increase/decrease the runtime of the problem. Real
+  MC simulations may use anywhere from O(10^5) to O(10^10)
+  particles per power iteration, so a wide range of values here
+  is acceptable. 
+
+- (Option) The number of lookups to perform per particle history.
+  This is the "-l" option, which defaults to 34.
+  This option previously referred to the total number of lookups,
+  but now refers to the number of lookups per particle.
+  The default value reflects the average number of XS lookups that
+  a particle will need over its lifetime in a light water reactor.
+  One may want to adjust this value if targeting a different
+  reactor type.
+
+- (Defaults) Due to the addition of the particle abstraction, the
+  default parameters were changed slightly. With a new default of
+  300,000 particles and 34 lookups/particle, a total of 10.2 million
+  XS lookups will be performed under the default configuration. This
+  is slightly larger to what was seen in v9, which only performed
+  10 million lookups.
+
+- (Feature) Verification mode has been added. The new mode can
+  be used by enabling the "VERIFY" flag in the makefile. In this
+  mode, the inputs and results results from each macro_xs lookup
+  are hashed and added to a running integer total, and a final
+  single hash value is returned at the end of the simulation. This
+  is a great tool for those wishing to alter or optimize the code,
+  as most mistakes will result in the hash value being changed.
+
+  Note that the verification mode does come with a small performance
+  penalty, as a (non-trivial) hashing operation is performed at
+  each macro_xs lookup result. The verification mode is therefore
+  intended to check for bugs or unintended result alterations, but
+  should be disabled when collecting performance metrics or
+  other runtime information.
+
+
+=====================================================================
 NEW IN VERSION 9
 =====================================================================
 - Changed the faddeeva function result variable in the micro_xs

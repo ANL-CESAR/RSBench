@@ -69,8 +69,10 @@ Input read_CLI( int argc, char * argv[] )
 	input.nthreads = omp_get_num_procs();
 	// defaults to 355 (corresponding to H-M Large benchmark)
 	input.n_nuclides = 355;
-	// defaults to 10,000,000
-	input.lookups = 10000000;
+	// defaults to 300,000
+	input.particles = 300000;
+	// defaults to 34
+	input.lookups = 34;
 	// defaults to H-M Large benchmark
 	input.HM = LARGE;
 	// defaults to 3000 resonancs (avg) per nuclide
@@ -103,6 +105,14 @@ Input read_CLI( int argc, char * argv[] )
 			else
 				print_CLI_error();
 		}
+		// particles (-p)
+		else if( strcmp(arg, "-p") == 0 )
+		{
+			if( ++i < argc )
+				input.particles = atoi(argv[i]);
+			else
+				print_CLI_error();
+		}
 		// nuclides (-n)
 		else if( strcmp(arg, "-n") == 0 )
 		{
@@ -132,7 +142,7 @@ Input read_CLI( int argc, char * argv[] )
 			input.doppler = 0;
 		}
 		// Avg number of windows per nuclide (-w)
-		else if( strcmp(arg, "-w") == 0 )
+		else if( strcmp(arg, "-W") == 0 )
 		{
 			if( ++i < argc )
 				input.avg_n_windows = atoi(argv[i]);
@@ -140,7 +150,7 @@ Input read_CLI( int argc, char * argv[] )
 				print_CLI_error();
 		}
 		// Avg number of poles per nuclide (-p)
-		else if( strcmp(arg, "-p") == 0 )
+		else if( strcmp(arg, "-P") == 0 )
 		{
 			if( ++i < argc )
 				input.avg_n_poles = atoi(argv[i]);
@@ -188,11 +198,12 @@ void print_CLI_error(void)
 	printf("Options include:\n");
 	printf("  -t <threads>     Number of OpenMP threads to run\n");
 	printf("  -s <size>        Size of H-M Benchmark to run (small, large)\n");
-	printf("  -l <lookups>     Number of Cross-section (XS) lookups\n");
-	printf("  -p <poles>       Average Number of Poles per Nuclide\n");
-	printf("  -w <poles>       Average Number of Windows per Nuclide\n");
+	printf("  -l <lookups>     Number of Cross-section (XS) lookups per particle history\n");
+	printf("  -p <particles>   Number of particle histories\n");
+	printf("  -P <poles>       Average Number of Poles per Nuclide\n");
+	printf("  -W <poles>       Average Number of Windows per Nuclide\n");
 	printf("  -d               Disables Temperature Dependence (Doppler Broadening)\n");
-	printf("Default is equivalent to: -s large -l 10000000 -p 1000 -w 100\n");
+	printf("Default is equivalent to: -s large -l 34 -p 300000 -P 1000 -W 100\n");
 	printf("See readme for full description of default run values\n");
 	exit(4);
 }
@@ -215,7 +226,9 @@ void print_input_summary(Input input)
 	printf("Total Nuclides:              %d\n", input.n_nuclides);
 	printf("Avg Poles per Nuclide:       "); fancy_int(input.avg_n_poles);
 	printf("Avg Windows per Nuclide:     "); fancy_int(input.avg_n_windows);
-	printf("XS Lookups:                  "); fancy_int(input.lookups);
+	printf("Particles:                   "); fancy_int(input.particles);
+	printf("XS Lookups per Particle:     "); fancy_int(input.lookups);
+	printf("Total XS Lookups:            "); fancy_int(input.lookups*input.particles);
 	printf("Threads:                     %d\n", input.nthreads);
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);
 	#ifdef PAPI

@@ -1,14 +1,14 @@
 #include "rsbench.h"
 
 // JRT 
-int * generate_n_poles( Input input )
+int * generate_n_poles( Input input, unsigned long * seed )
 {
 	int total_resonances = input.avg_n_poles * input.n_nuclides;
 
 	int * R = (int *) calloc( input.n_nuclides, sizeof(int));
 
 	for( int i = 0; i < total_resonances; i++ )
-		R[rand() % input.n_nuclides]++;
+		R[rn_i(seed) % input.n_nuclides]++;
 
 	// Ensure all nuclides have at least 1 resonance
 	for( int i = 0; i < input.n_nuclides; i++ )
@@ -23,14 +23,14 @@ int * generate_n_poles( Input input )
 	return R;
 }
 
-int * generate_n_windows( Input input )
+int * generate_n_windows( Input input, unsigned long * seed )
 {
 	int total_resonances = input.avg_n_windows * input.n_nuclides;
 
 	int * R = (int *) calloc( input.n_nuclides, sizeof(int));
 
 	for( int i = 0; i < total_resonances; i++ )
-		R[rand() % input.n_nuclides]++;
+		R[rn_i(seed) % input.n_nuclides]++;
 
 	// Ensure all nuclides have at least 1 resonance
 	for( int i = 0; i < input.n_nuclides; i++ )
@@ -46,7 +46,7 @@ int * generate_n_windows( Input input )
 }
 
 // 
-Pole ** generate_poles( Input input, int * n_poles )
+Pole ** generate_poles( Input input, int * n_poles, unsigned long * seed )
 {
 	// Pole Scaling Factor -- Used to bias hitting of the fast Faddeeva
 	// region to approximately 99.5% (i.e., only 0.5% of lookups should
@@ -67,11 +67,11 @@ Pole ** generate_poles( Input input, int * n_poles )
 	for( int i = 0; i < input.n_nuclides; i++ )
 		for( int j = 0; j < n_poles[i]; j++ )
 		{
-			R[i][j].MP_EA = f*((double) rand() / RAND_MAX + (double) rand() / RAND_MAX * I);
-			R[i][j].MP_RT = f*(double) rand() / RAND_MAX + (double) rand() / RAND_MAX * I;
-			R[i][j].MP_RA = f*(double) rand() / RAND_MAX + (double) rand() / RAND_MAX * I;
-			R[i][j].MP_RF = f*(double) rand() / RAND_MAX + (double) rand() / RAND_MAX * I;
-			R[i][j].l_value = rand() % input.numL;
+			R[i][j].MP_EA = f*(rn(seed) + rn(seed) * I);
+			R[i][j].MP_RT = f*rn(seed) + rn(seed) * I;
+			R[i][j].MP_RA = f*rn(seed) + rn(seed) * I;
+			R[i][j].MP_RF = f*rn(seed) + rn(seed) * I;
+			R[i][j].l_value = rn_i(seed) % input.numL;
 		}
 	
 	/* Debug
@@ -83,7 +83,7 @@ Pole ** generate_poles( Input input, int * n_poles )
 	return R;
 }
 
-Window ** generate_window_params( Input input, int * n_windows, int * n_poles )
+Window ** generate_window_params( Input input, int * n_windows, int * n_poles, unsigned long * seed )
 {
 	// Allocating 2D contiguous matrix
 	Window ** R = (Window **) malloc( input.n_nuclides * sizeof( Window *));
@@ -104,9 +104,9 @@ Window ** generate_window_params( Input input, int * n_windows, int * n_poles )
 		int ctr = 0;
 		for( int j = 0; j < n_windows[i]; j++ )
 		{
-			R[i][j].T = (double) rand() / RAND_MAX;
-			R[i][j].A = (double) rand() / RAND_MAX;
-			R[i][j].F = (double) rand() / RAND_MAX;
+			R[i][j].T = rn(seed);
+			R[i][j].A = rn(seed);
+			R[i][j].F = rn(seed);
 			R[i][j].start = ctr; 
 			R[i][j].end = ctr + space - 1;
 
@@ -123,7 +123,7 @@ Window ** generate_window_params( Input input, int * n_windows, int * n_poles )
 	return R;
 }
 
-double ** generate_pseudo_K0RS( Input input )
+double ** generate_pseudo_K0RS( Input input, unsigned long * seed )
 {
 	double ** R = (double **) malloc( input.n_nuclides * sizeof( double * ));
 	double * contiguous = (double *) malloc( input.n_nuclides * input.numL * sizeof(double));
@@ -133,7 +133,7 @@ double ** generate_pseudo_K0RS( Input input )
 
 	for( int i = 0; i < input.n_nuclides; i++)
 		for( int j = 0; j < input.numL; j++ )
-			R[i][j] = (double) rand() / RAND_MAX;
+			R[i][j] = rn(seed);
 
 	return R;
 }

@@ -24,6 +24,7 @@ typedef struct{
 	int avg_n_windows;
 	int numL;
 	int doppler;
+	int particles;
 } Input;
 
 typedef struct{
@@ -68,22 +69,24 @@ void print_CLI_error(void);
 void print_input_summary(Input input);
 
 // init.c
-int * generate_n_poles( Input input );
-int * generate_n_windows( Input input );
-Pole ** generate_poles( Input input, int * n_poles );
-Window ** generate_window_params( Input input, int * n_windows, int * n_poles );
-double ** generate_pseudo_K0RS( Input input );
+int * generate_n_poles( Input input,  unsigned long * seed );
+int * generate_n_windows( Input input ,  unsigned long * seed);
+Pole ** generate_poles( Input input, int * n_poles ,  unsigned long * seed);
+Window ** generate_window_params( Input input, int * n_windows, int * n_poles ,  unsigned long * seed);
+double ** generate_pseudo_K0RS( Input input ,  unsigned long * seed);
 
 // material.c
 int * load_num_nucs(Input input);
 int ** load_mats( Input input, int * num_nucs );
-double ** load_concs( int * num_nucs );
+double ** load_concs( int * num_nucs, unsigned long * seed );
 int pick_mat( unsigned long * seed );
-Materials get_materials(Input input);
+Materials get_materials(Input input, unsigned long * seed);
 
 // utils.c
 double rn(unsigned long * seed);
+unsigned long rn_i(unsigned long * seed);
 size_t get_mem_estimate( Input input );
+unsigned int hash(char *str, int nbins);
 
 // xs_kernel.c
 double complex fast_nuclear_W( double complex Z );

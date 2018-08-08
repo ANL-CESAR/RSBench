@@ -6,11 +6,15 @@ int main(int argc, char * argv[])
 	// Initialization & Command Line Read-In
 	// =====================================================================
 
-	int version = 9;
+	int version = 10;
 	int max_procs = omp_get_num_procs();
 	double start, stop;
-	
-	srand(time(NULL));
+	unsigned long iseed = 0;
+	#ifdef VERIFICATION
+	iseed = 42;
+	#else
+	iseed = time(NULL);
+	#endif
 	
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
@@ -37,27 +41,27 @@ int main(int argc, char * argv[])
 	
 	// Allocate & fill energy grids
 	printf("Generating resonance distributions...\n");
-	int * n_poles = generate_n_poles( input );
+	int * n_poles = generate_n_poles( input, &iseed );
 
 	// Allocate & fill Window grids
 	printf("Generating window distributions...\n");
-	int * n_windows = generate_n_windows( input );
+	int * n_windows = generate_n_windows( input, &iseed );
 
 	// Get material data
 	printf("Loading Hoogenboom-Martin material data...\n");
-	Materials materials = get_materials( input ); 
+	Materials materials = get_materials( input, &iseed ); 
 
 	// Prepare full resonance grid
 	printf("Generating resonance parameter grid...\n");
-	Pole ** poles = generate_poles( input, n_poles );
+	Pole ** poles = generate_poles( input, n_poles, &iseed );
 
 	// Prepare full Window grid
 	printf("Generating window parameter grid...\n");
-	Window ** windows = generate_window_params( input, n_windows, n_poles);
+	Window ** windows = generate_window_params( input, n_windows, n_poles, &iseed);
 
 	// Prepare 0K Resonances
 	printf("Generating 0K l_value data...\n");
-	double ** pseudo_K0RS = generate_pseudo_K0RS( input );
+	double ** pseudo_K0RS = generate_pseudo_K0RS( input, &iseed );
 
 	CalcDataPtrs data;
 	data.n_poles = n_poles;
@@ -92,20 +96,16 @@ int main(int argc, char * argv[])
 
 	start = omp_get_wtime();
 
+	unsigned long vhash = 0;
 
 	long g_abrarov = 0; 
 	long g_alls = 0;
 	#pragma omp parallel default(none) \
 	shared(input, data) \
-	reduction(+:g_abrarov, g_alls)
+	reduction(+:g_abrarov, g_alls, vhash)
 	{
-		unsigned long seed = time(NULL)+1;
-		double macro_xs[4];
 		double * xs = (double *) calloc(4, sizeof(double));
 		int thread = omp_get_thread_num();
-		seed += thread;
-		int mat;
-		double E;
 		long abrarov = 0; 
 		long alls = 0;
 
@@ -121,21 +121,62 @@ int main(int argc, char * argv[])
 			(complex double *) malloc( input.numL * sizeof(complex double) );
 
 		#pragma omp for schedule(dynamic)
-		for( int i = 0; i < input.lookups; i++ )
+		for( int p = 0; p < input.particles; p++ )
 		{
+			// Particles are seeded by their particle ID
+            unsigned long seed = ((unsigned long) p+ (unsigned long)1)* (unsigned long) 13371337;
+
+			// Randomly pick an energy and material for the particle
+            double E = rn(&seed);
+            int mat  = pick_mat(&seed);
+
 			#ifdef STATUS
-			if( thread == 0 && i % 1000 == 0 )
+			if( thread == 0 && p % 35 == 0 )
 				printf("\rCalculating XS's... (%.0lf%% completed)",
-						(i / ( (double)input.lookups /
+						(p / ( (double)input.particles /
 							   (double) input.nthreads )) /
 						(double) input.nthreads * 100.0);
 			#endif
-			mat = pick_mat( &seed );
-			E = rn( &seed );
-			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors, &abrarov, &alls ); 
-			// Results are copied onto heap to avoid some compiler
-			// flags (-flto) from optimizing out function call
-			memcpy(xs, macro_xs, 4*sizeof(double));
+
+			for( int i = 0; i < input.lookups; i++ )
+			{
+				double macro_xs[4] = {0};
+
+				calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors, &abrarov, &alls ); 
+
+				// Results are copied onto heap to avoid some compiler
+				// flags (-flto) from optimizing out function call
+				memcpy(xs, macro_xs, 4*sizeof(double));
+
+				// Verification hash calculation
+                // This method provides a consistent hash accross
+                // architectures and compilers.
+                #ifdef VERIFICATION
+                char line[256];
+                sprintf(line, "%.5lf %d %.5lf %.5lf %.5lf %.5lf",
+                       E, mat,
+                       macro_xs[0],
+                       macro_xs[1],
+                       macro_xs[2],
+                       macro_xs[3]);
+                unsigned long long vhash_local = hash(line, 10000);
+
+                vhash += vhash_local;
+                #endif
+
+                // Randomly pick next energy and material for the particle
+                // Also incorporates results from macro_xs lookup to
+                // enforce loop dependency.
+                // In a real MC app, this dependency is expressed in terms
+                // of branching physics sampling, whereas here we are just
+                // artificially enforcing this dependence based on altering
+                // the seed
+                for( int x = 0; x < 4; x++ )
+                    seed += macro_xs[x] * (x+1)*1337*1337;
+
+                E   = rn(&seed);
+                mat = pick_mat(&seed);
+			}
 		}
 
 		free(sigTfactors);
@@ -160,6 +201,9 @@ int main(int argc, char * argv[])
 		#endif
 	}
 
+	// Final hash step
+	vhash = vhash % 1000000;
+
 	stop = omp_get_wtime();
 	#ifndef PAPI
 	printf("\nSimulation Complete.\n");
@@ -171,12 +215,30 @@ int main(int argc, char * argv[])
 	center_print("RESULTS", 79);
 	border_print();
 
-	printf("Threads:       %d\n", input.nthreads);
+	printf("Threads:               %d\n", input.nthreads);
 	if( input.doppler)
-		printf("Slow Faddeeva: %.2lf%%\n", (double) g_abrarov/g_alls * 100.f);
-	printf("Runtime:       %.3lf seconds\n", stop-start);
-	printf("Lookups:       "); fancy_int(input.lookups);
-	printf("Lookups/s:     "); fancy_int((double) input.lookups / (stop-start));
+	printf("Slow Faddeeva:         %.2lf%%\n", (double) g_abrarov/g_alls * 100.f);
+	printf("Runtime:               %.3lf seconds\n", stop-start);
+	printf("Lookups:               "); fancy_int(input.lookups*input.particles);
+	printf("Lookups/s:             "); fancy_int((double) input.lookups*input.particles / (stop-start));
+	#ifdef VERIFICATION
+	unsigned long long large = 842241;
+	unsigned long long small = 62018;
+	if( input.HM  == LARGE )
+	{
+		if( vhash == large )
+			printf("Verification checksum: %llu (Valid)\n", vhash);
+		else
+			printf("Verification checksum: %llu (WARNING - INAVALID CHECKSUM!)\n", vhash);
+	}
+	else if( input.HM  == SMALL )
+	{
+		if( vhash == small )
+			printf("Verification checksum: %llu (Valid)\n", vhash);
+		else
+			printf("Verification checksum: %llu (WARNING - INAVALID CHECKSUM!)\n", vhash);
+	}
+	#endif
 
 	border_print();
 

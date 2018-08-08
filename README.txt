@@ -6,7 +6,7 @@
                    | | \ \ ____) | |_) |  __/ | | | (__| | | |
                    |_|  \_\_____/|____/ \___|_| |_|\___|_| |_|
                          
-                                   Version 9
+                                   Version 10
 
 ==============================================================================
 Contact Information
@@ -81,11 +81,12 @@ Running RSBench---------------------------------------------------------------
 	Options include:
 	  -t <threads>     Number of OpenMP threads to run
 	  -s <size>        Size of H-M Benchmark to run (small, large)
-	  -l <lookups>     Number of Cross-section (XS) lookups
-	  -p <poles>       Average Number of Poles per Nuclide
+	  -l <lookups>     Number of Cross-section (XS) lookups per particle
+	  -p <particles>   Number of particle histories to simulate
+	  -P <poles>       Average Number of Poles per Nuclide
 	  -w <windows>     Average Number of Windows per Nuclide
 	  -d               Disables Temperature Dependence (Doppler Broadening)
-	Default is equivalent to: -s large -l 10000000 -p 1000 -w 100
+	Default is equivalent to: -s large -p 300000 -l 34 -P 1000 -w 100
 
 	-t <threads>
 
@@ -111,16 +112,28 @@ Running RSBench---------------------------------------------------------------
 		whenever a lookup occurs in a fuel material.  Note that the
 		program defaults to "Large" if no specification is made.
 
-	-l <lookups>
-		
-		Sets the number of cross-section (XS) lookups to perform. By
-		default, this value is set to 5,000,000. Users may want to
-		increase this value if they wish to extend the runtime of
-		RSBench, perhaps to produce more reliable performance counter
-		data - as extending the run will decrease the percentage of
-		runtime spent on initialization.
+	-p <particles>
 
-	-p <poles>
+		Sets the number of particle histories to simulate.
+		By default, this value is set to 300,000. Users may want to
+		increase this value if they wish to extend the runtime of
+		XSBench, perhaps to produce more reliable performance counter
+		data - as extending the run will decrease the percentage of
+		runtime spent on initialization. Real MC simulations in a full
+		application may use up to several billion particles per generation,
+		so there is great flexibility in this variable.
+
+	-l <lookups>
+
+		Sets the number of cross-section (XS) lookups to perform per particle.
+		By default, this value is set to 34, which represents the average
+		number of XS lookups per particle over the course of its lifetime in
+		a light water reactor problem. Users should only alter this value if
+		they are trying to capture the behavior of a different type of reactor
+		(e.g., one with a fast spectrum), where the number of lookups per
+		history may be different.
+
+	-P <poles>
 		
 		This is the average number of poles per nuclide. Default is
 		set to 1000.
@@ -152,6 +165,7 @@ OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
 STATUS    = yes
+VERIFY    = no
 
 -> Optimization enables the -O3 optimization flag.
 
@@ -162,6 +176,33 @@ STATUS    = yes
 -> STATUS enables calculation completion % printout status text.
    You may want to disable this if doing batch or scripted runs.
    Does not affect performance.
+
+-> VERIFY enables the verification mode of RSBench (as described below).
+
+==============================================================================
+Verification Support
+==============================================================================
+
+RSBench has the ability to verify that consistent and correct results are
+achieved. This mode is enabled by altering the "VERIFY" setting to 'yes' in
+the makefile, i.e.:
+
+VERIFY = yes
+
+Once enabled, the code will generate a hash of the results and display it
+with the other data once the code has completed executing. This hash can
+then be verified against hashes that other versions or configurations of
+the code generate. For instance, running RSBench with 4 threads vs 8 threads
+(on a machine that supports that configuration) should generate the
+same hash number. Changing the model / run parameters should NOT generate
+the same hash number (i.e., increasing the number of particles, number
+of gridpoints, etc, will result in different hashes).
+
+Note that the verification mode runs a little slower, due to need to hash
+each macroscopic cross section result. Therefore, performance measurements
+should generally not be made when verification mode is on. Rather,
+verification mode should be used to ensure any changes to the code have not
+broken it, and then be disabled before performance metrics are recorded.
 
 ==============================================================================
 Citing RSBench

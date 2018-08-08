@@ -1,12 +1,12 @@
 #include "rsbench.h"
 
 // Handles all material creation tasks - returns Material struct
-Materials get_materials(Input input)
+Materials get_materials(Input input, unsigned long * seed)
 {
 	Materials M;
 	M.num_nucs = load_num_nucs(input);
 	M.mats = load_mats(input, M.num_nucs);
-	M.concs = load_concs(M.num_nucs);
+	M.concs = load_concs(M.num_nucs, seed);
 
 	return M;
 }
@@ -107,7 +107,7 @@ int ** load_mats( Input input, int * num_nucs )
 }
 
 // Creates a randomized array of 'concentrations' of nuclides in each mat
-double ** load_concs( int * num_nucs )
+double ** load_concs( int * num_nucs, unsigned long * seed )
 {
 	double ** concs = (double **)malloc( 12 * sizeof( double *) );
 	
@@ -116,7 +116,7 @@ double ** load_concs( int * num_nucs )
 	
 	for( int i = 0; i < 12; i++ )
 		for( int j = 0; j < num_nucs[i]; j++ )
-			concs[i][j] = (double) rand() / (double) RAND_MAX;
+			concs[i][j] = rn(seed);
 
 	// test
 	/*
