@@ -153,7 +153,7 @@ int main(int argc, char * argv[])
                 // architectures and compilers.
                 #ifdef VERIFICATION
                 char line[256];
-                sprintf(line, "%.5lf %d %.5lf %.5lf %.5lf %.5lf",
+                sprintf(line, "%.5le %d %.5le %.5le %.5le %.5le",
                        E, mat,
                        macro_xs[0],
                        macro_xs[1],

@@ -67,10 +67,18 @@ Pole ** generate_poles( Input input, int * n_poles, unsigned long * seed )
 	for( int i = 0; i < input.n_nuclides; i++ )
 		for( int j = 0; j < n_poles[i]; j++ )
 		{
-			R[i][j].MP_EA = f*(rn(seed) + rn(seed) * I);
-			R[i][j].MP_RT = f*rn(seed) + rn(seed) * I;
-			R[i][j].MP_RA = f*rn(seed) + rn(seed) * I;
-			R[i][j].MP_RF = f*rn(seed) + rn(seed) * I;
+			double r = rn(seed);
+			double im = rn(seed);
+			R[i][j].MP_EA = f*(r + im * I);
+			r = rn(seed);
+			im = rn(seed);
+			R[i][j].MP_RT = f*r + im * I;
+			r = rn(seed);
+			im = rn(seed);
+			R[i][j].MP_RA = f*r + im * I;
+			r = rn(seed);
+			im = rn(seed);
+			R[i][j].MP_RF = f*r + im * I;
 			R[i][j].l_value = rn_i(seed) % input.numL;
 		}
 	
