@@ -42,7 +42,7 @@ endif
 # intel compiler
 ifeq ($(COMPILER),intel)
   CC = icc
-  CFLAGS += -openmp -xhost -ansi-alias -no-prec-div
+  CFLAGS += -qopenmp -xhost -ansi-alias -no-prec-div
 endif
 
 # PGI compiler (thanks Chip!)
@@ -92,10 +92,10 @@ endif
 # Targets to Build
 #===============================================================================
 
-$(program): $(obj) rsbench.h
+$(program): $(obj) rsbench.h makefile
 	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
 
-%.o: %.c
+%.o: %.c rsbench.h makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
