@@ -92,10 +92,10 @@ endif
 # Targets to Build
 #===============================================================================
 
-$(program): $(obj) rsbench.h makefile
+$(program): $(obj) rsbench.h Makefile
 	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
 
-%.o: %.c rsbench.h makefile
+%.o: %.c rsbench.h Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

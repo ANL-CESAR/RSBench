@@ -153,7 +153,7 @@ int main(int argc, char * argv[])
                 // architectures and compilers.
                 #ifdef VERIFICATION
                 char line[256];
-                sprintf(line, "%.5le %d %.5le %.5le %.5le %.5le",
+                sprintf(line, "%.3le %d %.3le %.3le %.3le %.3le",
                        E, mat,
                        macro_xs[0],
                        macro_xs[1],
@@ -172,7 +172,12 @@ int main(int argc, char * argv[])
                 // artificially enforcing this dependence based on altering
                 // the seed
                 for( int x = 0; x < 4; x++ )
-                    seed += macro_xs[x] * (x+1)*1337*1337;
+				{
+					if( macro_xs[x] > 0 )
+                    	seed += 1337*p;
+					else
+						seed += 42;
+				}
 
                 E   = rn(&seed);
                 mat = pick_mat(&seed);

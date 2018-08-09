@@ -1,5 +1,32 @@
 #include "rsbench.h"
 
+// Implementation based on:
+// z = x + iy
+// cexp(z) = e^x * (cos(y) + i * sin(y))
+double fast_cexp( double complex z )
+{
+	double x = creal(z);
+	double y = cimag(z);
+
+	double t1 = fast_exp(x);
+	double t2 = cos(y);
+	double t3 = sin(y);
+	double complex result = t1 * (t2 + t3 * I);
+	return result;
+}	
+
+// Faster exponential function
+// Written By "ACMer":
+// https://codingforspeed.com/using-faster-exponential-approximation/
+double fast_exp(double x)
+{
+  x = 1. + x * 0.000244140625;
+  x *= x; x *= x; x *= x; x *= x;
+  x *= x; x *= x; x *= x; x *= x;
+  x *= x; x *= x; x *= x; x *= x;
+  return x;
+}
+
 // Park & Miller Multiplicative Conguential Algorithm
 // From "Numerical Recipes" Second Edition
 double rn(unsigned long * seed)

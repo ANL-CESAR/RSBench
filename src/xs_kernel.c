@@ -49,11 +49,11 @@ double complex fast_nuclear_W( double complex Z )
 			9.869604e+02
 		};
 
-		double complex W = I * ( 1 - cexp(I*12.*Z) ) / (12. * Z );
+		double complex W = I * ( 1 - fast_cexp(I*12.*Z) ) / (12. * Z );
 		double complex sum = 0;
 		for( int n = 0; n < 10; n++ )
 		{
-			complex double top = neg_1n[n] * cexp(I*12.*Z) - 1.;
+			complex double top = neg_1n[n] * fast_cexp(I*12.*Z) - 1.;
 			complex double bot = denominator_left[n] - 144.*Z*Z;
 			sum += an[n] * (top/bot);
 		}
