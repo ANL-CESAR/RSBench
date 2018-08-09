@@ -227,8 +227,8 @@ int main(int argc, char * argv[])
 	printf("Lookups:               "); fancy_int(input.lookups*input.particles);
 	printf("Lookups/s:             "); fancy_int((double) input.lookups*input.particles / (stop-start));
 	#ifdef VERIFICATION
-	unsigned long long large = 842241;
-	unsigned long long small = 62018;
+	unsigned long long large = 489504;
+	unsigned long long small = 376237;
 	if( input.HM  == LARGE )
 	{
 		if( vhash == large )
