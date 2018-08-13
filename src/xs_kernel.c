@@ -3,14 +3,15 @@
 // This function uses a combination of the Abrarov Approximation
 // and the QUICK_W three term asymptotic expansion.
 // Only expected to use Abrarov ~0.5% of the time.
-double complex fast_nuclear_W( double complex Z )
+RSComplex fast_nuclear_W( RSComplex Z )
 {
 	// Abrarov 
 	if( cabs(Z) < 6.0 )
 	{
 		// Precomputed parts for speeding things up
 		// (N = 10, Tm = 12.0)
-		double complex prefactor = 8.124330e+01 * I;
+		//RSComplex prefactor = 8.124330e+01 * I;
+		RSComplex prefactor = {0, 8.124330e+01};
 		double an[10] = {
 			2.758402e-01,
 			2.245740e-01,
@@ -49,32 +50,54 @@ double complex fast_nuclear_W( double complex Z )
 			9.869604e+02
 		};
 
-		double complex W = I * ( 1 - fast_cexp(I*12.*Z) ) / (12. * Z );
-		double complex sum = 0;
+		RSComplex t1 = {0, 12};
+		RSComplex t2 = {12, 0};
+		RSComplex i = {0,1};
+		RSComplex one = {1, 0};
+		//RSComplex W = i * ( 1 - fast_cexp(t1*Z) ) / (12. * Z );
+		//RSComplex W = i * ( one - fast_cexp(c_mul(t1, Z)) ) / c_mul(t2, Z);
+		//RSComplex W = i * ( c_sub(one, fast_cexp(c_mul(t1, Z))) ) / c_mul(t2, Z);
+		//RSComplex W = c_mul(i, ( c_sub(one, fast_cexp(c_mul(t1, Z))) )) / c_mul(t2, Z);
+		RSComplex W = c_div(c_mul(i, ( c_sub(one, fast_cexp(c_mul(t1, Z))) )) , c_mul(t2, Z));
+		RSComplex sum = 0;
 		for( int n = 0; n < 10; n++ )
 		{
-			complex double top = neg_1n[n] * fast_cexp(I*12.*Z) - 1.;
-			complex double bot = denominator_left[n] - 144.*Z*Z;
-			sum += an[n] * (top/bot);
+			//RSComplex top = neg_1n[n] * fast_cexp(t1*Z) - 1.;
+			//RSComplex top = c_sub(neg_1n[n] * fast_cexp(t1*Z), 1.);
+			//RSComplex top = c_sub(neg_1n[n] * fast_cexp(c_mul(t1, Z)), 1.);
+			RSComplex t3 = {neg_1n[n], 0};
+			RSComplex top = c_sub(c_mul(t3, fast_cexp(c_mul(t1, Z))), 1.);
+			RSComplex t4 = {denominator_left[n], 0};
+			//RSComplex bot = c_sub(t4, 144.*Z*Z);
+			RSComplex t5 = {144, 0};
+			RSComplex bot = c_sub(t4, c_mul(t5,c_mul(Z,Z)));
+			RSComplex t6 = {An[n], 0};
+			sum = c_add(sum, c_mul(t6, c_div(top,bot)));
 		}
-		W += prefactor * Z  * sum;
+		//W += prefactor * Z  * sum;
+		W = c_add(W, c_mul(prefactor, c_mul(Z, sum)));
 		return W;
 	}
+	else
+	{
+		// QUICK_2 3 Term Asymptotic Expansion (Accurate to O(1e-6)).
+		// Pre-computed parameters
+		double a = 0.512424224754768462984202823134979415014943561548661637413182;
+		double b = 0.275255128608410950901357962647054304017026259671664935783653;
+		double c = 0.051765358792987823963876628425793170829107067780337219430904;
+		double d = 2.724744871391589049098642037352945695982973740328335064216346;
 
-	// QUICK_2 3 Term Asymptotic Expansion (Accurate to O(1e-6)).
-	// Pre-computed parameters
-	double a = 0.512424224754768462984202823134979415014943561548661637413182;
-	double b = 0.275255128608410950901357962647054304017026259671664935783653;
-	double c = 0.051765358792987823963876628425793170829107067780337219430904;
-	double d = 2.724744871391589049098642037352945695982973740328335064216346;
+		RSComplex i = {0,1};
+		RSComplex Z2 = c_mul(Z, Z);
+		// Three Term Asymptotic Expansion
+		//RSComplex W = I * Z * (a/(Z*Z - b) + c/(Z*Z - d));
+		RSComplex W = c_mul(c_mul(Z,i), (c_add(c_div(a,(c_sub(Z2, b))) , c_div(c,(c_sub(Z2, d))))));
 
-	// Three Term Asymptotic Expansion
-	double complex W = I * Z * (a/(Z*Z - b) + c/(Z*Z - d));
-
-	return W;
+		return W;
+	}
 }
 
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, long * abrarov, long * alls ) 
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors, long * abrarov, long * alls ) 
 {
 	// zero out macro vector
 	for( int i = 0; i < 4; i++ )
@@ -105,7 +128,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 }
 
 // No Temperature dependence (i.e., 0K evaluation)
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors)
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors)
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -131,8 +154,8 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	// Loop over Poles within window, add contributions
 	for( int i = w.start; i < w.end; i++ )
 	{
-		complex double PSIIKI;
-		complex double CDUM;
+		RSComplex PSIIKI;
+		RSComplex CDUM;
 		Pole pole = data.poles[nuc][i];
 		PSIIKI = -(0.0 - 1.0 * _Complex_I ) / ( pole.MP_EA - sqrt(E) );
 		CDUM = PSIIKI / E;
@@ -152,7 +175,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 // Temperature Dependent Variation of Kernel
 // (This involves using the Complex Faddeeva function to
 // Doppler broaden the poles within the window)
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, long * abrarov, long * alls)
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors, long * abrarov, long * alls)
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -183,13 +206,13 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 		Pole pole = data.poles[nuc][i];
 
 		// Prep Z
-		double complex Z = (E - pole.MP_EA) * dopp;
+		RSComplex Z = (E - pole.MP_EA) * dopp;
 		if( cabs(Z) < 6.0 )
 			(*abrarov)++;
 		(*alls)++;
 
 		// Evaluate Fadeeva Function
-		complex double faddeeva = fast_nuclear_W( Z );
+		RSComplex faddeeva = fast_nuclear_W( Z );
 
 		// Update W
 		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );
@@ -205,7 +228,7 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 	micro_xs[3] = sigE;
 }
 
-void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors )
+void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors )
 {
 	double phi;
 

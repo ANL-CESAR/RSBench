@@ -116,8 +116,8 @@ int main(int argc, char * argv[])
 			counter_init(&eventset, &num_papi_events);
 		}
 		#endif
-		complex double * sigTfactors =
-			(complex double *) malloc( input.numL * sizeof(complex double) );
+		RSComplex * sigTfactors =
+			(RSComplex *) malloc( input.numL * sizeof(RSComplex) );
 
 		#pragma omp for schedule(dynamic)
 		for( int p = 0; p < input.particles; p++ )

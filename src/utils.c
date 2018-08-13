@@ -3,7 +3,7 @@
 // Implementation based on:
 // z = x + iy
 // cexp(z) = e^x * (cos(y) + i * sin(y))
-complex double fast_cexp( double complex z )
+RSComplex fast_cexp( RSComplex z )
 {
 	double x = creal(z);
 	double y = cimag(z);
@@ -11,7 +11,7 @@ complex double fast_cexp( double complex z )
 	double t1 = fast_exp(x);
 	double t2 = cos(y);
 	double t3 = sin(y);
-	double complex result = t1 * (t2 + t3 * I);
+	RSComplex result = t1 * (t2 + t3 * I);
 	return result;
 }	
 

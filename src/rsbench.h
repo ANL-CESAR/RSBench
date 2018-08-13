@@ -4,7 +4,6 @@
 #include<time.h>
 #include<string.h>
 #include<math.h>
-#include<complex.h>
 
 #ifdef PAPI
 #include "papi.h"
@@ -14,6 +13,49 @@
 
 // typedefs
 typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
+
+typedef struct{
+	double r;
+	double i;
+} RSComplex;
+
+RSComplex c_add( RSComplex A, RSComplex B)
+{
+	RSComplex C;
+	C.r = A.r + B.r;
+	C.i = A.i + B.i;
+	return C;
+}
+RSComplex c_sub( RSComplex A, RSComplex B)
+{
+	RSComplex C;
+	C.r = A.r - B.r;
+	C.i = A.i - B.i;
+	return C;
+}
+RSComplex c_mul( RSComplex A, RSComplex B)
+{
+	double a = A.r;
+	double b = A.i;
+	double c = B.r;
+	double d = B.i;
+	RSComplex C;
+	C.r = (a*c) - (b*d);
+	C.i = (a*d) + (b*c);
+	return C;
+}
+RSComplex c_div( RSComplex A, RSComplex B)
+{
+	double a = A.r;
+	double b = A.i;
+	double c = B.r;
+	double d = B.i;
+	RSComplex C;
+	double denom = c*c + d*d;
+	C.r = ( (a*c) + (b*d) ) / denom;
+	C.i = ( (b*c) - (a*d) ) / denom;
+	return C;
+}
 
 typedef struct{
 	int nthreads;
