@@ -157,11 +157,14 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 		RSComplex PSIIKI;
 		RSComplex CDUM;
 		Pole pole = data.poles[nuc][i];
-		PSIIKI = -(0.0 - 1.0 * _Complex_I ) / ( pole.MP_EA - sqrt(E) );
-		CDUM = PSIIKI / E;
-		sigT += creal( pole.MP_RT * CDUM * sigTfactors[pole.l_value] );
-		sigA += creal( pole.MP_RA * CDUM);
-		sigF += creal( pole.MP_RF * CDUM);
+		RSComplex t1 = {0, 1};
+		RSComplex t2 = {sqrt(E), 0 };
+		PSIIKI = c_div( t1 , c_sub(pole.MP_EA,t2) );
+		RSComplex E_c = {E, 0}
+		CDUM = c_div(PSIIKI, E_c);
+		sigT += (c_mul(pole.MP_RT, c_mul(CDUM, sigTfactors[pole.l_value])) ).r;
+		sigA += (c_mul( pole.MP_RA, CDUM)).r;
+		sigF += (c_mul(pole.MP_RF, CDUM)).r;
 	}
 
 	sigE = sigT - sigA;
@@ -206,8 +209,10 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 		Pole pole = data.poles[nuc][i];
 
 		// Prep Z
-		RSComplex Z = (E - pole.MP_EA) * dopp;
-		if( cabs(Z) < 6.0 )
+		RSComplex E_c = {E, 0};
+		RSComplex dopp_c = {dopp, 0};
+		RSComplex Z = c_mul(c_sub(E_c, pole.MP_EA), dopp_c);
+		if( c_abs(Z) < 6.0 )
 			(*abrarov)++;
 		(*alls)++;
 
@@ -215,9 +220,9 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 		RSComplex faddeeva = fast_nuclear_W( Z );
 
 		// Update W
-		sigT += creal( pole.MP_RT * faddeeva * sigTfactors[pole.l_value] );
-		sigA += creal( pole.MP_RA * faddeeva);
-		sigF += creal( pole.MP_RF * faddeeva);
+		sigT += (c_mul( pole.MP_RT, c_mul(faddeeva, sigTfactors[pole.l_value]) )).r;
+		sigA += (c_mul( pole.MP_RA , faddeeva)).r;
+		sigF += (c_mul( pole.MP_RF , faddeeva)).r;
 	}
 
 	sigE = sigT - sigA;
@@ -245,6 +250,9 @@ void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, RSCompl
 
 		phi *= 2.0;
 
-		sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
+		//sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
+		sigTfactors[i].r = cos(phi);
+		sigTfactors[i].i = -sin(phi);
+
 	}
 }

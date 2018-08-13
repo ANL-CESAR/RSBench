@@ -57,6 +57,11 @@ RSComplex c_div( RSComplex A, RSComplex B)
 	return C;
 }
 
+double c_abs( RSComplex A)
+{
+	return sqrt(A.r*A.r + A.i * A.i);
+}
+
 typedef struct{
 	int nthreads;
 	int n_nuclides;
@@ -76,10 +81,10 @@ typedef struct{
 } Materials;
 
 typedef struct{
-	complex double MP_EA;
-	complex double MP_RT;
-	complex double MP_RA;
-	complex double MP_RF;
+	RSComplex MP_EA;
+	RSComplex MP_RT;
+	RSComplex MP_RA;
+	RSComplex MP_RF;
 	short int l_value;
 } Pole;
 
@@ -129,15 +134,15 @@ double rn(unsigned long * seed);
 unsigned long rn_i(unsigned long * seed);
 size_t get_mem_estimate( Input input );
 unsigned int hash(char *str, int nbins);
-complex double fast_cexp( double complex z );
+RSComplex fast_cexp( RSComplex z );
 double fast_exp(double x);
 
 // xs_kernel.c
-double complex fast_nuclear_W( double complex Z );
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, long * abrarov, long * alls ); 
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors);
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors, long * abrarov, long * alls);
-void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, complex double * sigTfactors );
+RSComplex fast_nuclear_W( RSComplex Z );
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors, long * abrarov, long * alls ); 
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors);
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors, long * abrarov, long * alls);
+void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors );
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );
