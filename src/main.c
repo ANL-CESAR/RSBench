@@ -7,7 +7,6 @@ int main(int argc, char * argv[])
 	// =====================================================================
 
 	int version = 10;
-	int max_procs = omp_get_num_procs();
 	double start, stop;
 	unsigned long iseed = 0;
 	#ifdef VERIFICATION
@@ -153,7 +152,7 @@ int main(int argc, char * argv[])
                 // architectures and compilers.
                 #ifdef VERIFICATION
                 char line[256];
-                sprintf(line, "%.3le %d %.3le %.3le %.3le %.3le",
+                sprintf(line, "%.2le %d %.2le %.2le %.2le %.2le",
                        E, mat,
                        macro_xs[0],
                        macro_xs[1],
@@ -227,21 +226,21 @@ int main(int argc, char * argv[])
 	printf("Lookups:               "); fancy_int(input.lookups*input.particles);
 	printf("Lookups/s:             "); fancy_int((double) input.lookups*input.particles / (stop-start));
 	#ifdef VERIFICATION
-	unsigned long long large = 489504;
-	unsigned long long small = 376237;
+	unsigned long long large = 425149;
+	unsigned long long small = 830419;
 	if( input.HM  == LARGE )
 	{
 		if( vhash == large )
-			printf("Verification checksum: %llu (Valid)\n", vhash);
+			printf("Verification checksum: %lu (Valid)\n", vhash);
 		else
-			printf("Verification checksum: %llu (WARNING - INAVALID CHECKSUM!)\n", vhash);
+			printf("Verification checksum: %lu (WARNING - INAVALID CHECKSUM!)\n", vhash);
 	}
 	else if( input.HM  == SMALL )
 	{
 		if( vhash == small )
-			printf("Verification checksum: %llu (Valid)\n", vhash);
+			printf("Verification checksum: %lu (Valid)\n", vhash);
 		else
-			printf("Verification checksum: %llu (WARNING - INAVALID CHECKSUM!)\n", vhash);
+			printf("Verification checksum: %lu (WARNING - INAVALID CHECKSUM!)\n", vhash);
 	}
 	#endif
 

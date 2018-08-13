@@ -87,7 +87,7 @@ double rn(unsigned long * seed);
 unsigned long rn_i(unsigned long * seed);
 size_t get_mem_estimate( Input input );
 unsigned int hash(char *str, int nbins);
-double fast_cexp( double complex z );
+complex double fast_cexp( double complex z );
 double fast_exp(double x);
 
 // xs_kernel.c
