@@ -6,7 +6,7 @@
 RSComplex fast_nuclear_W( RSComplex Z )
 {
 	// Abrarov 
-	if( cabs(Z) < 6.0 )
+	if( c_abs(Z) < 6.0 )
 	{
 		// Precomputed parts for speeding things up
 		// (N = 10, Tm = 12.0)
@@ -59,19 +59,19 @@ RSComplex fast_nuclear_W( RSComplex Z )
 		//RSComplex W = i * ( c_sub(one, fast_cexp(c_mul(t1, Z))) ) / c_mul(t2, Z);
 		//RSComplex W = c_mul(i, ( c_sub(one, fast_cexp(c_mul(t1, Z))) )) / c_mul(t2, Z);
 		RSComplex W = c_div(c_mul(i, ( c_sub(one, fast_cexp(c_mul(t1, Z))) )) , c_mul(t2, Z));
-		RSComplex sum = 0;
+		RSComplex sum = {0,0};
 		for( int n = 0; n < 10; n++ )
 		{
 			//RSComplex top = neg_1n[n] * fast_cexp(t1*Z) - 1.;
 			//RSComplex top = c_sub(neg_1n[n] * fast_cexp(t1*Z), 1.);
 			//RSComplex top = c_sub(neg_1n[n] * fast_cexp(c_mul(t1, Z)), 1.);
 			RSComplex t3 = {neg_1n[n], 0};
-			RSComplex top = c_sub(c_mul(t3, fast_cexp(c_mul(t1, Z))), 1.);
+			RSComplex top = c_sub(c_mul(t3, fast_cexp(c_mul(t1, Z))), one);
 			RSComplex t4 = {denominator_left[n], 0};
 			//RSComplex bot = c_sub(t4, 144.*Z*Z);
 			RSComplex t5 = {144, 0};
 			RSComplex bot = c_sub(t4, c_mul(t5,c_mul(Z,Z)));
-			RSComplex t6 = {An[n], 0};
+			RSComplex t6 = {an[n], 0};
 			sum = c_add(sum, c_mul(t6, c_div(top,bot)));
 		}
 		//W += prefactor * Z  * sum;
@@ -82,10 +82,10 @@ RSComplex fast_nuclear_W( RSComplex Z )
 	{
 		// QUICK_2 3 Term Asymptotic Expansion (Accurate to O(1e-6)).
 		// Pre-computed parameters
-		double a = 0.512424224754768462984202823134979415014943561548661637413182;
-		double b = 0.275255128608410950901357962647054304017026259671664935783653;
-		double c = 0.051765358792987823963876628425793170829107067780337219430904;
-		double d = 2.724744871391589049098642037352945695982973740328335064216346;
+		RSComplex a = {0.512424224754768462984202823134979415014943561548661637413182,0};
+		RSComplex b = {0.275255128608410950901357962647054304017026259671664935783653, 0};
+		RSComplex c = {0.051765358792987823963876628425793170829107067780337219430904, 0};
+		RSComplex d = {2.724744871391589049098642037352945695982973740328335064216346, 0};
 
 		RSComplex i = {0,1};
 		RSComplex Z2 = c_mul(Z, Z);
@@ -160,7 +160,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 		RSComplex t1 = {0, 1};
 		RSComplex t2 = {sqrt(E), 0 };
 		PSIIKI = c_div( t1 , c_sub(pole.MP_EA,t2) );
-		RSComplex E_c = {E, 0}
+		RSComplex E_c = {E, 0};
 		CDUM = c_div(PSIIKI, E_c);
 		sigT += (c_mul(pole.MP_RT, c_mul(CDUM, sigTfactors[pole.l_value])) ).r;
 		sigA += (c_mul( pole.MP_RA, CDUM)).r;

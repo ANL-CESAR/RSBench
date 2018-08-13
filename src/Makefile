@@ -22,7 +22,8 @@ xs_kernel.c \
 io.c \
 init.c \
 material.c \
-utils.c 
+utils.c \
+rscomplex.c
 
 obj = $(source:.c=.o)
 

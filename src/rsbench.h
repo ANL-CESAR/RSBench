@@ -19,48 +19,7 @@ typedef struct{
 	double i;
 } RSComplex;
 
-RSComplex c_add( RSComplex A, RSComplex B)
-{
-	RSComplex C;
-	C.r = A.r + B.r;
-	C.i = A.i + B.i;
-	return C;
-}
-RSComplex c_sub( RSComplex A, RSComplex B)
-{
-	RSComplex C;
-	C.r = A.r - B.r;
-	C.i = A.i - B.i;
-	return C;
-}
-RSComplex c_mul( RSComplex A, RSComplex B)
-{
-	double a = A.r;
-	double b = A.i;
-	double c = B.r;
-	double d = B.i;
-	RSComplex C;
-	C.r = (a*c) - (b*d);
-	C.i = (a*d) + (b*c);
-	return C;
-}
-RSComplex c_div( RSComplex A, RSComplex B)
-{
-	double a = A.r;
-	double b = A.i;
-	double c = B.r;
-	double d = B.i;
-	RSComplex C;
-	double denom = c*c + d*d;
-	C.r = ( (a*c) + (b*d) ) / denom;
-	C.i = ( (b*c) - (a*d) ) / denom;
-	return C;
-}
 
-double c_abs( RSComplex A)
-{
-	return sqrt(A.r*A.r + A.i * A.i);
-}
 
 typedef struct{
 	int nthreads;
@@ -143,6 +102,13 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors);
 void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors, long * abrarov, long * alls);
 void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors );
+
+// rscomplex.c
+RSComplex c_add( RSComplex A, RSComplex B);
+RSComplex c_sub( RSComplex A, RSComplex B);
+RSComplex c_mul( RSComplex A, RSComplex B);
+RSComplex c_div( RSComplex A, RSComplex B);
+double c_abs( RSComplex A);
 
 // papi.c
 void counter_init( int *eventset, int *num_papi_events );
