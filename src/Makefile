@@ -37,13 +37,13 @@ CFLAGS := -std=gnu99 -Wall
 # gcc Compiler
 ifeq ($(COMPILER),gnu)
   CC = gcc
-  CFLAGS += -fopenmp -ffast-math
+  CFLAGS += -fopenmp -ffast-math -flto
 endif
 
 # intel compiler
 ifeq ($(COMPILER),intel)
   CC = icc
-  CFLAGS += -qopenmp -xhost -ansi-alias -no-prec-div
+  CFLAGS += -qopenmp -xhost -ansi-alias -no-prec-div -ipo
 endif
 
 # PGI compiler (thanks Chip!)
