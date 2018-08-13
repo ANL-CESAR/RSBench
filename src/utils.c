@@ -5,13 +5,15 @@
 // cexp(z) = e^x * (cos(y) + i * sin(y))
 RSComplex fast_cexp( RSComplex z )
 {
-	double x = creal(z);
-	double y = cimag(z);
+	double x = z.r;
+	double y = z.i;
 
 	double t1 = fast_exp(x);
 	double t2 = cos(y);
 	double t3 = sin(y);
-	RSComplex result = t1 * (t2 + t3 * I);
+	RSComplex t4 = {t2, t3};
+	RSComplex t5 = {t1, 0};
+	RSComplex result = c_mul(t5, (t4));
 	return result;
 }	
 

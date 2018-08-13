@@ -52,6 +52,7 @@ Pole ** generate_poles( Input input, int * n_poles, unsigned long * seed )
 	// region to approximately 99.5% (i.e., only 0.5% of lookups should
 	// require the full eval).
 	double f = 152.5;
+	RSComplex f_c = {f, 0}
 	// Allocating 2D contiguous matrix
 	Pole ** R = (Pole **) malloc( input.n_nuclides * sizeof( Pole *));
 	Pole * contiguous = (Pole *) malloc( input.n_nuclides * input.avg_n_poles * sizeof(Pole));
@@ -69,16 +70,20 @@ Pole ** generate_poles( Input input, int * n_poles, unsigned long * seed )
 		{
 			double r = rn(seed);
 			double im = rn(seed);
-			R[i][j].MP_EA = f*(r + im * I);
+			RSComplex t1 = {r, im};
+			R[i][j].MP_EA = c_mul(f_c,t1);
 			r = rn(seed);
 			im = rn(seed);
-			R[i][j].MP_RT = f*r + im * I;
+			RSComplex t2 = {f*r, im};
+			R[i][j].MP_RT = t2;
 			r = rn(seed);
 			im = rn(seed);
-			R[i][j].MP_RA = f*r + im * I;
+			RSComplex t3 = {f*r, im};
+			R[i][j].MP_RA = t3;
 			r = rn(seed);
 			im = rn(seed);
-			R[i][j].MP_RF = f*r + im * I;
+			RSComplex t4 = {f*r, im};
+			R[i][j].MP_RF = t4;
 			R[i][j].l_value = rn_i(seed) % input.numL;
 		}
 	
