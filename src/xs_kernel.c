@@ -103,22 +103,107 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	for( int i = 0; i < 4; i++ )
 		macro_xs[i] = 0;
 
-	// for nuclide in mat
-	for( int i = 0; i < (data.materials).num_nucs[mat]; i++ )
+	// Pre-processing state to determine poles and indexing
+	// Determine total number of poles for this lookup
+	int num_nucs = data.materials.num_nucs[mat];
+	int npoles = 0;
+	int npoles_per_nuc[500]; // We are assuming maximum 500 nuclides being tracked
+	int nuc_of_pole[5000]; // We are assuming 10 windows per nuclide, so 5k poles max
+	int offset_of_nuc[500]; // Offsets where nuclides begin
+	int p_idx = 0;
+
+	// The final macro values we want
+	double sigT = 0;
+	double sigA = 0;
+	double sigF = 0;
+	double sigE = 0;
+
+	for( int n = 0; n < num_nucs; n++ )
 	{
-		double micro_xs[4];
-		int nuc = (data.materials).mats[mat][i];
+		offset_of_nuc[n] = p_idx;
+		// Calculate Window Index
+		double spacing = 1.0 / data.n_windows[n];
+		int window = (int) ( E / spacing );
+		if( window == data.n_windows[n] )
+			window--;
 
-		if( input.doppler == 1 )
-			calculate_micro_xs_doppler( micro_xs, nuc, E, input, data, sigTfactors, abrarov, alls);
-		else
-			calculate_micro_xs( micro_xs, nuc, E, input, data, sigTfactors);
+		Window w = data.windows[n][window];
 
-		for( int j = 0; j < 4; j++ )
+		// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
+		Window w = data.windows[n][window];
+		double conc = data.materials.concs[mat][n];
+		sigT += E * w.T * conc;
+		sigA += E * w.A * conc;
+		sigF += E * w.F * conc;
+
+		// Compute & store number of poles in the window
+		int np = w.end - w.start;
+		npoles_per_nuc[n] = np;
+		npoles += np;
+
+		// Compute & store the nuclide for each pole
+		for( int p = 0; p < np; p++ )
 		{
-			macro_xs[j] += micro_xs[j] * data.materials.concs[mat][i];
+			nuc_of_pole[p_idx] = n;
+			p_idx++;
 		}
 	}
+	//printf("npoles = %d\n", npoles);
+
+	// By this point, we have added in background contributions, and know all our indices
+
+	// Loop over poles
+	for( int p = 0; p < npoles; p++ )
+	{
+		// Determine nuclide index
+		int n = nuc_of_pole[p];
+
+		// Determine pole index
+		int p_idx = p - offset_of_nuc[n];
+
+		double dopp = 0.5;
+
+		Pole pole = data.poles[n][p_idx];
+
+		// Prep Z
+		RSComplex E_c = {E, 0};
+		RSComplex dopp_c = {dopp, 0};
+		RSComplex Z = c_mul(c_sub(E_c, pole.MP_EA), dopp_c);
+
+		// Evaluate Fadeeva Function
+		RSComplex faddeeva = fast_nuclear_W( Z );
+
+		int l_value = pole.l_value;
+
+		// Compute SigT Factor
+		double phi = data.pseudo_K0RS[n][l_value] * sqrt(E);
+
+		if( l_value == 1 )
+			phi -= - atan( phi );
+		else if( l_value == 2 )
+			phi -= atan( 3.0 * phi / (3.0 - phi*phi));
+		else if( l_value == 3 )
+			phi -= atan(phi*(15.0-phi*phi)/(15.0-6.0*phi*phi));
+
+		phi *= 2.0;
+
+		RSComplex SigTfactor;
+		sigTfactor.r = cos(phi);
+		sigTfactor.i = -sin(phi);
+
+		// Update W
+		sigT += ((c_mul( pole.MP_RT, c_mul(faddeeva, sigTfactor) )).r ) * conc;
+		sigA += ((c_mul( pole.MP_RA , faddeeva)).r) * conc;
+		sigF += ((c_mul( pole.MP_RF , faddeeva)).r) * conc;
+	}
+	
+	// Compute SigE
+	sigE = sigT - sigA;
+
+	macro_xs[0] = sigT;
+	macro_xs[1] = sigA;
+	macro_xs[2] = sigF;
+	macro_xs[3] = sigE;
 
 	/* Debug
 	printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",

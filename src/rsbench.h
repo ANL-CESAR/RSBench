@@ -37,6 +37,7 @@ typedef struct{
 	int * num_nucs;
 	int ** mats;
 	double ** concs;
+	int * num_poles;
 } Materials;
 
 typedef struct{
