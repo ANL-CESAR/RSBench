@@ -107,9 +107,10 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	// Determine total number of poles for this lookup
 	int num_nucs = data.materials.num_nucs[mat];
 	int npoles = 0;
-	int npoles_per_nuc[500]; // We are assuming maximum 500 nuclides being tracked
+	//int npoles_per_nuc[500]; // We are assuming maximum 500 nuclides being tracked
 	int nuc_of_pole[5000]; // We are assuming 10 windows per nuclide, so 5k poles max
 	int offset_of_nuc[500]; // Offsets where nuclides begin
+	int w_starts[500]; // window start offset locations
 	int p_idx = 0;
 
 	// The final macro values we want
@@ -118,35 +119,43 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	double sigF = 0;
 	double sigE = 0;
 
-	for( int n = 0; n < num_nucs; n++ )
+	for( int nuclide = 0; nuclide < num_nucs; nuclide++ )
 	{
-		offset_of_nuc[n] = p_idx;
+		int n = data.materials.mats[mat][nuclide];
+		offset_of_nuc[nuclide] = p_idx;
 		// Calculate Window Index
 		double spacing = 1.0 / data.n_windows[n];
+		//printf("spacing = %lf\n", spacing);
 		int window = (int) ( E / spacing );
 		if( window == data.n_windows[n] )
 			window--;
 
+		//printf("window = %d\n", window);
 		Window w = data.windows[n][window];
 
 		// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
-		Window w = data.windows[n][window];
-		double conc = data.materials.concs[mat][n];
+		double conc = data.materials.concs[mat][nuclide];
 		sigT += E * w.T * conc;
 		sigA += E * w.A * conc;
 		sigF += E * w.F * conc;
 
 		// Compute & store number of poles in the window
 		int np = w.end - w.start;
-		npoles_per_nuc[n] = np;
+		w_starts[nuclide] = w.start;
+		//npoles_per_nuc[n] = np;
 		npoles += np;
 
 		// Compute & store the nuclide for each pole
 		for( int p = 0; p < np; p++ )
 		{
-			nuc_of_pole[p_idx] = n;
+			nuc_of_pole[p_idx] = nuclide;
 			p_idx++;
 		}
+		// Debug
+		/*
+		printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
+		E, mat, sigT, sigA, sigF, sigE );
+		*/
 	}
 	//printf("npoles = %d\n", npoles);
 
@@ -156,14 +165,19 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	for( int p = 0; p < npoles; p++ )
 	{
 		// Determine nuclide index
-		int n = nuc_of_pole[p];
+		int nuclide = nuc_of_pole[p];
+		int n = data.materials.mats[mat][nuclide];
+		
+		double conc = data.materials.concs[mat][nuclide];
 
 		// Determine pole index
-		int p_idx = p - offset_of_nuc[n];
+		int p_idx = p - offset_of_nuc[nuclide];
+		p_idx += w_starts[nuclide];
 
 		double dopp = 0.5;
 
 		Pole pole = data.poles[n][p_idx];
+		//printf("pole: n = %d  p_idx = %d\n", n, p_idx);
 
 		// Prep Z
 		RSComplex E_c = {E, 0};
@@ -172,6 +186,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 
 		// Evaluate Fadeeva Function
 		RSComplex faddeeva = fast_nuclear_W( Z );
+		//printf("real fad = %lf\n", faddeeva.r);
 
 		int l_value = pole.l_value;
 
@@ -187,7 +202,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 
 		phi *= 2.0;
 
-		RSComplex SigTfactor;
+		RSComplex sigTfactor;
 		sigTfactor.r = cos(phi);
 		sigTfactor.i = -sin(phi);
 
@@ -205,10 +220,9 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	macro_xs[2] = sigF;
 	macro_xs[3] = sigE;
 
-	/* Debug
-	printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
-	E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
-	*/
+	// Debug
+	//printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
+	//E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
 	
 }
 
