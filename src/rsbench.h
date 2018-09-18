@@ -15,6 +15,9 @@
 // typedefs
 typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
 
+#define HISTORY_BASED 1
+#define EVENT_BASED 2
+
 typedef struct{
 	int nthreads;
 	int n_nuclides;
@@ -25,6 +28,7 @@ typedef struct{
 	int numL;
 	int doppler;
 	int particles;
+	int simulation_method;
 } Input;
 
 typedef struct{
@@ -89,6 +93,10 @@ size_t get_mem_estimate( Input input );
 unsigned int hash(char *str, int nbins);
 complex double fast_cexp( double complex z );
 double fast_exp(double x);
+
+// simulation.c
+void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
+void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
 
 // xs_kernel.c
 double complex fast_nuclear_W( double complex Z );

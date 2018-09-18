@@ -6,7 +6,7 @@
                    | | \ \ ____) | |_) |  __/ | | | (__| | | |
                    |_|  \_\_____/|____/ \___|_| |_|\___|_| |_|
                          
-                                   Version 10
+                                   Version 11
 
 ==============================================================================
 Contact Information
@@ -79,6 +79,7 @@ Running RSBench---------------------------------------------------------------
 
 	Usage: ./RSBench <options>
 	Options include:
+	  -m <simulation method>   Simulation method (history, event)
 	  -t <threads>     Number of OpenMP threads to run
 	  -s <size>        Size of H-M Benchmark to run (small, large)
 	  -l <lookups>     Number of Cross-section (XS) lookups per particle
@@ -87,6 +88,21 @@ Running RSBench---------------------------------------------------------------
 	  -w <windows>     Average Number of Windows per Nuclide
 	  -d               Disables Temperature Dependence (Doppler Broadening)
 	Default is equivalent to: -s large -p 300000 -l 34 -P 1000 -w 100
+
+	-m <simulation method>
+
+		Sets the simulation method, either "history" or "event". These
+		options represent the history based or event based algorithms
+		respectively. The default is the history based method. These two
+		methods represent different methods of parallelizing the Monte
+		Carlo transport method. In the history based method, the central
+		mode of parallelism is expressed over particles, which each require
+		some number of macroscopic cross sections to be executed in series
+		and in a dependent order. The event based method expresses its
+		parallelism over a large pool of independent macroscopic cross
+		section lookups that can be executed in any order without dependence.
+		They key difference between the two methods is the dependence/independence
+		of the macroscopic cross section loop.
 
 	-t <threads>
 

@@ -1,4 +1,50 @@
 =====================================================================
+NEW IN VERSION 11
+=====================================================================
+- (Feature) Added in an option to
+  use an event based simulation algorithm as opposed to the default
+  history based algorithm. This same change was featured in the
+  XSBench v18 update. This mode can be enabled with the "-m
+  event" command line option. The central difference between the
+  default history based algorithm and the event based algorithm is
+  the dependence or independence of macroscopic cross section
+  lookups. In the default history based method, the simulation
+  parallelism is expressed over a large number of independent
+  particle "histories", with each particle history requiring (by
+  default) 34 sequential and dependent macroscopic cross section
+  lookups to be executed. In the event based method, all macroscopic
+  cross sections are pooled together in a way that allows them to
+  be executed independently in any order. On CPU architectures,
+  both algorithms run in approximately the same speed, though in
+  full Monte Carlo applications there are some added costs associated
+  with the event based method (namely, the need to frequently store
+  and load particle states) that are not represented in XSBench.
+  However, the model event based algorithm in XSBench is useful for
+  examining how the dependence or independence of the loop over
+  macroscopic cross sections may affect performance on different
+  computer architectures.
+
+  The event based mode in RSBench is very similar to the algorithm
+  expressed in v9 and before, so performance results collected
+  with v9 and previous should be comparable to performance results
+  collected with the event mode in v11. On most CPU architectures
+  and with most compilers, the history and event based methods run
+  in approximately the same time, with some CPUs showing a small
+  (less than 20%) speedup with the event based method.
+
+- With the addition of the different event and history based options,
+  the main function of the code has been broken down into some
+  smaller functions. Notably, the main parallel simulation phase
+  has been moved to a history and event based function in the
+  "simulation.c" file.
+
+- Added different verification checksums for the new event based mode.
+  While in a real application, the history and event based methods
+  would produce the same answers, in the context of this mini-app
+  for programming convenience purposes they do not produce the same
+  answer/checksum.
+
+=====================================================================
 NEW IN VERSION 10
 =====================================================================
 - In previous versions of RSBench, it was assumed that the method

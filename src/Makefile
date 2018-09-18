@@ -8,7 +8,7 @@ DEBUG     = no
 PROFILE   = no
 STATUS    = yes
 PAPI      = no
-VERIFY    = no
+VERIFY    = yes
 
 #===============================================================================
 # Program name & source code list
@@ -18,6 +18,7 @@ program = rsbench
 
 source = \
 main.c \
+simulation.c \
 xs_kernel.c \
 io.c \
 init.c \

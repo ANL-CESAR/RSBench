@@ -64,7 +64,9 @@ void fancy_int( int a )
 Input read_CLI( int argc, char * argv[] )
 {
 	Input input;
-	
+
+	// defaults to the history based simulation method
+	input.simulation_method = HISTORY_BASED;
 	// defaults to max threads on the system	
 	input.nthreads = omp_get_num_procs();
 	// defaults to 355 (corresponding to H-M Large benchmark)
@@ -94,6 +96,27 @@ Input read_CLI( int argc, char * argv[] )
 		{
 			if( ++i < argc )
 				input.nthreads = atoi(argv[i]);
+			else
+				print_CLI_error();
+		}
+		// Simulation Method (-m)
+		else if( strcmp(arg, "-m") == 0 )
+		{
+			char * sim_type;
+			if( ++i < argc )
+				sim_type = argv[i];
+			else
+				print_CLI_error();
+
+			if( strcmp(sim_type, "history") == 0 )
+				input.simulation_method = HISTORY_BASED;
+			else if( strcmp(sim_type, "event") == 0 )
+			{
+				input.simulation_method = EVENT_BASED;
+				// Also resets default # of lookups
+				input.lookups =  input.lookups * input.particles;
+				input.particles = 0;
+			}
 			else
 				print_CLI_error();
 		}
@@ -196,14 +219,15 @@ void print_CLI_error(void)
 {
 	printf("Usage: ./multibench <options>\n");
 	printf("Options include:\n");
-	printf("  -t <threads>     Number of OpenMP threads to run\n");
-	printf("  -s <size>        Size of H-M Benchmark to run (small, large)\n");
-	printf("  -l <lookups>     Number of Cross-section (XS) lookups per particle history\n");
-	printf("  -p <particles>   Number of particle histories\n");
-	printf("  -P <poles>       Average Number of Poles per Nuclide\n");
-	printf("  -W <poles>       Average Number of Windows per Nuclide\n");
-	printf("  -d               Disables Temperature Dependence (Doppler Broadening)\n");
-	printf("Default is equivalent to: -s large -l 34 -p 300000 -P 1000 -W 100\n");
+	printf("  -t <threads>            Number of OpenMP threads to run\n");
+	printf("  -m <simulation method>  Simulation method (history, event)\n");
+	printf("  -s <size>               Size of H-M Benchmark to run (small, large)\n");
+	printf("  -l <lookups>            Number of Cross-section (XS) lookups per particle history\n");
+	printf("  -p <particles>          Number of particle histories\n");
+	printf("  -P <poles>              Average Number of Poles per Nuclide\n");
+	printf("  -W <poles>              Average Number of Windows per Nuclide\n");
+	printf("  -d                      Disables Temperature Dependence (Doppler Broadening)\n");
+	printf("Default is equivalent to: -s large -m history -l 34 -p 300000 -P 1000 -W 100\n");
 	printf("See readme for full description of default run values\n");
 	exit(4);
 }
@@ -213,6 +237,10 @@ void print_input_summary(Input input)
 	// Calculate Estimate of Memory Usage
 	size_t mem = get_mem_estimate(input);
 
+	if( input.simulation_method == EVENT_BASED )
+		printf("Simulation Method:           Event Based\n");
+	else
+		printf("Simulation Method:           History Based\n");
 	printf("Materials:                   12\n");
 	printf("H-M Benchmark Size:          ");
 	if( input.HM == 0 )
@@ -226,9 +254,15 @@ void print_input_summary(Input input)
 	printf("Total Nuclides:              %d\n", input.n_nuclides);
 	printf("Avg Poles per Nuclide:       "); fancy_int(input.avg_n_poles);
 	printf("Avg Windows per Nuclide:     "); fancy_int(input.avg_n_windows);
-	printf("Particles:                   "); fancy_int(input.particles);
-	printf("XS Lookups per Particle:     "); fancy_int(input.lookups);
-	printf("Total XS Lookups:            "); fancy_int(input.lookups*input.particles);
+
+	int lookups = input.lookups;
+	if( input.simulation_method == HISTORY_BASED )
+	{
+		printf("Particles:                   "); fancy_int(input.particles);
+		printf("XS Lookups per Particle:     "); fancy_int(input.lookups);
+		lookups *= input.particles;
+	}
+	printf("Total XS Lookups:            "); fancy_int(lookups);
 	printf("Threads:                     %d\n", input.nthreads);
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);
 	#ifdef PAPI
