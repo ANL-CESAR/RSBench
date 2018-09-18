@@ -118,12 +118,16 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 		{
 			macro_xs[j] += micro_xs[j] * data.materials.concs[mat][i];
 		}
+		// Debug
+		/*
+		printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
+		E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
+		*/
 	}
 
-	/* Debug
+	// Debug
 	printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
 	E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
-	*/
 	
 }
 
@@ -192,6 +196,8 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 	if( window == data.n_windows[nuc] )
 		window--;
 
+	//printf("spacing = %lf\n", spacing);
+	//printf("window = %d\n", window);
 	// Calculate sigTfactors
 	calculate_sig_T(nuc, E, input, data, sigTfactors );
 
@@ -207,6 +213,7 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 	for( int i = w.start; i < w.end; i++ )
 	{
 		Pole pole = data.poles[nuc][i];
+		//printf("pole: n = %d  p_idx = %d\n", nuc, i);
 
 		// Prep Z
 		RSComplex E_c = {E, 0};
@@ -218,6 +225,8 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 
 		// Evaluate Fadeeva Function
 		RSComplex faddeeva = fast_nuclear_W( Z );
+		//RSComplex faddeeva = {1,1};
+		//printf("real fad = %lf\n", faddeeva.r);
 
 		// Update W
 		sigT += (c_mul( pole.MP_RT, c_mul(faddeeva, sigTfactors[pole.l_value]) )).r;
