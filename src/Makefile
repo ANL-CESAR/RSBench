@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER  = gnu
+COMPILER  = intel
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
