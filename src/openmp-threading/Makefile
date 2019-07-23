@@ -16,12 +16,10 @@ program = rsbench
 source = \
 main.c \
 simulation.c\
-xs_kernel.c \
 io.c \
 init.c \
 material.c \
-utils.c \
-rscomplex.c
+utils.c
 
 obj = $(source:.c=.o)
 

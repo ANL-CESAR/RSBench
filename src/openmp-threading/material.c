@@ -129,9 +129,6 @@ int pick_mat( uint64_t * seed )
 	// *perfect* approximation of where XS lookups are going to occur,
 	// but this will do a good job of biasing the system nonetheless.
 
-	// Also could be argued that doing fractions by weight would be 
-	// a better approximation, but volume does a good enough job for now.
-
 	double dist[12];
 	dist[0]  = 0.140;	// fuel
 	dist[1]  = 0.052;	// cladding
