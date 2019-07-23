@@ -35,6 +35,7 @@ int main(int argc, char * argv[])
 	SimulationData SD = initialize_simulation( input );
 
 	stop = get_time();
+
 	printf("Initialization Complete. (%.2lf seconds)\n", stop-start);
 	
 	// =====================================================================
@@ -44,20 +45,21 @@ int main(int argc, char * argv[])
 	center_print("SIMULATION", 79);
 	border_print();
 
-	start = get_time();
-
 	unsigned long vhash = 0;
 
 	// Run Simulation
+	start = get_time();
+
 	if(input.simulation_method == HISTORY_BASED )
 		run_history_based_simulation(input, SD, &vhash );
 	else if( input.simulation_method == EVENT_BASED )
 		run_event_based_simulation(input, SD, &vhash );
 
+	stop = get_time();
+
 	// Final hash step
 	vhash = vhash % 999983;
 
-	stop = get_time();
 	printf("Simulation Complete.\n");
 
 	// =====================================================================
