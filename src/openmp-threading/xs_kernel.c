@@ -10,7 +10,6 @@ RSComplex fast_nuclear_W( RSComplex Z )
 	{
 		// Precomputed parts for speeding things up
 		// (N = 10, Tm = 12.0)
-		//RSComplex prefactor = 8.124330e+01 * I;
 		RSComplex prefactor = {0, 8.124330e+01};
 		double an[10] = {
 			2.758402e-01,
@@ -54,27 +53,18 @@ RSComplex fast_nuclear_W( RSComplex Z )
 		RSComplex t2 = {12, 0};
 		RSComplex i = {0,1};
 		RSComplex one = {1, 0};
-		//RSComplex W = i * ( 1 - fast_cexp(t1*Z) ) / (12. * Z );
-		//RSComplex W = i * ( one - fast_cexp(c_mul(t1, Z)) ) / c_mul(t2, Z);
-		//RSComplex W = i * ( c_sub(one, fast_cexp(c_mul(t1, Z))) ) / c_mul(t2, Z);
-		//RSComplex W = c_mul(i, ( c_sub(one, fast_cexp(c_mul(t1, Z))) )) / c_mul(t2, Z);
 		RSComplex W = c_div(c_mul(i, ( c_sub(one, fast_cexp(c_mul(t1, Z))) )) , c_mul(t2, Z));
 		RSComplex sum = {0,0};
 		for( int n = 0; n < 10; n++ )
 		{
-			//RSComplex top = neg_1n[n] * fast_cexp(t1*Z) - 1.;
-			//RSComplex top = c_sub(neg_1n[n] * fast_cexp(t1*Z), 1.);
-			//RSComplex top = c_sub(neg_1n[n] * fast_cexp(c_mul(t1, Z)), 1.);
 			RSComplex t3 = {neg_1n[n], 0};
 			RSComplex top = c_sub(c_mul(t3, fast_cexp(c_mul(t1, Z))), one);
 			RSComplex t4 = {denominator_left[n], 0};
-			//RSComplex bot = c_sub(t4, 144.*Z*Z);
 			RSComplex t5 = {144, 0};
 			RSComplex bot = c_sub(t4, c_mul(t5,c_mul(Z,Z)));
 			RSComplex t6 = {an[n], 0};
 			sum = c_add(sum, c_mul(t6, c_div(top,bot)));
 		}
-		//W += prefactor * Z  * sum;
 		W = c_add(W, c_mul(prefactor, c_mul(Z, sum)));
 		return W;
 	}
@@ -90,7 +80,6 @@ RSComplex fast_nuclear_W( RSComplex Z )
 		RSComplex i = {0,1};
 		RSComplex Z2 = c_mul(Z, Z);
 		// Three Term Asymptotic Expansion
-		//RSComplex W = I * Z * (a/(Z*Z - b) + c/(Z*Z - d));
 		RSComplex W = c_mul(c_mul(Z,i), (c_add(c_div(a,(c_sub(Z2, b))) , c_div(c,(c_sub(Z2, d))))));
 
 		return W;
@@ -126,8 +115,10 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	}
 
 	// Debug
+	/*
 	printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
 	E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
+	*/
 	
 }
 
@@ -259,9 +250,7 @@ void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, RSCompl
 
 		phi *= 2.0;
 
-		//sigTfactors[i] = cos(phi) - sin(phi) * _Complex_I;
 		sigTfactors[i].r = cos(phi);
 		sigTfactors[i].i = -sin(phi);
-
 	}
 }

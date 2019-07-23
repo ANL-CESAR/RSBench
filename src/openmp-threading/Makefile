@@ -6,9 +6,6 @@ COMPILER  = gnu
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
-STATUS    = yes
-PAPI      = no
-VERIFY    = yes
 
 #===============================================================================
 # Program name & source code list
@@ -18,6 +15,7 @@ program = rsbench
 
 source = \
 main.c \
+simulation.c\
 xs_kernel.c \
 io.c \
 init.c \
@@ -32,7 +30,7 @@ obj = $(source:.c=.o)
 #===============================================================================
 
 # Standard Flags
-CFLAGS := -std=gnu99 -Wall
+CFLAGS := -std=gnu99 -Wall -DVERIFICATION
 
 # gcc Compiler
 ifeq ($(COMPILER),gnu)
@@ -44,12 +42,6 @@ endif
 ifeq ($(COMPILER),intel)
   CC = icc
   CFLAGS += -qopenmp -xhost -ansi-alias -no-prec-div -ipo
-endif
-
-# PGI compiler (thanks Chip!)
-ifeq ($(COMPILER),pgi)
-  CC = pgcc
-  CFLAGS := -mp -fastsse
 endif
 
 # Linker Flags
@@ -70,23 +62,6 @@ endif
 # Optimization Flags
 ifeq ($(OPTIMIZE),yes)
   CFLAGS += -Ofast
-endif
-
-# Calculation Status % Complete Indicator
-ifeq ($(STATUS),yes)
-  CFLAGS += -DSTATUS
-endif
-
-# PAPI Performance Counters
-ifeq ($(PAPI),yes)
-  CFLAGS += -DPAPI
-  source += papi.c
-  LDFLAGS += -lpapi
-endif
-
-# Verification of results mode
-ifeq ($(VERIFY),yes)
-  CFLAGS += -DVERIFICATION
 endif
 
 #===============================================================================

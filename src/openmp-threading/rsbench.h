@@ -14,6 +14,9 @@
 // typedefs
 typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
 
+#define HISTORY_BASED 1
+#define EVENT_BASED 2
+
 typedef struct{
 	double r;
 	double i;
@@ -31,6 +34,7 @@ typedef struct{
 	int numL;
 	int doppler;
 	int particles;
+	int simulation_method;
 } Input;
 
 typedef struct{
@@ -102,6 +106,10 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors);
 void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors, long * abrarov, long * alls);
 void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors );
+
+// simulation.c
+void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
+void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
 
 // rscomplex.c
 RSComplex c_add( RSComplex A, RSComplex B);
