@@ -143,7 +143,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	calculate_sig_T(nuc, E, input, data, sigTfactors );
 
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
-	Window w = data.windows[nuc][window];
+	Window w = data.windows[nuc * data.max_num_windows + window];
 	sigT = E * w.T;
 	sigA = E * w.A;
 	sigF = E * w.F;
@@ -195,7 +195,7 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 	calculate_sig_T(nuc, E, input, data, sigTfactors );
 
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
-	Window w = data.windows[nuc][window];
+	Window w = data.windows[nuc * data.max_num_windows + window];
 	sigT = E * w.T;
 	sigA = E * w.A;
 	sigF = E * w.F;

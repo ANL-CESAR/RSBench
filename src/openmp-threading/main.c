@@ -52,7 +52,8 @@ int main(int argc, char * argv[])
 
 	// Prepare full Window grid
 	printf("Generating window parameter grid...\n");
-	Window ** windows = generate_window_params( input, n_windows, n_poles, &seed);
+	int max_num_windows;
+	Window * windows = generate_window_params( input, n_windows, n_poles, &seed, &max_num_windows);
 
 	// Prepare 0K Resonances
 	printf("Generating 0K l_value data...\n");
@@ -66,6 +67,7 @@ int main(int argc, char * argv[])
 	data.windows = windows;
 	data.pseudo_K0RS = pseudo_K0RS;
 	data.max_num_poles = max_num_poles;
+	data.max_num_windows = max_num_windows;
 
 	stop = omp_get_wtime();
 	printf("Initialization Complete. (%.2lf seconds)\n", stop-start);

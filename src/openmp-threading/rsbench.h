@@ -68,9 +68,10 @@ typedef struct{
 	int * n_windows;
 	Materials materials;
 	Pole * poles;
-	Window ** windows;
+	Window * windows;
 	double ** pseudo_K0RS;
 	int max_num_poles;
+	int max_num_windows;
 } CalcDataPtrs;
 
 
@@ -87,7 +88,7 @@ void print_input_summary(Input input);
 int * generate_n_poles( Input input,  uint64_t * seed );
 int * generate_n_windows( Input input ,  uint64_t * seed);
 Pole * generate_poles( Input input, int * n_poles, uint64_t * seed, int * max_num_poles );
-Window ** generate_window_params( Input input, int * n_windows, int * n_poles ,  uint64_t * seed);
+Window * generate_window_params( Input input, int * n_windows, int * n_poles, uint64_t * seed, int * max_num_windows );
 double ** generate_pseudo_K0RS( Input input ,  uint64_t * seed);
 
 // material.c

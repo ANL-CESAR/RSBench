@@ -96,18 +96,19 @@ Pole * generate_poles( Input input, int * n_poles, uint64_t * seed, int * max_nu
 	return R;
 }
 
-Window ** generate_window_params( Input input, int * n_windows, int * n_poles, uint64_t * seed )
+Window * generate_window_params( Input input, int * n_windows, int * n_poles, uint64_t * seed, int * max_num_windows )
 {
-	// Allocating 2D contiguous matrix
-	Window ** R = (Window **) malloc( input.n_nuclides * sizeof( Window *));
-	Window * contiguous = (Window *) malloc( input.n_nuclides * input.avg_n_windows * sizeof(Window));
-
-	int k = 0;
+	int max_windows = -1;
+	
 	for( int i = 0; i < input.n_nuclides; i++ )
 	{
-		R[i] = &contiguous[k];
-		k += n_windows[i];
+		if( n_windows[i] > max_windows)
+			max_windows = n_windows[i];
 	}
+	*max_num_windows = max_windows;
+
+	// Allocating 2D contiguous matrix
+	Window * R = (Window *) malloc( input.n_nuclides * max_windows * sizeof(Window));
 	
 	// fill with data
 	for( int i = 0; i < input.n_nuclides; i++ )
@@ -117,18 +118,18 @@ Window ** generate_window_params( Input input, int * n_windows, int * n_poles, u
 		int ctr = 0;
 		for( int j = 0; j < n_windows[i]; j++ )
 		{
-			R[i][j].T = LCG_random_double(seed);
-			R[i][j].A = LCG_random_double(seed);
-			R[i][j].F = LCG_random_double(seed);
-			R[i][j].start = ctr; 
-			R[i][j].end = ctr + space - 1;
+			R[i * max_windows + j].T = LCG_random_double(seed);
+			R[i * max_windows + j].A = LCG_random_double(seed);
+			R[i * max_windows + j].F = LCG_random_double(seed);
+			R[i * max_windows + j].start = ctr; 
+			R[i * max_windows + j].end = ctr + space - 1;
 
 			ctr += space;
 
 			if ( j < remainder )
 			{
 				ctr++;
-				R[i][j].end++;
+				R[i * max_windows + j].end++;
 			}
 		}
 	}
