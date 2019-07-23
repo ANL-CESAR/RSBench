@@ -28,3 +28,19 @@ size_t get_mem_estimate( Input input )
 	
 	return total;
 }
+
+double get_time(void)
+{
+	#ifdef OPENMP
+	return omp_get_wtime();
+	#endif
+
+	struct timeval timecheck;
+
+	gettimeofday(&timecheck, NULL);
+	long ms = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
+
+	double time = (double) ms / 1000.0;
+
+	return time;
+}

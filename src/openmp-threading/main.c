@@ -12,6 +12,8 @@ int main(int argc, char * argv[])
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
 
+	printf("numL = %d\n", input.numL);
+
 	// Set number of OpenMP Threads
 	omp_set_num_threads(input.nthreads); 
 	
@@ -30,11 +32,11 @@ int main(int argc, char * argv[])
 	center_print("INITIALIZATION", 79);
 	border_print();
 	
-	start = omp_get_wtime();
+	start = get_time();
 	
 	SimulationData SD = initialize_simulation( input );
 
-	stop = omp_get_wtime();
+	stop = get_time();
 	printf("Initialization Complete. (%.2lf seconds)\n", stop-start);
 	
 	// =====================================================================
@@ -43,11 +45,8 @@ int main(int argc, char * argv[])
 	border_print();
 	center_print("SIMULATION", 79);
 	border_print();
-	
-	printf("Beginning Simulation.\n");
-	printf("Calculating XS's...\n");
 
-	start = omp_get_wtime();
+	start = get_time();
 
 	unsigned long vhash = 0;
 
@@ -63,8 +62,8 @@ int main(int argc, char * argv[])
 	// Final hash step
 	vhash = vhash % 999983;
 
-	stop = omp_get_wtime();
-	printf("\nSimulation Complete.\n");
+	stop = get_time();
+	printf("Simulation Complete.\n");
 	// =====================================================================
 	// Print / Save Results and Exit
 	// =====================================================================

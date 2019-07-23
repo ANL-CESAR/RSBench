@@ -1,15 +1,13 @@
 #include<stdio.h>
-#include<omp.h>
 #include<stdlib.h>
-#include<time.h>
-#include<string.h>
+#include<sys/time.h>
 #include<math.h>
+#include<string.h>
 #include<stdint.h>
 #include<float.h>
+#include<omp.h>
 
-#ifdef PAPI
-#include "papi.h"
-#endif
+#define OPENMP
 
 #define PI 3.14159265359
 
@@ -106,12 +104,13 @@ SimulationData get_materials(Input input, uint64_t * seed);
 // utils.c
 size_t get_mem_estimate( Input input );
 RSComplex fast_cexp( RSComplex z );
+double get_time(void);
 
 // xs_kernel.c
 RSComplex fast_nuclear_W( RSComplex Z );
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, SimulationData data, RSComplex * sigTfactors, long * abrarov, long * alls ); 
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, SimulationData data, RSComplex * sigTfactors);
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, SimulationData data, RSComplex * sigTfactors, long * abrarov, long * alls);
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, SimulationData data, long * abrarov, long * alls ) ;
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, SimulationData data);
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, SimulationData data, long * abrarov, long * alls);
 void calculate_sig_T( int nuc, double E, Input input, SimulationData data, RSComplex * sigTfactors );
 
 // simulation.c

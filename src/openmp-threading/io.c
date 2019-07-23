@@ -248,6 +248,10 @@ void print_input_summary(Input input)
 	// Calculate Estimate of Memory Usage
 	size_t mem = get_mem_estimate(input);
 
+	if( input.simulation_method == EVENT_BASED )
+		printf("Simulation Method:           Event Based\n");
+	else
+		printf("Simulation Method:           History Based\n");
 	printf("Materials:                   12\n");
 	printf("H-M Benchmark Size:          ");
 	if( input.HM == 0 )
@@ -261,12 +265,15 @@ void print_input_summary(Input input)
 	printf("Total Nuclides:              %d\n", input.n_nuclides);
 	printf("Avg Poles per Nuclide:       "); fancy_int(input.avg_n_poles);
 	printf("Avg Windows per Nuclide:     "); fancy_int(input.avg_n_windows);
-	printf("Particles:                   "); fancy_int(input.particles);
-	printf("XS Lookups per Particle:     "); fancy_int(input.lookups);
-	printf("Total XS Lookups:            "); fancy_int(input.lookups*input.particles);
+
+	int lookups = input.lookups;
+	if( input.simulation_method == HISTORY_BASED )
+	{
+		printf("Particles:                   "); fancy_int(input.particles);
+		printf("XS Lookups per Particle:     "); fancy_int(input.lookups);
+		lookups *= input.particles;
+	}
+	printf("Total XS Lookups:            "); fancy_int(lookups);
 	printf("Threads:                     %d\n", input.nthreads);
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);
-	#ifdef PAPI
-	printf("PAPI Performance Counters:   ON\n");
-	#endif
 }

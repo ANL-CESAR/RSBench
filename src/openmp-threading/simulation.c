@@ -12,10 +12,6 @@ void run_event_based_simulation(Input input, SimulationData data, long * abrarov
 		long abrarov = 0; 
 		long alls = 0;
 
-		RSComplex * sigTfactors =
-			(RSComplex *) malloc( input.numL * sizeof(RSComplex) );
-
-		// This loop is independent!
 		// I.e., macroscopic cross section lookups in the event based simulation
 		// can be executed in any order.
 		#pragma omp for schedule(dynamic,1000)
@@ -33,7 +29,7 @@ void run_event_based_simulation(Input input, SimulationData data, long * abrarov
 
 			double macro_xs[4] = {0};
 
-			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors, &abrarov, &alls ); 
+			calculate_macro_xs( macro_xs, mat, E, input, data, &abrarov, &alls ); 
 
 			// For verification, and to prevent the compiler from optimizing
 			// all work out, we interrogate the returned macro_xs_vector array
@@ -54,8 +50,6 @@ void run_event_based_simulation(Input input, SimulationData data, long * abrarov
 			}
 			verification += max_idx+1;
 		}
-
-		free(sigTfactors);
 
 		// Accumulate global counters
 		g_abrarov = abrarov; 
@@ -80,9 +74,6 @@ void run_history_based_simulation(Input input, SimulationData data, long * abrar
 		long abrarov = 0; 
 		long alls = 0;
 
-		RSComplex * sigTfactors =
-			(RSComplex *) malloc( input.numL * sizeof(RSComplex) );
-
 		// This loop is independent!
 		// I.e., particle histories can be executed in any order
 		#pragma omp for schedule(dynamic, 1000)
@@ -105,7 +96,7 @@ void run_history_based_simulation(Input input, SimulationData data, long * abrar
 			{
 				double macro_xs[4] = {0};
 
-				calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors, &abrarov, &alls ); 
+				calculate_macro_xs( macro_xs, mat, E, input, data, &abrarov, &alls ); 
 
 				// For verification, and to prevent the compiler from optimizing
 				// all work out, we interrogate the returned macro_xs_vector array
@@ -144,8 +135,6 @@ void run_history_based_simulation(Input input, SimulationData data, long * abrar
                 mat = pick_mat(&seed);
 			}
 		}
-
-		free(sigTfactors);
 
 		// Accumulate global counters
 		g_abrarov = abrarov; 
