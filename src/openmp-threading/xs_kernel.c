@@ -106,7 +106,8 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 
 		for( int j = 0; j < 4; j++ )
 		{
-			macro_xs[j] += micro_xs[j] * data.materials.concs[mat][i];
+			//macro_xs[j] += micro_xs[j] * data.materials.concs[mat][i];
+			macro_xs[j] += micro_xs[j] * data.materials.concs[mat * data.materials.max_num_nucs + i];
 		}
 		// Debug
 		/*

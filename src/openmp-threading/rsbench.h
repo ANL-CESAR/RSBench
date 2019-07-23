@@ -43,7 +43,7 @@ typedef struct{
 typedef struct{
 	int * num_nucs;
 	int * mats;
-	double ** concs;
+	double * concs;
 	int max_num_nucs;
 } Materials;
 
@@ -92,7 +92,7 @@ double ** generate_pseudo_K0RS( Input input ,  uint64_t * seed);
 // material.c
 int * load_num_nucs(Input input);
 int * load_mats( Input input, int * num_nucs, int * max_num_nucs );
-double ** load_concs( int * num_nucs, uint64_t * seed );
+double * load_concs( int * num_nucs, uint64_t * seed, int max_num_nucs );
 int pick_mat( uint64_t * seed );
 Materials get_materials(Input input, uint64_t * seed);
 

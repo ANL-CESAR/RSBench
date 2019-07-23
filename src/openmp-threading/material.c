@@ -6,7 +6,7 @@ Materials get_materials(Input input, uint64_t * seed)
 	Materials M;
 	M.num_nucs = load_num_nucs(input);
 	M.mats = load_mats(input, M.num_nucs, &M.max_num_nucs);
-	M.concs = load_concs(M.num_nucs, seed);
+	M.concs = load_concs(M.num_nucs, seed, M.max_num_nucs);
 
 	return M;
 }
@@ -104,23 +104,13 @@ int * load_mats( Input input, int * num_nucs, int * max_num_nucs )
 }
 
 // Creates a randomized array of 'concentrations' of nuclides in each mat
-double ** load_concs( int * num_nucs, uint64_t * seed )
+double * load_concs( int * num_nucs, uint64_t * seed, int max_num_nucs )
 {
-	double ** concs = (double **)malloc( 12 * sizeof( double *) );
-	
-	for( int i = 0; i < 12; i++ )
-		concs[i] = (double *)malloc( num_nucs[i] * sizeof(double) );
-	
-	for( int i = 0; i < 12; i++ )
-		for( int j = 0; j < num_nucs[i]; j++ )
-			concs[i][j] = LCG_random_double(seed);
+	double * concs = (double *) malloc( 12 * max_num_nucs * sizeof( double ) );
 
-	// test
-	/*
 	for( int i = 0; i < 12; i++ )
 		for( int j = 0; j < num_nucs[i]; j++ )
-			printf("concs[%d][%d] = %lf\n", i, j, concs[i][j] );
-	*/
+			concs[i * max_num_nucs + j] = LCG_random_double(seed);
 
 	return concs;
 }
@@ -149,7 +139,7 @@ int pick_mat( uint64_t * seed )
 	dist[9]  = 0.015;	// top nozzle
 	dist[10] = 0.025;	// top of fuel assemblies
 	dist[11] = 0.013;	// bottom of fuel assemblies
-	
+
 	double roll = LCG_random_double(seed);
 
 	// makes a pick based on the distro
