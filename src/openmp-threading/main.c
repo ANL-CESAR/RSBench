@@ -8,7 +8,7 @@ int main(int argc, char * argv[])
 
 	int version = 10;
 	double start, stop;
-	uint64_t seed = STARTING_SEED;
+	uint64_t seed = INITIALIZATION_SEED;
 	
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );

@@ -19,6 +19,7 @@ typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
 #define EVENT_BASED 2
 
 #define STARTING_SEED 1070
+#define INITIALIZATION_SEED 42
 
 typedef struct{
 	double r;

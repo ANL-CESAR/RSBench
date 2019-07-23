@@ -23,8 +23,11 @@ void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_r
 		#pragma omp for schedule(guided)
 		for( int i = 0; i < input.lookups; i++ )
 		{
-			// Particles are seeded by their particle ID
-			unsigned long seed = ((unsigned long) i+ (unsigned long)1)* (unsigned long) 13371337;
+			// Set the initial seed value
+			uint64_t seed = STARTING_SEED;	
+
+			// Forward seed to lookup index (we need 2 samples per lookup)
+			seed = fast_forward_LCG(seed, 2*i);
 
 			// Randomly pick an energy and material for the particle
 			double E = LCG_random_double(&seed);
@@ -90,20 +93,15 @@ void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov
 		#pragma omp for schedule(guided)
 		for( int p = 0; p < input.particles; p++ )
 		{
-			// Particles are seeded by their particle ID
-            unsigned long seed = ((unsigned long) p+ (unsigned long)1)* (unsigned long) 13371337;
+			// Set the initial seed value
+			uint64_t seed = STARTING_SEED;	
+
+			// Forward seed to lookup index (we need 2 samples per lookup)
+			seed = fast_forward_LCG(seed, p * input.lookups * 2 * 4);
 
 			// Randomly pick an energy and material for the particle
             double E = LCG_random_double(&seed);
             int mat  = pick_mat(&seed);
-
-			#ifdef STATUS
-			if( thread == 0 && p % 35 == 0 )
-				printf("\rCalculating XS's... (%.0lf%% completed)",
-						(p / ( (double)input.particles /
-							   (double) input.nthreads )) /
-						(double) input.nthreads * 100.0);
-			#endif
 
 			// This loop is dependent!
 			// I.e., This loop must be executed sequentially,
@@ -141,13 +139,12 @@ void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov
                 // of branching physics sampling, whereas here we are just
                 // artificially enforcing this dependence based on altering
                 // the seed
+				uint64_t n_forward = 0;
                 for( int x = 0; x < 4; x++ )
-				{
-					if( macro_xs[x] > 0 )
-                    	seed += 1337*p;
-					else
-						seed += 42;
-				}
+					if( macro_xs[x] > 1.0 )
+						n_forward++;
+				if( n_forward > 0 )
+					seed = fast_forward_LCG(seed, n_forward);
 
                 E   = LCG_random_double(&seed);
                 mat = pick_mat(&seed);
