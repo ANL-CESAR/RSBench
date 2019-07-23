@@ -469,6 +469,23 @@ double c_abs( RSComplex A)
 	return sqrt(A.r*A.r + A.i * A.i);
 }
 
+// Implementation based on:
+// z = x + iy
+// cexp(z) = e^x * (cos(y) + i * sin(y))
+RSComplex fast_cexp( RSComplex z )
+{
+	double x = z.r;
+	double y = z.i;
+
+	double t1 = exp(x);
+	double t2 = cos(y);
+	double t3 = sin(y);
+	RSComplex t4 = {t2, t3};
+	RSComplex t5 = {t1, 0};
+	RSComplex result = c_mul(t5, (t4));
+	return result;
+}	
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Parallel Quicksort Key-Value Sorting Algorithms
 ////////////////////////////////////////////////////////////////////////////////////
@@ -669,7 +686,7 @@ void run_event_based_simulation_optimization_1(Input in, SimulationData SD, unsi
 	total_sz += sz;
 	SD.length_mat_samples = in.lookups;
 	
-	printf("Allocated an additional %.0lf MB of data on GPU.\n", total_sz/1024.0/1024.0);
+	printf("Allocated an additional %.0lf MB of data on CPU.\n", total_sz/1024.0/1024.0);
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// Begin Actual Simulation 
@@ -678,6 +695,7 @@ void run_event_based_simulation_optimization_1(Input in, SimulationData SD, unsi
 	////////////////////////////////////////////////////////////////////////////////
 	// Sample Materials and Energies
 	////////////////////////////////////////////////////////////////////////////////
+	printf("Sampling event data...\n");
 	#pragma omp parallel for schedule(dynamic, 1000)
 	for( int i = 0; i < in.lookups; i++ )
 	{
@@ -694,7 +712,7 @@ void run_event_based_simulation_optimization_1(Input in, SimulationData SD, unsi
 		SD.p_energy_samples[i] = p_energy;
 		SD.mat_samples[i] = mat;
 	}
-	printf("finished sampling...\n");
+	printf("Finished sampling.\n");
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// Sort by Material

@@ -50,7 +50,6 @@ int main(int argc, char * argv[])
 	// Run Simulation
 	start = get_time();
 
-
 	// Run simulation
 	if( input.simulation_method == EVENT_BASED )
 	{

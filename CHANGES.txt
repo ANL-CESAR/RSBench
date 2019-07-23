@@ -1,4 +1,116 @@
 =====================================================================
+NEW IN VERSION 12
+=====================================================================
+- (Feature) Ports of RSBench in a variety of accelerator oriented
+  programming models have been added to the repo. The traditional
+  OpenMP threading model of RSBench is now located in the 
+  "RSBench/src/openmp-threading" directory. The other programming
+  models are:
+
+    - OpenMP target offloading, for use with OpenMP 4.5+ compilers
+      that can target a variety of acecelerator architectures.
+
+    - CUDA for use on NVIDIA GPUs.
+
+    - OpenCL for use on CPU and accelerators. Note that this port
+      may need to be heavily re-optimized if running on a non-GPU
+      architecture.
+
+    - SYCL for use on CPU and accelerators. Note that this port
+      may need to be heavily re-optimized if running on a non-GPU
+      architecture.
+
+  Note that the accelerator-oriented models only implement the event
+  based model of parallelism, as this model is expected to be 
+  superior to the history-based model for accelerator architectures.
+  As such, running with the accelerator models will require the
+  "-m event" flag to be used.
+
+- (Optimization) For the CUDA and openmp-threading code bases,
+  several different optimized kernel variants have been developed.
+  These optimized kernels can be selected with the "-k <kernel ID #>"
+  argument. The optimized kernels work by sorting values by energy
+  and material to reduce thread divergence and greatly improve
+  cache locality. All baseline (default) kernel (-k 0) is generally
+  the same across all programming models. In a future release, we
+  plan on implementing these optimizations for all programming models
+  if possible. 
+
+- (Feature) Verification mode is now default and required, so is no
+  longer an option in the Makefile. A new and faster method of
+  verifying results was developed and added, making it have much less
+  of an impact on performance than the previous methods did. As the
+  new method generates a different hash than the old one, the expected
+  has values have changed in v19.
+
+- (Removal) Removed PAPI performance counters from code and Makefile.
+
+- (Removal) A number of optional/outdated Makefile options were
+  removed in an effort to clean up the code base and simplify things.
+
+- (Feature) To service the new verification mode, a new PRNG scheme
+  has been implemented. We now use a specific LCG for all random
+  number generation rather than relying on C standard rand() for
+  some parts of initialization. Additionally, instead of selecting
+  seeds by thread ID, we now base the PRNG stream off of a single
+  seed that gets forwarded using a log(N) algorithm. This ensures
+  that each sample is uncorrelated so will better ensure the randomness
+  of our energy and material samples as compared to the old scheme.
+
+- (Feature) The basic data structures in RSBench have all been changed
+  to use a single 1D memory allocation each so as to make it as
+  easy as possible to offload heap memory to devices without having
+  to flatten things manually for each device implementation. Several
+  structures were consolidated into a single structure to make it
+  easier to see what data arrays need to be moved to a device.
+
+=====================================================================
+NEW IN VERSION 11
+=====================================================================
+- (Feature) Added in an option to
+  use an event based simulation algorithm as opposed to the default
+  history based algorithm. This same change was featured in the
+  XSBench v18 update. This mode can be enabled with the "-m
+  event" command line option. The central difference between the
+  default history based algorithm and the event based algorithm is
+  the dependence or independence of macroscopic cross section
+  lookups. In the default history based method, the simulation
+  parallelism is expressed over a large number of independent
+  particle "histories", with each particle history requiring (by
+  default) 34 sequential and dependent macroscopic cross section
+  lookups to be executed. In the event based method, all macroscopic
+  cross sections are pooled together in a way that allows them to
+  be executed independently in any order. On CPU architectures,
+  both algorithms run in approximately the same speed, though in
+  full Monte Carlo applications there are some added costs associated
+  with the event based method (namely, the need to frequently store
+  and load particle states) that are not represented in XSBench.
+  However, the model event based algorithm in XSBench is useful for
+  examining how the dependence or independence of the loop over
+  macroscopic cross sections may affect performance on different
+  computer architectures.
+
+  The event based mode in RSBench is very similar to the algorithm
+  expressed in v9 and before, so performance results collected
+  with v9 and previous should be comparable to performance results
+  collected with the event mode in v11. On most CPU architectures
+  and with most compilers, the history and event based methods run
+  in approximately the same time, with some CPUs showing a small
+  (less than 20%) speedup with the event based method.
+
+- With the addition of the different event and history based options,
+  the main function of the code has been broken down into some
+  smaller functions. Notably, the main parallel simulation phase
+  has been moved to a history and event based function in the
+  "simulation.c" file.
+
+- Added different verification checksums for the new event based mode.
+  While in a real application, the history and event based methods
+  would produce the same answers, in the context of this mini-app
+  for programming convenience purposes they do not produce the same
+  answer/checksum.
+
+=====================================================================
 NEW IN VERSION 10
 =====================================================================
 - In previous versions of RSBench, it was assumed that the method
