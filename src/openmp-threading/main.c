@@ -131,13 +131,13 @@ int main(int argc, char * argv[])
 	unsigned long long small = 0;
 	if(input.simulation_method == HISTORY_BASED )
 	{
-		large = 744787;
-		small = 64267;
+		large = 841550;
+		small = 252526;
 	}
 	else if( input.simulation_method == EVENT_BASED )
 	{
-		large = 744911;
-		small = 66776;
+		large = 846231;
+		small = 251196;
 	}
 
 	if( input.HM  == LARGE )

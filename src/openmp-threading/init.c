@@ -1,19 +1,18 @@
 #include "rsbench.h"
 
-// JRT 
 int * generate_n_poles( Input input, uint64_t * seed )
 {
 	int total_resonances = input.avg_n_poles * input.n_nuclides;
 
-	int * R = (int *) calloc( input.n_nuclides, sizeof(int));
-
-	for( int i = 0; i < total_resonances; i++ )
-		R[LCG_random_int(seed) % input.n_nuclides]++;
-
+	int * R = (int *) malloc( input.n_nuclides * sizeof(int));
+	
 	// Ensure all nuclides have at least 1 resonance
 	for( int i = 0; i < input.n_nuclides; i++ )
-		if( R[i] == 0 )
-			R[i] = 1;
+		R[i] = 1;
+
+	// Sample the rest
+	for( int i = 0; i < total_resonances - input.n_nuclides; i++ )
+		R[LCG_random_int(seed) % input.n_nuclides]++;
 	
 	/* Debug	
 	for( int i = 0; i < input.n_nuclides; i++ )
@@ -27,15 +26,14 @@ int * generate_n_windows( Input input, uint64_t * seed )
 {
 	int total_resonances = input.avg_n_windows * input.n_nuclides;
 
-	int * R = (int *) calloc( input.n_nuclides, sizeof(int));
-
-	for( int i = 0; i < total_resonances; i++ )
-		R[LCG_random_int(seed) % input.n_nuclides]++;
-
+	int * R = (int *) malloc( input.n_nuclides * sizeof(int));
+	
 	// Ensure all nuclides have at least 1 resonance
 	for( int i = 0; i < input.n_nuclides; i++ )
-		if( R[i] == 0 )
-			R[i] = 1;
+		R[i] = 1;
+
+	for( int i = 0; i < total_resonances - input.n_nuclides; i++ )
+		R[LCG_random_int(seed) % input.n_nuclides]++;
 	
 	/* Debug	
 	for( int i = 0; i < input.n_nuclides; i++ )
