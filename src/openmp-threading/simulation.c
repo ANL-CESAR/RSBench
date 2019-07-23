@@ -678,7 +678,7 @@ void run_event_based_simulation_optimization_1(Input in, SimulationData SD, unsi
 	////////////////////////////////////////////////////////////////////////////////
 	// Sample Materials and Energies
 	////////////////////////////////////////////////////////////////////////////////
-	#pragma omp parallel for schedule(dynamic, 100)
+	#pragma omp parallel for schedule(dynamic, 1000)
 	for( int i = 0; i < in.lookups; i++ )
 	{
 		// Set the initial seed value
