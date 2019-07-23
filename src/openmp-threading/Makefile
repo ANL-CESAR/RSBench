@@ -28,7 +28,7 @@ obj = $(source:.c=.o)
 #===============================================================================
 
 # Standard Flags
-CFLAGS := -std=gnu99 -Wall -DVERIFICATION
+CFLAGS := -std=gnu99 -Wall
 
 # gcc Compiler
 ifeq ($(COMPILER),gnu)

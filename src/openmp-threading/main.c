@@ -50,10 +50,22 @@ int main(int argc, char * argv[])
 	// Run Simulation
 	start = get_time();
 
-	if(input.simulation_method == HISTORY_BASED )
+
+	// Run simulation
+	if( input.simulation_method == EVENT_BASED )
+	{
+		if( input.kernel_id == 0 )
+			run_event_based_simulation(input, SD, &vhash );
+		else if( input.kernel_id == 1 )
+			run_event_based_simulation_optimization_1(input, SD, &vhash );
+		else
+		{
+			printf("Error: No kernel ID %d found!\n", input.kernel_id);
+			exit(1);
+		}
+	}
+	else if( input.simulation_method == HISTORY_BASED )
 		run_history_based_simulation(input, SD, &vhash );
-	else if( input.simulation_method == EVENT_BASED )
-		run_event_based_simulation(input, SD, &vhash );
 
 	stop = get_time();
 

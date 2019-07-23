@@ -36,6 +36,7 @@ typedef struct{
 	int doppler;
 	int particles;
 	int simulation_method;
+	int kernel_id;
 } Input;
 
 typedef struct{
@@ -74,8 +75,11 @@ typedef struct{
 	int max_num_nucs;
 	int max_num_poles;
 	int max_num_windows;
+	double * p_energy_samples;
+	unsigned long length_p_energy_samples;
+	int * mat_samples;
+	unsigned long length_mat_samples;
 } SimulationData;
-
 
 // io.c
 void logo(int version);
@@ -120,6 +124,7 @@ void run_history_based_simulation(Input input, SimulationData data, unsigned lon
 double LCG_random_double(uint64_t * seed);
 uint64_t LCG_random_int(uint64_t * seed);
 uint64_t fast_forward_LCG(uint64_t seed, uint64_t n);
+void run_event_based_simulation_optimization_1(Input in, SimulationData SD, unsigned long * vhash_result );
 
 // rscomplex.c
 RSComplex c_add( RSComplex A, RSComplex B);

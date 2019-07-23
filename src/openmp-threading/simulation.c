@@ -14,7 +14,7 @@
 
 void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result )
 {
-	printf("Beginning event based simulation...\n");
+	printf("Beginning baseline event based simulation...\n");
 	unsigned long verification = 0;
 
 	// Main simulation loop over macroscopic cross section lookups
@@ -644,3 +644,145 @@ void quickSort_parallel_d_i(double* key,int * value, int lenArray, int numThread
 // was slightly faster than the thrust library version, so for speed and
 // simplicity we will do not add the thrust dependency.
 ////////////////////////////////////////////////////////////////////////////////////
+
+void run_event_based_simulation_optimization_1(Input in, SimulationData SD, unsigned long * vhash_result )
+{
+	char * optimization_name = "Optimization 1 - Kernel splitting + full material & energy sort";
+	
+	printf("Simulation Kernel:\"%s\"\n", optimization_name);
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// Allocate Additional Data Structures Needed by Optimized Kernel
+	////////////////////////////////////////////////////////////////////////////////
+	printf("Allocating additional data required by optimized kernel...\n");
+	size_t sz;
+	size_t total_sz = 0;
+	double start, stop;
+
+	sz = in.lookups * sizeof(double);
+	SD.p_energy_samples = (double *) malloc(sz);
+	total_sz += sz;
+	SD.length_p_energy_samples = in.lookups;
+
+	sz = in.lookups * sizeof(int);
+	SD.mat_samples = (int *) malloc(sz);
+	total_sz += sz;
+	SD.length_mat_samples = in.lookups;
+	
+	printf("Allocated an additional %.0lf MB of data on GPU.\n", total_sz/1024.0/1024.0);
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// Begin Actual Simulation 
+	////////////////////////////////////////////////////////////////////////////////
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// Sample Materials and Energies
+	////////////////////////////////////////////////////////////////////////////////
+	#pragma omp parallel for schedule(dynamic, 100)
+	for( int i = 0; i < in.lookups; i++ )
+	{
+		// Set the initial seed value
+		uint64_t seed = STARTING_SEED;	
+
+		// Forward seed to lookup index (we need 2 samples per lookup)
+		seed = fast_forward_LCG(seed, 2*i);
+
+		// Randomly pick an energy and material for the particle
+		double p_energy = LCG_random_double(&seed);
+		int mat         = pick_mat(&seed); 
+
+		SD.p_energy_samples[i] = p_energy;
+		SD.mat_samples[i] = mat;
+	}
+	printf("finished sampling...\n");
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// Sort by Material
+	////////////////////////////////////////////////////////////////////////////////
+	
+	start = get_time();
+
+	quickSort_parallel_i_d(SD.mat_samples, SD.p_energy_samples, in.lookups, in.nthreads);
+
+	stop = get_time();
+
+	printf("Material sort took %.3lf seconds\n", stop-start);
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// Sort by Energy
+	////////////////////////////////////////////////////////////////////////////////
+	
+	start = get_time();
+	
+	// Count up number of each type of sample. 
+	int num_samples_per_mat[12] = {0};
+	for( int l = 0; l < in.lookups; l++ )
+		num_samples_per_mat[ SD.mat_samples[l] ]++;
+
+	// Determine offsets
+	int offsets[12] = {0};
+	for( int m = 1; m < 12; m++ )
+		offsets[m] = offsets[m-1] + num_samples_per_mat[m-1];
+	
+	stop = get_time();
+	printf("Counting samples and offsets took %.3lf seconds\n", stop-start);
+	start = stop;
+
+	// Sort each material type by energy level
+	int offset = 0;
+	for( int m = 0; m < 12; m++ )
+		quickSort_parallel_d_i(SD.p_energy_samples + offsets[m],SD.mat_samples + offsets[m], num_samples_per_mat[m], in.nthreads);
+
+	stop = get_time();
+	printf("Energy Sorts took %.3lf seconds\n", stop-start);
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// Perform lookups for each material separately
+	////////////////////////////////////////////////////////////////////////////////
+	start = get_time();
+
+	unsigned long long verification = 0;
+
+	// Individual Materials
+	offset = 0;
+	for( int m = 0; m < 12; m++ )
+	{
+		#pragma omp parallel for schedule(dynamic,100) reduction(+:verification)
+		for( int i = offset; i < offset + num_samples_per_mat[m]; i++)
+		{
+			// load pre-sampled energy and material for the particle
+			double E = SD.p_energy_samples[i];
+			int mat  = SD.mat_samples[i]; 
+
+			double macro_xs_vector[4] = {0};
+
+			// Perform macroscopic Cross Section Lookup
+			calculate_macro_xs( macro_xs_vector, mat, E, in, SD ); 
+
+			// For verification, and to prevent the compiler from optimizing
+			// all work out, we interrogate the returned macro_xs_vector array
+			// to find its maximum value index, then increment the verification
+			// value by that index. In this implementation, we prevent thread
+			// contention by using an OMP reduction on the verification value.
+			// For accelerators, a different approach might be required
+			// (e.g., atomics, reduction of thread-specific values in large
+			// array via CUDA thrust, etc).
+			double max = -DBL_MAX;
+			int max_idx = 0;
+			for(int j = 0; j < 4; j++ )
+			{
+				if( macro_xs_vector[j] > max )
+				{
+					max = macro_xs_vector[j];
+					max_idx = j;
+				}
+			}
+			verification += max_idx+1;
+		}
+		offset += num_samples_per_mat[m];
+	}
+	
+	stop = get_time();
+	printf("XS Lookups took %.3lf seconds\n", stop-start);
+	*vhash_result = verification;
+}

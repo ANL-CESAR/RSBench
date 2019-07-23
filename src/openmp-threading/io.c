@@ -85,6 +85,8 @@ Input read_CLI( int argc, char * argv[] )
 	input.numL = 4;
 	// defaults to no temperature dependence (Doppler broadening)
 	input.doppler = 1;
+	// defaults to baseline simulation kernel
+	input.kernel_id = 0;
 	
 	int default_lookups = 1;
 	int default_particles = 1;
@@ -189,6 +191,14 @@ Input read_CLI( int argc, char * argv[] )
 		{
 			if( ++i < argc )
 				input.avg_n_poles = atoi(argv[i]);
+			else
+				print_CLI_error();
+		}
+		// Kernel ID (-k)
+		else if( strcmp(arg, "-k") == 0 )
+		{
+			if( ++i < argc )
+				input.kernel_id = atoi(argv[i]);
 			else
 				print_CLI_error();
 		}
