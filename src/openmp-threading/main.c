@@ -47,7 +47,8 @@ int main(int argc, char * argv[])
 
 	// Prepare full resonance grid
 	printf("Generating resonance parameter grid...\n");
-	Pole ** poles = generate_poles( input, n_poles, &seed );
+	int max_num_poles;
+	Pole * poles = generate_poles( input, n_poles, &seed, &max_num_poles );
 
 	// Prepare full Window grid
 	printf("Generating window parameter grid...\n");
@@ -64,6 +65,7 @@ int main(int argc, char * argv[])
 	data.poles = poles;
 	data.windows = windows;
 	data.pseudo_K0RS = pseudo_K0RS;
+	data.max_num_poles = max_num_poles;
 
 	stop = omp_get_wtime();
 	printf("Initialization Complete. (%.2lf seconds)\n", stop-start);

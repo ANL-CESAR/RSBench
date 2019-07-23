@@ -153,7 +153,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 	{
 		RSComplex PSIIKI;
 		RSComplex CDUM;
-		Pole pole = data.poles[nuc][i];
+		Pole pole = data.poles[nuc * data.max_num_poles + i];
 		RSComplex t1 = {0, 1};
 		RSComplex t2 = {sqrt(E), 0 };
 		PSIIKI = c_div( t1 , c_sub(pole.MP_EA,t2) );
@@ -205,7 +205,8 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 	// Loop over Poles within window, add contributions
 	for( int i = w.start; i < w.end; i++ )
 	{
-		Pole pole = data.poles[nuc][i];
+		//Pole pole = data.poles[nuc][i];
+		Pole pole = data.poles[nuc * data.max_num_poles + i];
 		//printf("pole: n = %d  p_idx = %d\n", nuc, i);
 
 		// Prep Z
