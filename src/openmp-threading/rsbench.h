@@ -5,6 +5,7 @@
 #include<string.h>
 #include<math.h>
 #include<stdint.h>
+#include<float.h>
 
 #ifdef PAPI
 #include "papi.h"

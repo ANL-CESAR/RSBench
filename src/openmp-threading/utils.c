@@ -8,7 +8,7 @@ RSComplex fast_cexp( RSComplex z )
 	double x = z.r;
 	double y = z.i;
 
-	double t1 = fast_exp(x);
+	double t1 = exp(x);
 	double t2 = cos(y);
 	double t3 = sin(y);
 	RSComplex t4 = {t2, t3};
@@ -20,6 +20,7 @@ RSComplex fast_cexp( RSComplex z )
 // Faster exponential function
 // Written By "ACMer":
 // https://codingforspeed.com/using-faster-exponential-approximation/
+/*
 double fast_exp(double x)
 {
   x = 1. + x * 0.000244140625;
@@ -28,6 +29,7 @@ double fast_exp(double x)
   x *= x; x *= x; x *= x; x *= x;
   return x;
 }
+*/
 
 // Park & Miller Multiplicative Conguential Algorithm
 // From "Numerical Recipes" Second Edition

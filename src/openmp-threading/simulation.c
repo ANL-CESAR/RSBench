@@ -4,13 +4,11 @@ void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_r
 	printf("Beginning event based simulation...\n");
 	long g_abrarov = 0;
 	long g_alls = 0;
-	unsigned long vhash = 0;
+	unsigned long verification = 0;
 	#pragma omp parallel default(none) \
 	shared(input, data) \
-	reduction(+:g_abrarov, g_alls, vhash)
+	reduction(+:g_abrarov, g_alls, verification)
 	{
-		double * xs = (double *) calloc(4, sizeof(double));
-		int thread = omp_get_thread_num();
 		long abrarov = 0; 
 		long alls = 0;
 
@@ -20,7 +18,7 @@ void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_r
 		// This loop is independent!
 		// I.e., macroscopic cross section lookups in the event based simulation
 		// can be executed in any order.
-		#pragma omp for schedule(guided)
+		#pragma omp for schedule(dynamic,1000)
 		for( int i = 0; i < input.lookups; i++ )
 		{
 			// Set the initial seed value
@@ -37,25 +35,24 @@ void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_r
 
 			calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors, &abrarov, &alls ); 
 
-			// Results are copied onto heap to avoid some compiler
-			// flags (-flto) from optimizing out function call
-			memcpy(xs, macro_xs, 4*sizeof(double));
-
-			// Verification hash calculation
-			// This method provides a consistent hash accross
-			// architectures and compilers.
-			#ifdef VERIFICATION
-			char line[256];
-			sprintf(line, "%.2le %d %.2le %.2le %.2le %.2le",
-				   E, mat,
-				   macro_xs[0],
-				   macro_xs[1],
-				   macro_xs[2],
-				   macro_xs[3]);
-			unsigned long long vhash_local = hash(line, 10000);
-
-			vhash += vhash_local;
-			#endif
+			// For verification, and to prevent the compiler from optimizing
+			// all work out, we interrogate the returned macro_xs_vector array
+			// to find its maximum value index, then increment the verification
+			// value by that index. In this implementation, we prevent thread
+			// contention by using an OMP reduction on it. For other accelerators,
+			// a different approach might be required (e.g., atomics, reduction
+			// of thread-specific values in large array via CUDA thrust, etc)
+			double max = -DBL_MAX;
+			int max_idx = 0;
+			for(int x = 0; x < 4; x++ )
+			{
+				if( macro_xs[x] > max )
+				{
+					max = macro_xs[x];
+					max_idx = x;
+				}
+			}
+			verification += max_idx+1;
 		}
 
 		free(sigTfactors);
@@ -67,7 +64,7 @@ void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_r
 	}
 	*abrarov_result = g_abrarov;
 	*alls_result = g_alls;
-	*vhash_result = vhash;
+	*vhash_result = verification;
 }
 
 void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov_result, long * alls_result, unsigned long * vhash_result )
@@ -75,13 +72,11 @@ void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov
 	printf("Beginning history based simulation...\n");
 	long g_abrarov = 0;
 	long g_alls = 0;
-	unsigned long vhash = 0;
+	unsigned long verification = 0;
 	#pragma omp parallel default(none) \
 	shared(input, data) \
-	reduction(+:g_abrarov, g_alls, vhash)
+	reduction(+:g_abrarov, g_alls, verification)
 	{
-		double * xs = (double *) calloc(4, sizeof(double));
-		int thread = omp_get_thread_num();
 		long abrarov = 0; 
 		long alls = 0;
 
@@ -90,7 +85,7 @@ void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov
 
 		// This loop is independent!
 		// I.e., particle histories can be executed in any order
-		#pragma omp for schedule(guided)
+		#pragma omp for schedule(dynamic, 1000)
 		for( int p = 0; p < input.particles; p++ )
 		{
 			// Set the initial seed value
@@ -112,25 +107,24 @@ void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov
 
 				calculate_macro_xs( macro_xs, mat, E, input, data, sigTfactors, &abrarov, &alls ); 
 
-				// Results are copied onto heap to avoid some compiler
-				// flags (-flto) from optimizing out function call
-				memcpy(xs, macro_xs, 4*sizeof(double));
-
-				// Verification hash calculation
-                // This method provides a consistent hash accross
-                // architectures and compilers.
-                #ifdef VERIFICATION
-                char line[256];
-                sprintf(line, "%.2le %d %.2le %.2le %.2le %.2le",
-                       E, mat,
-                       macro_xs[0],
-                       macro_xs[1],
-                       macro_xs[2],
-                       macro_xs[3]);
-                unsigned long long vhash_local = hash(line, 10000);
-
-                vhash += vhash_local;
-                #endif
+				// For verification, and to prevent the compiler from optimizing
+				// all work out, we interrogate the returned macro_xs_vector array
+				// to find its maximum value index, then increment the verification
+				// value by that index. In this implementation, we prevent thread
+				// contention by using an OMP reduction on it. For other accelerators,
+				// a different approach might be required (e.g., atomics, reduction
+				// of thread-specific values in large array via CUDA thrust, etc)
+				double max = -DBL_MAX;
+				int max_idx = 0;
+				for(int x = 0; x < 4; x++ )
+				{
+					if( macro_xs[x] > max )
+					{
+						max = macro_xs[x];
+						max_idx = x;
+					}
+				}
+				verification += max_idx+1;
 
                 // Randomly pick next energy and material for the particle
                 // Also incorporates results from macro_xs lookup to
@@ -157,24 +151,10 @@ void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov
 		g_abrarov = abrarov; 
 		g_alls = alls;
 
-		#ifdef PAPI
-		if( thread == 0 )
-		{
-			printf("\n");
-			border_print();
-			center_print("PAPI COUNTER RESULTS", 79);
-			border_print();
-			printf("Count          \tSmybol      \tDescription\n");
-		}
-		{
-			#pragma omp barrier
-		}
-		counter_stop(&eventset, num_papi_events);
-		#endif
 	}
 	*abrarov_result = g_abrarov;
 	*alls_result = g_alls;
-	*vhash_result = vhash;
+	*vhash_result = verification;
 }
 
 double LCG_random_double(uint64_t * seed)

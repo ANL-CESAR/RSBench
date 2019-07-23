@@ -119,20 +119,25 @@ int main(int argc, char * argv[])
 	if( input.doppler)
 	printf("Slow Faddeeva:         %.2lf%%\n", (double) g_abrarov/g_alls * 100.f);
 	printf("Runtime:               %.3lf seconds\n", stop-start);
-	printf("Lookups:               "); fancy_int(input.lookups*input.particles);
-	printf("Lookups/s:             "); fancy_int((double) input.lookups*input.particles / (stop-start));
+	int lookups = 0;
+	if( input.simulation_method == HISTORY_BASED )
+		lookups = input.lookups*input.particles;
+	else
+		lookups = input.lookups;
+	printf("Lookups:               "); fancy_int(lookups);
+	printf("Lookups/s:             "); fancy_int((double) lookups / (stop-start));
 	#ifdef VERIFICATION
 	unsigned long long large = 0;
 	unsigned long long small = 0;
 	if(input.simulation_method == HISTORY_BASED )
 	{
-		large = 425149;
-		small = 830419;
+		large = 744787;
+		small = 64267;
 	}
 	else if( input.simulation_method == EVENT_BASED )
 	{
-		large = 897883;
-		small = 418807;
+		large = 744911;
+		small = 66776;
 	}
 
 	if( input.HM  == LARGE )
