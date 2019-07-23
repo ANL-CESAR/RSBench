@@ -27,7 +27,7 @@ void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_r
 			unsigned long seed = ((unsigned long) i+ (unsigned long)1)* (unsigned long) 13371337;
 
 			// Randomly pick an energy and material for the particle
-			double E = rn(&seed);
+			double E = LCG_random_double(&seed);
 			int mat  = pick_mat(&seed);
 
 			double macro_xs[4] = {0};
@@ -94,7 +94,7 @@ void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov
             unsigned long seed = ((unsigned long) p+ (unsigned long)1)* (unsigned long) 13371337;
 
 			// Randomly pick an energy and material for the particle
-            double E = rn(&seed);
+            double E = LCG_random_double(&seed);
             int mat  = pick_mat(&seed);
 
 			#ifdef STATUS
@@ -149,7 +149,7 @@ void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov
 						seed += 42;
 				}
 
-                E   = rn(&seed);
+                E   = LCG_random_double(&seed);
                 mat = pick_mat(&seed);
 			}
 		}
@@ -178,4 +178,53 @@ void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov
 	*abrarov_result = g_abrarov;
 	*alls_result = g_alls;
 	*vhash_result = vhash;
+}
+
+double LCG_random_double(uint64_t * seed)
+{
+	// LCG parameters
+	const uint64_t m = 9223372036854775808ULL; // 2^63
+	const uint64_t a = 2806196910506780709ULL;
+	const uint64_t c = 1ULL;
+	*seed = (a * (*seed) + c) % m;
+	return (double) (*seed) / (double) m;
+}	
+
+uint64_t LCG_random_int(uint64_t * seed)
+{
+	// LCG parameters
+	const uint64_t m = 9223372036854775808ULL; // 2^63
+	const uint64_t a = 2806196910506780709ULL;
+	const uint64_t c = 1ULL;
+	*seed = (a * (*seed) + c) % m;
+	return *seed;
+}	
+
+uint64_t fast_forward_LCG(uint64_t seed, uint64_t n)
+{
+	// LCG parameters
+	const uint64_t m = 9223372036854775808ULL; // 2^63
+	uint64_t a = 2806196910506780709ULL;
+	uint64_t c = 1ULL;
+
+	n = n % m;
+
+	uint64_t a_new = 1;
+	uint64_t c_new = 0;
+
+	while(n > 0) 
+	{
+		if(n & 1)
+		{
+			a_new *= a;
+			c_new = c_new * a + c;
+		}
+		c *= (a + 1);
+		a *= a;
+
+		n >>= 1;
+	}
+
+	return (a_new * seed + c_new) % m;
+
 }

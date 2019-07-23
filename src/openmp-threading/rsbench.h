@@ -4,6 +4,7 @@
 #include<time.h>
 #include<string.h>
 #include<math.h>
+#include<stdint.h>
 
 #ifdef PAPI
 #include "papi.h"
@@ -16,6 +17,8 @@ typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
 
 #define HISTORY_BASED 1
 #define EVENT_BASED 2
+
+#define STARTING_SEED 1070
 
 typedef struct{
 	double r;
@@ -79,18 +82,18 @@ void print_CLI_error(void);
 void print_input_summary(Input input);
 
 // init.c
-int * generate_n_poles( Input input,  unsigned long * seed );
-int * generate_n_windows( Input input ,  unsigned long * seed);
-Pole ** generate_poles( Input input, int * n_poles ,  unsigned long * seed);
-Window ** generate_window_params( Input input, int * n_windows, int * n_poles ,  unsigned long * seed);
-double ** generate_pseudo_K0RS( Input input ,  unsigned long * seed);
+int * generate_n_poles( Input input,  uint64_t * seed );
+int * generate_n_windows( Input input ,  uint64_t * seed);
+Pole ** generate_poles( Input input, int * n_poles ,  uint64_t * seed);
+Window ** generate_window_params( Input input, int * n_windows, int * n_poles ,  uint64_t * seed);
+double ** generate_pseudo_K0RS( Input input ,  uint64_t * seed);
 
 // material.c
 int * load_num_nucs(Input input);
 int ** load_mats( Input input, int * num_nucs );
-double ** load_concs( int * num_nucs, unsigned long * seed );
-int pick_mat( unsigned long * seed );
-Materials get_materials(Input input, unsigned long * seed);
+double ** load_concs( int * num_nucs, uint64_t * seed );
+int pick_mat( uint64_t * seed );
+Materials get_materials(Input input, uint64_t * seed);
 
 // utils.c
 double rn(unsigned long * seed);
@@ -110,6 +113,9 @@ void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, RSCompl
 // simulation.c
 void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
 void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
+double LCG_random_double(uint64_t * seed);
+uint64_t LCG_random_int(uint64_t * seed);
+uint64_t fast_forward_LCG(uint64_t seed, uint64_t n);
 
 // rscomplex.c
 RSComplex c_add( RSComplex A, RSComplex B);

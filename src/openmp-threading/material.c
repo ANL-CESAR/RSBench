@@ -1,7 +1,7 @@
 #include "rsbench.h"
 
 // Handles all material creation tasks - returns Material struct
-Materials get_materials(Input input, unsigned long * seed)
+Materials get_materials(Input input, uint64_t * seed)
 {
 	Materials M;
 	M.num_nucs = load_num_nucs(input);
@@ -107,7 +107,7 @@ int ** load_mats( Input input, int * num_nucs )
 }
 
 // Creates a randomized array of 'concentrations' of nuclides in each mat
-double ** load_concs( int * num_nucs, unsigned long * seed )
+double ** load_concs( int * num_nucs, uint64_t * seed )
 {
 	double ** concs = (double **)malloc( 12 * sizeof( double *) );
 	
@@ -116,7 +116,7 @@ double ** load_concs( int * num_nucs, unsigned long * seed )
 	
 	for( int i = 0; i < 12; i++ )
 		for( int j = 0; j < num_nucs[i]; j++ )
-			concs[i][j] = rn(seed);
+			concs[i][j] = LCG_random_double(seed);
 
 	// test
 	/*
@@ -129,7 +129,7 @@ double ** load_concs( int * num_nucs, unsigned long * seed )
 }
 
 // picks a material based on a probabilistic distribution
-int pick_mat( unsigned long * seed )
+int pick_mat( uint64_t * seed )
 {
 	// I have a nice spreadsheet supporting these numbers. They are
 	// the fractions (by volume) of material in the core. Not a 
@@ -153,7 +153,7 @@ int pick_mat( unsigned long * seed )
 	dist[10] = 0.025;	// top of fuel assemblies
 	dist[11] = 0.013;	// bottom of fuel assemblies
 	
-	double roll = rn(seed);
+	double roll = LCG_random_double(seed);
 
 	// makes a pick based on the distro
 	for( int i = 0; i < 12; i++ )

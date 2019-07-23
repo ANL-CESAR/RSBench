@@ -1,14 +1,14 @@
 #include "rsbench.h"
 
 // JRT 
-int * generate_n_poles( Input input, unsigned long * seed )
+int * generate_n_poles( Input input, uint64_t * seed )
 {
 	int total_resonances = input.avg_n_poles * input.n_nuclides;
 
 	int * R = (int *) calloc( input.n_nuclides, sizeof(int));
 
 	for( int i = 0; i < total_resonances; i++ )
-		R[rn_i(seed) % input.n_nuclides]++;
+		R[LCG_random_int(seed) % input.n_nuclides]++;
 
 	// Ensure all nuclides have at least 1 resonance
 	for( int i = 0; i < input.n_nuclides; i++ )
@@ -23,14 +23,14 @@ int * generate_n_poles( Input input, unsigned long * seed )
 	return R;
 }
 
-int * generate_n_windows( Input input, unsigned long * seed )
+int * generate_n_windows( Input input, uint64_t * seed )
 {
 	int total_resonances = input.avg_n_windows * input.n_nuclides;
 
 	int * R = (int *) calloc( input.n_nuclides, sizeof(int));
 
 	for( int i = 0; i < total_resonances; i++ )
-		R[rn_i(seed) % input.n_nuclides]++;
+		R[LCG_random_int(seed) % input.n_nuclides]++;
 
 	// Ensure all nuclides have at least 1 resonance
 	for( int i = 0; i < input.n_nuclides; i++ )
@@ -46,7 +46,7 @@ int * generate_n_windows( Input input, unsigned long * seed )
 }
 
 // 
-Pole ** generate_poles( Input input, int * n_poles, unsigned long * seed )
+Pole ** generate_poles( Input input, int * n_poles, uint64_t * seed )
 {
 	// Pole Scaling Factor -- Used to bias hitting of the fast Faddeeva
 	// region to approximately 99.5% (i.e., only 0.5% of lookups should
@@ -68,23 +68,23 @@ Pole ** generate_poles( Input input, int * n_poles, unsigned long * seed )
 	for( int i = 0; i < input.n_nuclides; i++ )
 		for( int j = 0; j < n_poles[i]; j++ )
 		{
-			double r = rn(seed);
-			double im = rn(seed);
+			double r = LCG_random_double(seed);
+			double im = LCG_random_double(seed);
 			RSComplex t1 = {r, im};
 			R[i][j].MP_EA = c_mul(f_c,t1);
-			r = rn(seed);
-			im = rn(seed);
+			r = LCG_random_double(seed);
+			im = LCG_random_double(seed);
 			RSComplex t2 = {f*r, im};
 			R[i][j].MP_RT = t2;
-			r = rn(seed);
-			im = rn(seed);
+			r = LCG_random_double(seed);
+			im = LCG_random_double(seed);
 			RSComplex t3 = {f*r, im};
 			R[i][j].MP_RA = t3;
-			r = rn(seed);
-			im = rn(seed);
+			r = LCG_random_double(seed);
+			im = LCG_random_double(seed);
 			RSComplex t4 = {f*r, im};
 			R[i][j].MP_RF = t4;
-			R[i][j].l_value = rn_i(seed) % input.numL;
+			R[i][j].l_value = LCG_random_int(seed) % input.numL;
 		}
 	
 	/* Debug
@@ -96,7 +96,7 @@ Pole ** generate_poles( Input input, int * n_poles, unsigned long * seed )
 	return R;
 }
 
-Window ** generate_window_params( Input input, int * n_windows, int * n_poles, unsigned long * seed )
+Window ** generate_window_params( Input input, int * n_windows, int * n_poles, uint64_t * seed )
 {
 	// Allocating 2D contiguous matrix
 	Window ** R = (Window **) malloc( input.n_nuclides * sizeof( Window *));
@@ -117,9 +117,9 @@ Window ** generate_window_params( Input input, int * n_windows, int * n_poles, u
 		int ctr = 0;
 		for( int j = 0; j < n_windows[i]; j++ )
 		{
-			R[i][j].T = rn(seed);
-			R[i][j].A = rn(seed);
-			R[i][j].F = rn(seed);
+			R[i][j].T = LCG_random_double(seed);
+			R[i][j].A = LCG_random_double(seed);
+			R[i][j].F = LCG_random_double(seed);
 			R[i][j].start = ctr; 
 			R[i][j].end = ctr + space - 1;
 
@@ -136,7 +136,7 @@ Window ** generate_window_params( Input input, int * n_windows, int * n_poles, u
 	return R;
 }
 
-double ** generate_pseudo_K0RS( Input input, unsigned long * seed )
+double ** generate_pseudo_K0RS( Input input, uint64_t * seed )
 {
 	double ** R = (double **) malloc( input.n_nuclides * sizeof( double * ));
 	double * contiguous = (double *) malloc( input.n_nuclides * input.numL * sizeof(double));
@@ -146,7 +146,7 @@ double ** generate_pseudo_K0RS( Input input, unsigned long * seed )
 
 	for( int i = 0; i < input.n_nuclides; i++)
 		for( int j = 0; j < input.numL; j++ )
-			R[i][j] = rn(seed);
+			R[i][j] = LCG_random_double(seed);
 
 	return R;
 }

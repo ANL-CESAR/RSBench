@@ -8,12 +8,7 @@ int main(int argc, char * argv[])
 
 	int version = 10;
 	double start, stop;
-	unsigned long iseed = 0;
-	#ifdef VERIFICATION
-	iseed = 42;
-	#else
-	iseed = time(NULL);
-	#endif
+	uint64_t seed = STARTING_SEED;
 	
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
@@ -40,27 +35,27 @@ int main(int argc, char * argv[])
 	
 	// Allocate & fill energy grids
 	printf("Generating resonance distributions...\n");
-	int * n_poles = generate_n_poles( input, &iseed );
+	int * n_poles = generate_n_poles( input, &seed );
 
 	// Allocate & fill Window grids
 	printf("Generating window distributions...\n");
-	int * n_windows = generate_n_windows( input, &iseed );
+	int * n_windows = generate_n_windows( input, &seed );
 
 	// Get material data
 	printf("Loading Hoogenboom-Martin material data...\n");
-	Materials materials = get_materials( input, &iseed ); 
+	Materials materials = get_materials( input, &seed ); 
 
 	// Prepare full resonance grid
 	printf("Generating resonance parameter grid...\n");
-	Pole ** poles = generate_poles( input, n_poles, &iseed );
+	Pole ** poles = generate_poles( input, n_poles, &seed );
 
 	// Prepare full Window grid
 	printf("Generating window parameter grid...\n");
-	Window ** windows = generate_window_params( input, n_windows, n_poles, &iseed);
+	Window ** windows = generate_window_params( input, n_windows, n_poles, &seed);
 
 	// Prepare 0K Resonances
 	printf("Generating 0K l_value data...\n");
-	double ** pseudo_K0RS = generate_pseudo_K0RS( input, &iseed );
+	double ** pseudo_K0RS = generate_pseudo_K0RS( input, &seed );
 
 	CalcDataPtrs data;
 	data.n_poles = n_poles;
@@ -107,7 +102,7 @@ int main(int argc, char * argv[])
 		run_event_based_simulation(input, data, &g_abrarov, &g_alls, &vhash );
 
 	// Final hash step
-	vhash = vhash % 1000000;
+	vhash = vhash % 999983;
 
 	stop = omp_get_wtime();
 	#ifndef PAPI

@@ -31,6 +31,7 @@ double fast_exp(double x)
 
 // Park & Miller Multiplicative Conguential Algorithm
 // From "Numerical Recipes" Second Edition
+/*
 double rn(unsigned long * seed)
 {
 	double ret;
@@ -56,6 +57,7 @@ unsigned long rn_i(unsigned long * seed)
 	ret = n1;
 	return ret;
 }
+*/
 
 size_t get_mem_estimate( Input input )
 {
