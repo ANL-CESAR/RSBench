@@ -86,18 +86,18 @@ RSComplex fast_nuclear_W( RSComplex Z )
 	}
 }
 
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors, long * abrarov, long * alls ) 
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, SimulationData data, RSComplex * sigTfactors, long * abrarov, long * alls ) 
 {
 	// zero out macro vector
 	for( int i = 0; i < 4; i++ )
 		macro_xs[i] = 0;
 
 	// for nuclide in mat
-	for( int i = 0; i < (data.materials).num_nucs[mat]; i++ )
+	for( int i = 0; i < data.num_nucs[mat]; i++ )
 	{
 		double micro_xs[4];
 		//int nuc = (data.materials).mats[mat][i];
-		int nuc = (data.materials).mats[mat * data.materials.max_num_nucs + i];
+		int nuc = data.mats[mat * data.max_num_nucs + i];
 
 		if( input.doppler == 1 )
 			calculate_micro_xs_doppler( micro_xs, nuc, E, input, data, sigTfactors, abrarov, alls);
@@ -107,7 +107,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 		for( int j = 0; j < 4; j++ )
 		{
 			//macro_xs[j] += micro_xs[j] * data.materials.concs[mat][i];
-			macro_xs[j] += micro_xs[j] * data.materials.concs[mat * data.materials.max_num_nucs + i];
+			macro_xs[j] += micro_xs[j] * data.concs[mat * data.max_num_nucs + i];
 		}
 		// Debug
 		/*
@@ -125,7 +125,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 }
 
 // No Temperature dependence (i.e., 0K evaluation)
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors)
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, SimulationData data, RSComplex * sigTfactors)
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -175,7 +175,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Calc
 // Temperature Dependent Variation of Kernel
 // (This involves using the Complex Faddeeva function to
 // Doppler broaden the poles within the window)
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors, long * abrarov, long * alls)
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, SimulationData data, RSComplex * sigTfactors, long * abrarov, long * alls)
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -236,7 +236,7 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 	micro_xs[3] = sigE;
 }
 
-void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors )
+void calculate_sig_T( int nuc, double E, Input input, SimulationData data, RSComplex * sigTfactors )
 {
 	double phi;
 

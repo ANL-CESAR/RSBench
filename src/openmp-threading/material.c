@@ -1,14 +1,19 @@
 #include "rsbench.h"
 
 // Handles all material creation tasks - returns Material struct
-Materials get_materials(Input input, uint64_t * seed)
+SimulationData get_materials(Input input, uint64_t * seed)
 {
-	Materials M;
-	M.num_nucs = load_num_nucs(input);
-	M.mats = load_mats(input, M.num_nucs, &M.max_num_nucs);
-	M.concs = load_concs(M.num_nucs, seed, M.max_num_nucs);
+	SimulationData SD;
 
-	return M;
+	SD.num_nucs = load_num_nucs(input);
+	SD.length_num_nucs = 12;
+
+	SD.mats = load_mats(input, SD.num_nucs, &SD.max_num_nucs, &SD.length_mats);
+
+	SD.concs = load_concs(SD.num_nucs, seed, SD.max_num_nucs);
+	SD.length_concs = 12 * SD.max_num_nucs; 
+
+	return SD;
 }
 
 // num_nucs represents the number of nuclides that each material contains
@@ -39,7 +44,7 @@ int * load_num_nucs(Input input)
 }
 
 // Assigns an array of nuclide ID's to each material
-int * load_mats( Input input, int * num_nucs, int * max_num_nucs )
+int * load_mats( Input input, int * num_nucs, int * max_num_nucs, unsigned long * length_mats )
 {
 	*max_num_nucs = 0;
 	int num_mats = 12;
@@ -49,6 +54,7 @@ int * load_mats( Input input, int * num_nucs, int * max_num_nucs )
 			*max_num_nucs = num_nucs[m];
 	}
 	int * mats = (int *) malloc( num_mats * (*max_num_nucs) * sizeof(int) );
+	*length_mats = num_mats * (*max_num_nucs);
 
 	// Small H-M has 34 fuel nuclides
 	int mats0_Sml[] =  { 58, 59, 60, 61, 40, 42, 43, 44, 45, 46, 1, 2, 3, 7,

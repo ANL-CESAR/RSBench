@@ -1,5 +1,41 @@
 #include "rsbench.h"
 
+SimulationData initialize_simulation( Input input )
+{
+	uint64_t seed = INITIALIZATION_SEED;
+	
+	// Get material data
+	printf("Loading Hoogenboom-Martin material data...\n");
+	SimulationData SD = get_materials( input, &seed ); 
+	
+	// Allocate & fill energy grids
+	printf("Generating resonance distributions...\n");
+	SD.n_poles = generate_n_poles( input, &seed );
+	SD.length_n_poles = input.n_nuclides;
+
+	// Allocate & fill Window grids
+	printf("Generating window distributions...\n");
+	SD.n_windows = generate_n_windows( input, &seed );
+	SD.length_n_windows = input.n_nuclides;
+
+	// Prepare full resonance grid
+	printf("Generating resonance parameter grid...\n");
+	SD.poles = generate_poles( input, SD.n_poles, &seed, &SD.max_num_poles );
+	SD.length_poles = input.n_nuclides * SD.max_num_poles;
+
+	// Prepare full Window grid
+	printf("Generating window parameter grid...\n");
+	SD.windows = generate_window_params( input, SD.n_windows, SD.n_poles, &seed, &SD.max_num_windows);
+	SD.length_windows = input.n_nuclides * SD.max_num_windows;
+
+	// Prepare 0K Resonances
+	printf("Generating 0K l_value data...\n");
+	SD.pseudo_K0RS = generate_pseudo_K0RS( input, &seed );
+	SD.length_pseudo_K0RS = input.n_nuclides * input.numL;
+
+	return SD;
+}
+
 int * generate_n_poles( Input input, uint64_t * seed )
 {
 	int total_resonances = input.avg_n_poles * input.n_nuclides;

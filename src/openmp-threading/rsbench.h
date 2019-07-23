@@ -41,13 +41,6 @@ typedef struct{
 } Input;
 
 typedef struct{
-	int * num_nucs;
-	int * mats;
-	double * concs;
-	int max_num_nucs;
-} Materials;
-
-typedef struct{
 	RSComplex MP_EA;
 	RSComplex MP_RT;
 	RSComplex MP_RA;
@@ -65,14 +58,25 @@ typedef struct{
 
 typedef struct{
 	int * n_poles;
+	unsigned long length_n_poles;
 	int * n_windows;
-	Materials materials;
+	unsigned long length_n_windows;
 	Pole * poles;
+	unsigned long length_poles;
 	Window * windows;
+	unsigned long length_windows;
 	double * pseudo_K0RS;
+	unsigned long length_pseudo_K0RS;
+	int * num_nucs;
+	unsigned long length_num_nucs;
+	int * mats;
+	unsigned long length_mats;
+	double * concs;
+	unsigned long length_concs;
+	int max_num_nucs;
 	int max_num_poles;
 	int max_num_windows;
-} CalcDataPtrs;
+} SimulationData;
 
 
 // io.c
@@ -85,6 +89,7 @@ void print_CLI_error(void);
 void print_input_summary(Input input);
 
 // init.c
+SimulationData initialize_simulation( Input input );
 int * generate_n_poles( Input input,  uint64_t * seed );
 int * generate_n_windows( Input input ,  uint64_t * seed);
 Pole * generate_poles( Input input, int * n_poles, uint64_t * seed, int * max_num_poles );
@@ -93,10 +98,10 @@ double * generate_pseudo_K0RS( Input input, uint64_t * seed );
 
 // material.c
 int * load_num_nucs(Input input);
-int * load_mats( Input input, int * num_nucs, int * max_num_nucs );
+int * load_mats( Input input, int * num_nucs, int * max_num_nucs, unsigned long * length_mats );
 double * load_concs( int * num_nucs, uint64_t * seed, int max_num_nucs );
 int pick_mat( uint64_t * seed );
-Materials get_materials(Input input, uint64_t * seed);
+SimulationData get_materials(Input input, uint64_t * seed);
 
 // utils.c
 size_t get_mem_estimate( Input input );
@@ -104,14 +109,14 @@ RSComplex fast_cexp( RSComplex z );
 
 // xs_kernel.c
 RSComplex fast_nuclear_W( RSComplex Z );
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors, long * abrarov, long * alls ); 
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors);
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors, long * abrarov, long * alls);
-void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, RSComplex * sigTfactors );
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, SimulationData data, RSComplex * sigTfactors, long * abrarov, long * alls ); 
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, SimulationData data, RSComplex * sigTfactors);
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, SimulationData data, RSComplex * sigTfactors, long * abrarov, long * alls);
+void calculate_sig_T( int nuc, double E, Input input, SimulationData data, RSComplex * sigTfactors );
 
 // simulation.c
-void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
-void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
+void run_event_based_simulation(Input input, SimulationData data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
+void run_history_based_simulation(Input input, SimulationData data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
 double LCG_random_double(uint64_t * seed);
 uint64_t LCG_random_int(uint64_t * seed);
 uint64_t fast_forward_LCG(uint64_t seed, uint64_t n);

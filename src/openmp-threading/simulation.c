@@ -1,5 +1,5 @@
 #include "rsbench.h"
-void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_result, long * alls_result, unsigned long * vhash_result )
+void run_event_based_simulation(Input input, SimulationData data, long * abrarov_result, long * alls_result, unsigned long * vhash_result )
 {
 	printf("Beginning event based simulation...\n");
 	long g_abrarov = 0;
@@ -67,7 +67,7 @@ void run_event_based_simulation(Input input, CalcDataPtrs data, long * abrarov_r
 	*vhash_result = verification;
 }
 
-void run_history_based_simulation(Input input, CalcDataPtrs data, long * abrarov_result, long * alls_result, unsigned long * vhash_result )
+void run_history_based_simulation(Input input, SimulationData data, long * abrarov_result, long * alls_result, unsigned long * vhash_result )
 {
 	printf("Beginning history based simulation...\n");
 	long g_abrarov = 0;
