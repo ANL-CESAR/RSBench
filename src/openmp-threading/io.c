@@ -277,3 +277,54 @@ void print_input_summary(Input input)
 	printf("Threads:                     %d\n", input.nthreads);
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);
 }
+
+int validate_and_print_results(Input input, double runtime, unsigned long vhash)
+{
+	printf("Threads:               %d\n", input.nthreads);
+	printf("Runtime:               %.3lf seconds\n", runtime);
+	int lookups = 0;
+	if( input.simulation_method == HISTORY_BASED )
+		lookups = input.lookups*input.particles;
+	else
+		lookups = input.lookups;
+	printf("Lookups:               "); fancy_int(lookups);
+	printf("Lookups/s:             "); fancy_int((double) lookups / (runtime));
+
+	int is_invalid = 1;
+
+	unsigned long long large = 0;
+	unsigned long long small = 0;
+	if(input.simulation_method == HISTORY_BASED )
+	{
+		large = 351414;
+		small = 879238;
+	}
+	else if( input.simulation_method == EVENT_BASED )
+	{
+		large = 358421;
+		small = 879382;
+	}
+
+	if( input.HM  == LARGE )
+	{
+		if( vhash == large )
+		{
+			printf("Verification checksum: %lu (Valid)\n", vhash);
+			is_invalid = 0;
+		}
+		else
+			printf("Verification checksum: %lu (WARNING - INAVALID CHECKSUM!)\n", vhash);
+	}
+	else if( input.HM  == SMALL )
+	{
+		if( vhash == small )
+		{
+			printf("Verification checksum: %lu (Valid)\n", vhash);
+			is_invalid = 0;
+		}
+		else
+			printf("Verification checksum: %lu (WARNING - INAVALID CHECKSUM!)\n", vhash);
+	}
+
+	return is_invalid;
+}

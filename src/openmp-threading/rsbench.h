@@ -85,6 +85,7 @@ void fancy_int( int a );
 Input read_CLI( int argc, char * argv[] );
 void print_CLI_error(void);
 void print_input_summary(Input input);
+int validate_and_print_results(Input input, double runtime, unsigned long vhash);
 
 // init.c
 SimulationData initialize_simulation( Input input );
@@ -108,14 +109,14 @@ double get_time(void);
 
 // xs_kernel.c
 RSComplex fast_nuclear_W( RSComplex Z );
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, SimulationData data, long * abrarov, long * alls ) ;
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, SimulationData data ) ;
 void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, SimulationData data);
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, SimulationData data, long * abrarov, long * alls);
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, SimulationData data);
 void calculate_sig_T( int nuc, double E, Input input, SimulationData data, RSComplex * sigTfactors );
 
 // simulation.c
-void run_event_based_simulation(Input input, SimulationData data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
-void run_history_based_simulation(Input input, SimulationData data, long * abrarov_result, long * alls_result, unsigned long * vhash_result );
+void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result );
+void run_history_based_simulation(Input input, SimulationData data, unsigned long * vhash_result );
 double LCG_random_double(uint64_t * seed);
 uint64_t LCG_random_int(uint64_t * seed);
 uint64_t fast_forward_LCG(uint64_t seed, uint64_t n);

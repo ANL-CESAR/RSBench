@@ -12,8 +12,6 @@ int main(int argc, char * argv[])
 	// Process CLI Fields
 	Input input = read_CLI( argc, argv );
 
-	printf("numL = %d\n", input.numL);
-
 	// Set number of OpenMP Threads
 	omp_set_num_threads(input.nthreads); 
 	
@@ -26,7 +24,7 @@ int main(int argc, char * argv[])
 	print_input_summary(input);
 
 	// =====================================================================
-	// Prepare Pole Paremeter Grids
+	// Intialize Simulation Data Structures
 	// =====================================================================
 	border_print();
 	center_print("INITIALIZATION", 79);
@@ -50,20 +48,18 @@ int main(int argc, char * argv[])
 
 	unsigned long vhash = 0;
 
-	long g_abrarov = 0; 
-	long g_alls = 0;
-
 	// Run Simulation
 	if(input.simulation_method == HISTORY_BASED )
-		run_history_based_simulation(input, SD, &g_abrarov, &g_alls, &vhash );
+		run_history_based_simulation(input, SD, &vhash );
 	else if( input.simulation_method == EVENT_BASED )
-		run_event_based_simulation(input, SD, &g_abrarov, &g_alls, &vhash );
+		run_event_based_simulation(input, SD, &vhash );
 
 	// Final hash step
 	vhash = vhash % 999983;
 
 	stop = get_time();
 	printf("Simulation Complete.\n");
+
 	// =====================================================================
 	// Print / Save Results and Exit
 	// =====================================================================
@@ -71,47 +67,9 @@ int main(int argc, char * argv[])
 	center_print("RESULTS", 79);
 	border_print();
 
-	printf("Threads:               %d\n", input.nthreads);
-	if( input.doppler)
-	printf("Slow Faddeeva:         %.2lf%%\n", (double) g_abrarov/g_alls * 100.f);
-	printf("Runtime:               %.3lf seconds\n", stop-start);
-	int lookups = 0;
-	if( input.simulation_method == HISTORY_BASED )
-		lookups = input.lookups*input.particles;
-	else
-		lookups = input.lookups;
-	printf("Lookups:               "); fancy_int(lookups);
-	printf("Lookups/s:             "); fancy_int((double) lookups / (stop-start));
-
-	unsigned long long large = 0;
-	unsigned long long small = 0;
-	if(input.simulation_method == HISTORY_BASED )
-	{
-		large = 351414;
-		small = 879238;
-	}
-	else if( input.simulation_method == EVENT_BASED )
-	{
-		large = 358421;
-		small = 879382;
-	}
-
-	if( input.HM  == LARGE )
-	{
-		if( vhash == large )
-			printf("Verification checksum: %lu (Valid)\n", vhash);
-		else
-			printf("Verification checksum: %lu (WARNING - INAVALID CHECKSUM!)\n", vhash);
-	}
-	else if( input.HM  == SMALL )
-	{
-		if( vhash == small )
-			printf("Verification checksum: %lu (Valid)\n", vhash);
-		else
-			printf("Verification checksum: %lu (WARNING - INAVALID CHECKSUM!)\n", vhash);
-	}
+	int is_invalid = validate_and_print_results(input, stop-start, vhash);
 
 	border_print();
 
-	return 0;
+	return is_invalid;
 }

@@ -1,17 +1,12 @@
 #include "rsbench.h"
-void run_event_based_simulation(Input input, SimulationData data, long * abrarov_result, long * alls_result, unsigned long * vhash_result )
+void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result )
 {
 	printf("Beginning event based simulation...\n");
-	long g_abrarov = 0;
-	long g_alls = 0;
 	unsigned long verification = 0;
 	#pragma omp parallel default(none) \
 	shared(input, data) \
-	reduction(+:g_abrarov, g_alls, verification)
+	reduction(+:verification)
 	{
-		long abrarov = 0; 
-		long alls = 0;
-
 		// I.e., macroscopic cross section lookups in the event based simulation
 		// can be executed in any order.
 		#pragma omp for schedule(dynamic,1000)
@@ -29,7 +24,7 @@ void run_event_based_simulation(Input input, SimulationData data, long * abrarov
 
 			double macro_xs[4] = {0};
 
-			calculate_macro_xs( macro_xs, mat, E, input, data, &abrarov, &alls ); 
+			calculate_macro_xs( macro_xs, mat, E, input, data ); 
 
 			// For verification, and to prevent the compiler from optimizing
 			// all work out, we interrogate the returned macro_xs_vector array
@@ -50,30 +45,18 @@ void run_event_based_simulation(Input input, SimulationData data, long * abrarov
 			}
 			verification += max_idx+1;
 		}
-
-		// Accumulate global counters
-		g_abrarov = abrarov; 
-		g_alls = alls;
-
 	}
-	*abrarov_result = g_abrarov;
-	*alls_result = g_alls;
 	*vhash_result = verification;
 }
 
-void run_history_based_simulation(Input input, SimulationData data, long * abrarov_result, long * alls_result, unsigned long * vhash_result )
+void run_history_based_simulation(Input input, SimulationData data, unsigned long * vhash_result )
 {
 	printf("Beginning history based simulation...\n");
-	long g_abrarov = 0;
-	long g_alls = 0;
 	unsigned long verification = 0;
 	#pragma omp parallel default(none) \
 	shared(input, data) \
-	reduction(+:g_abrarov, g_alls, verification)
+	reduction(+:verification)
 	{
-		long abrarov = 0; 
-		long alls = 0;
-
 		// This loop is independent!
 		// I.e., particle histories can be executed in any order
 		#pragma omp for schedule(dynamic, 1000)
@@ -96,7 +79,7 @@ void run_history_based_simulation(Input input, SimulationData data, long * abrar
 			{
 				double macro_xs[4] = {0};
 
-				calculate_macro_xs( macro_xs, mat, E, input, data, &abrarov, &alls ); 
+				calculate_macro_xs( macro_xs, mat, E, input, data ); 
 
 				// For verification, and to prevent the compiler from optimizing
 				// all work out, we interrogate the returned macro_xs_vector array
@@ -135,14 +118,7 @@ void run_history_based_simulation(Input input, SimulationData data, long * abrar
                 mat = pick_mat(&seed);
 			}
 		}
-
-		// Accumulate global counters
-		g_abrarov = abrarov; 
-		g_alls = alls;
-
 	}
-	*abrarov_result = g_abrarov;
-	*alls_result = g_alls;
 	*vhash_result = verification;
 }
 

@@ -86,7 +86,7 @@ RSComplex fast_nuclear_W( RSComplex Z )
 	}
 }
 
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, SimulationData data, long * abrarov, long * alls ) 
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, SimulationData data ) 
 {
 	// zero out macro vector
 	for( int i = 0; i < 4; i++ )
@@ -99,7 +99,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Simu
 		int nuc = data.mats[mat * data.max_num_nucs + i];
 
 		if( input.doppler == 1 )
-			calculate_micro_xs_doppler( micro_xs, nuc, E, input, data, abrarov, alls);
+			calculate_micro_xs_doppler( micro_xs, nuc, E, input, data );
 		else
 			calculate_micro_xs( micro_xs, nuc, E, input, data);
 
@@ -174,7 +174,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, Simu
 // Temperature Dependent Variation of Kernel
 // (This involves using the Complex Faddeeva function to
 // Doppler broaden the poles within the window)
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, SimulationData data, long * abrarov, long * alls)
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, SimulationData data )
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -212,9 +212,6 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 		RSComplex E_c = {E, 0};
 		RSComplex dopp_c = {dopp, 0};
 		RSComplex Z = c_mul(c_sub(E_c, pole.MP_EA), dopp_c);
-		if( c_abs(Z) < 6.0 )
-			(*abrarov)++;
-		(*alls)++;
 
 		// Evaluate Fadeeva Function
 		RSComplex faddeeva = fast_nuclear_W( Z );
