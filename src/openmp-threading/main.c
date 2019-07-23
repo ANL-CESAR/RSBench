@@ -57,7 +57,7 @@ int main(int argc, char * argv[])
 
 	// Prepare 0K Resonances
 	printf("Generating 0K l_value data...\n");
-	double ** pseudo_K0RS = generate_pseudo_K0RS( input, &seed );
+	double * pseudo_K0RS = generate_pseudo_K0RS( input, &seed );
 
 	CalcDataPtrs data;
 	data.n_poles = n_poles;

@@ -242,7 +242,7 @@ void calculate_sig_T( int nuc, double E, Input input, CalcDataPtrs data, RSCompl
 
 	for( int i = 0; i < input.numL; i++ )
 	{
-		phi = data.pseudo_K0RS[nuc][i] * sqrt(E);
+		phi = data.pseudo_K0RS[nuc * input.numL + i] * sqrt(E);
 
 		if( i == 1 )
 			phi -= - atan( phi );

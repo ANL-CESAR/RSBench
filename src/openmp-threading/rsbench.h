@@ -69,7 +69,7 @@ typedef struct{
 	Materials materials;
 	Pole * poles;
 	Window * windows;
-	double ** pseudo_K0RS;
+	double * pseudo_K0RS;
 	int max_num_poles;
 	int max_num_windows;
 } CalcDataPtrs;
@@ -89,7 +89,7 @@ int * generate_n_poles( Input input,  uint64_t * seed );
 int * generate_n_windows( Input input ,  uint64_t * seed);
 Pole * generate_poles( Input input, int * n_poles, uint64_t * seed, int * max_num_poles );
 Window * generate_window_params( Input input, int * n_windows, int * n_poles, uint64_t * seed, int * max_num_windows );
-double ** generate_pseudo_K0RS( Input input ,  uint64_t * seed);
+double * generate_pseudo_K0RS( Input input, uint64_t * seed );
 
 // material.c
 int * load_num_nucs(Input input);

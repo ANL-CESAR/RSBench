@@ -137,17 +137,13 @@ Window * generate_window_params( Input input, int * n_windows, int * n_poles, ui
 	return R;
 }
 
-double ** generate_pseudo_K0RS( Input input, uint64_t * seed )
+double * generate_pseudo_K0RS( Input input, uint64_t * seed )
 {
-	double ** R = (double **) malloc( input.n_nuclides * sizeof( double * ));
-	double * contiguous = (double *) malloc( input.n_nuclides * input.numL * sizeof(double));
-
-	for( int i = 0; i < input.n_nuclides; i++ )
-		R[i] = &contiguous[i*input.numL];
+	double * R = (double *) malloc( input.n_nuclides * input.numL * sizeof(double));
 
 	for( int i = 0; i < input.n_nuclides; i++)
 		for( int j = 0; j < input.numL; j++ )
-			R[i][j] = LCG_random_double(seed);
+			R[i * input.numL + j] = LCG_random_double(seed);
 
 	return R;
 }
