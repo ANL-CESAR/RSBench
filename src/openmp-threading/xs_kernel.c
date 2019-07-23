@@ -96,7 +96,8 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Calc
 	for( int i = 0; i < (data.materials).num_nucs[mat]; i++ )
 	{
 		double micro_xs[4];
-		int nuc = (data.materials).mats[mat][i];
+		//int nuc = (data.materials).mats[mat][i];
+		int nuc = (data.materials).mats[mat * data.materials.max_num_nucs + i];
 
 		if( input.doppler == 1 )
 			calculate_micro_xs_doppler( micro_xs, nuc, E, input, data, sigTfactors, abrarov, alls);

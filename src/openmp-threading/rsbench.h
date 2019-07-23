@@ -27,8 +27,6 @@ typedef struct{
 	double i;
 } RSComplex;
 
-
-
 typedef struct{
 	int nthreads;
 	int n_nuclides;
@@ -44,8 +42,9 @@ typedef struct{
 
 typedef struct{
 	int * num_nucs;
-	int ** mats;
+	int * mats;
 	double ** concs;
+	int max_num_nucs;
 } Materials;
 
 typedef struct{
@@ -92,18 +91,14 @@ double ** generate_pseudo_K0RS( Input input ,  uint64_t * seed);
 
 // material.c
 int * load_num_nucs(Input input);
-int ** load_mats( Input input, int * num_nucs );
+int * load_mats( Input input, int * num_nucs, int * max_num_nucs );
 double ** load_concs( int * num_nucs, uint64_t * seed );
 int pick_mat( uint64_t * seed );
 Materials get_materials(Input input, uint64_t * seed);
 
 // utils.c
-double rn(unsigned long * seed);
-unsigned long rn_i(unsigned long * seed);
 size_t get_mem_estimate( Input input );
-unsigned int hash(char *str, int nbins);
 RSComplex fast_cexp( RSComplex z );
-double fast_exp(double x);
 
 // xs_kernel.c
 RSComplex fast_nuclear_W( RSComplex Z );
