@@ -17,7 +17,7 @@ void run_event_based_simulation(Input input, SimulationData GSD, unsigned long *
 	////////////////////////////////////////////////////////////////////////////////
 	// Configure & Launch Simulation Kernel
 	////////////////////////////////////////////////////////////////////////////////
-	printf("Running baseline event-based simulation...\n");
+	printf("Running baseline event-based simulation on device...\n");
 
 	int nthreads = 32;
 	int nblocks = ceil( (double) input.lookups / 32.0);
