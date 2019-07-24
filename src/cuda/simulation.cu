@@ -494,3 +494,172 @@ __device__ RSComplex fast_cexp( RSComplex z )
 	RSComplex result = c_mul(t5, (t4));
 	return result;
 }	
+
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+// OPTIMIZED VARIANT FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////
+// This section contains a number of optimized variants of some of the above
+// functions, which each deploy a different combination of optimizations strategies
+// specific to GPU. By default, RSBench will not run any of these variants. They
+// must be specifically selected using the "-k <optimized variant ID>" command
+// line argument.
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////
+// Optimization 6 -- Kernel Splitting + All Material Lookups + Full Sort
+//                   + Energy Sort
+////////////////////////////////////////////////////////////////////////////////////
+// This optimization builds on optimization 4, adding in a second sort by energy.
+// It is extremely fast, as now most of the threads within a warp will be hitting
+// the same indices in the lookup grids. This greatly reduces thread divergence and
+// greatly improves cache efficiency and re-use.
+//
+// However, it is unlikely that this exact optimization would be possible in a real
+// application like OpenMC. One major difference is that particle objects are quite
+// large, often having 50+ variable fields, such that sorting them in memory becomes
+// rather expensive. Instead, the best possible option would probably be to create
+// intermediate indexing (per Hamilton et. al 2019), and run the kernels indirectly.
+////////////////////////////////////////////////////////////////////////////////////
+
+__global__ void sampling_kernel(Input in, SimulationData GSD )
+{
+	// The lookup ID.
+	const int i = blockIdx.x *blockDim.x + threadIdx.x;
+
+	if( i >= in.lookups )
+		return;
+
+	// Set the initial seed value
+	uint64_t seed = STARTING_SEED;	
+
+	// Forward seed to lookup index (we need 2 samples per lookup)
+	seed = fast_forward_LCG(seed, 2*i);
+
+	// Randomly pick an energy and material for the particle
+	double p_energy = LCG_random_double(&seed);
+	int mat         = pick_mat(&seed); 
+
+	// Store sample data in state array
+	GSD.p_energy_samples[i] = p_energy;
+	GSD.mat_samples[i] = mat;
+}
+
+__global__ void xs_lookup_kernel_optimization_1(Input in, SimulationData GSD, int m, int n_lookups, int offset )
+{
+	// The lookup ID. Used to set the seed, and to store the verification value
+	int i = blockIdx.x *blockDim.x + threadIdx.x;
+
+	if( i >= n_lookups )
+		return;
+
+	i += offset;
+
+	// Check that our material type matches the kernel material
+	int mat = GSD.mat_samples[i];
+	if( mat != m )
+		return;
+	
+	double macro_xs[4] = {0};
+
+	calculate_macro_xs( macro_xs, mat, GSD.p_energy_samples[i], in, GSD.num_nucs, GSD.mats, GSD.max_num_nucs, GSD.concs, GSD.n_windows, GSD.pseudo_K0RS, GSD.windows, GSD.poles, GSD.max_num_windows, GSD.max_num_poles );
+
+	// For verification, and to prevent the compiler from optimizing
+	// all work out, we interrogate the returned macro_xs_vector array
+	// to find its maximum value index, then increment the verification
+	// value by that index. In this implementation, we write to a global
+	// verification array that will get reduced after this kernel comples.
+	double max = -DBL_MAX;
+	int max_idx = 0;
+	for(int x = 0; x < 4; x++ )
+	{
+		if( macro_xs[x] > max )
+		{
+			max = macro_xs[x];
+			max_idx = x;
+		}
+	}
+	GSD.verification[i] = max_idx+1;
+}
+
+void run_event_based_simulation_optimization_1(Input in, SimulationData GSD, unsigned long * vhash_result)
+{
+	const char * optimization_name = "Optimization 1 - Material & Energy Sorts + Material-specific Kernels";
+	
+	printf("Simulation Kernel:\"%s\"\n", optimization_name);
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// Allocate Additional Data Structures Needed by Optimized Kernel
+	////////////////////////////////////////////////////////////////////////////////
+	printf("Allocating additional device data required by kernel...\n");
+	size_t sz;
+	size_t total_sz = 0;
+
+	sz = in.lookups * sizeof(double);
+	gpuErrchk( cudaMalloc((void **) &GSD.p_energy_samples, sz) );
+	total_sz += sz;
+	GSD.length_p_energy_samples = in.lookups;
+
+	sz = in.lookups * sizeof(int);
+	gpuErrchk( cudaMalloc((void **) &GSD.mat_samples, sz) );
+	total_sz += sz;
+	GSD.length_mat_samples = in.lookups;
+	
+	printf("Allocated an additional %.0lf MB of data on GPU.\n", total_sz/1024.0/1024.0);
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Configure & Launch Simulation Kernel
+	////////////////////////////////////////////////////////////////////////////////
+	printf("Beginning optimized simulation...\n");
+
+	int nthreads = 32;
+	int nblocks = ceil( (double) in.lookups / 32.0);
+	
+	sampling_kernel<<<nblocks, nthreads>>>( in, GSD );
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+	// Count the number of fuel material lookups that need to be performed (fuel id = 0)
+	int n_lookups_per_material[12];
+	for( int m = 0; m < 12; m++ )
+		n_lookups_per_material[m] = thrust::count(thrust::device, GSD.mat_samples, GSD.mat_samples + in.lookups, m);
+
+	// Sort by material first
+	thrust::sort_by_key(thrust::device, GSD.mat_samples, GSD.mat_samples + in.lookups, GSD.p_energy_samples);
+
+	// Now, sort each material by energy
+	int offset = 0;
+	for( int m = 0; m < 12; m++ )
+	{
+		thrust::sort_by_key(thrust::device, GSD.p_energy_samples + offset, GSD.p_energy_samples + offset + n_lookups_per_material[m], GSD.mat_samples + offset);
+		offset += n_lookups_per_material[m];
+	}
+	
+	// Launch all material kernels individually
+	offset = 0;
+	for( int m = 0; m < 12; m++ )
+	{
+		nthreads = 32;
+		nblocks = ceil((double) n_lookups_per_material[m] / (double) nthreads);
+		xs_lookup_kernel_optimization_1<<<nblocks, nthreads>>>( in, GSD, m, n_lookups_per_material[m], offset );
+		offset += n_lookups_per_material[m];
+	}
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+	
+	////////////////////////////////////////////////////////////////////////////////
+	// Reduce Verification Results
+	////////////////////////////////////////////////////////////////////////////////
+	printf("Reducing verification results...\n");
+
+	unsigned long verification_scalar = thrust::reduce(thrust::device, GSD.verification, GSD.verification + in.lookups, 0);
+	gpuErrchk( cudaPeekAtLastError() );
+	gpuErrchk( cudaDeviceSynchronize() );
+
+	*vhash_result = verification_scalar;
+}

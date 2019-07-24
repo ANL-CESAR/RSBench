@@ -125,6 +125,7 @@ double get_time(void);
 
 // simulation.c
 void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result );
+void run_event_based_simulation_optimization_1(Input in, SimulationData GSD, unsigned long * vhash_result);
 __global__ void xs_lookup_kernel_baseline(Input in, SimulationData GSD );
 __device__ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles );
 __device__ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles);

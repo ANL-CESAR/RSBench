@@ -53,6 +53,8 @@ int main(int argc, char * argv[])
 	{
 		if( input.kernel_id == 0 )
 			run_event_based_simulation(input, GSD, &vhash );
+		else if( input.kernel_id == 1 )
+			run_event_based_simulation_optimization_1(input, GSD, &vhash );
 		else
 		{
 			printf("Error: No kernel ID %d found!\n", input.kernel_id);
