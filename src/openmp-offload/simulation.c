@@ -17,8 +17,11 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	printf("Beginning baseline event based simulation on device...\n");
 	unsigned long verification = 0;
 
-	//#pragma omp parallel for reduction(+:verification)
+	int offloaded_to_device = 0;
+
 	// Main simulation loop over macroscopic cross section lookups
+
+	// #pragma omp parallel for reduction(+:verification)
 	#pragma omp target teams distribute parallel for\
 	map(to:data.n_poles[:data.length_n_poles])\
 	map(to:data.n_windows[:data.length_n_windows])\
@@ -31,6 +34,7 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	map(to:data.max_num_nucs)\
 	map(to:data.max_num_poles)\
 	map(to:data.max_num_windows)\
+	map(tofrom:offloaded_to_device)\
 	reduction(+:verification)
 	for( int i = 0; i < input.lookups; i++ )
 	{
@@ -66,7 +70,17 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 			}
 		}
 		verification += max_idx+1;
+
+		// Check if we are currently running on the device or not
+		if( i == 0 )
+			offloaded_to_device = !omp_is_initial_device();
 	}
+
+	// Print if kernel actually ran on the device
+	if( offloaded_to_device )
+		printf( "Kernel ran accelerator device.\n" );
+	else
+		printf( "NOTE - Kernel ran on the host!\n" );
 
 	*vhash_result = verification;
 }
@@ -104,7 +118,6 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int 
 	printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
 	E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
 	*/
-	
 }
 
 // No Temperature dependence (i.e., 0K evaluation)
@@ -454,9 +467,12 @@ double c_abs( RSComplex A)
 // Fast (but inaccurate) exponential function
 // Written By "ACMer":
 // https://codingforspeed.com/using-faster-exponential-approximation/
-float fast_exp(float x)
+// We use our own to avoid small differences in compiler specific
+// exp() intrinsic implementations that make it difficult to verify
+// if the code is working correctly or not.
+double fast_exp(double x)
 {
-  x = 1.f + x * 0.000244140625f;
+  x = 1.0 + x * 0.000244140625;
   x *= x; x *= x; x *= x; x *= x;
   x *= x; x *= x; x *= x; x *= x;
   x *= x; x *= x; x *= x; x *= x;

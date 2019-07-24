@@ -6,6 +6,7 @@
 #include<stdint.h>
 #include<float.h>
 #include<omp.h>
+#include<assert.h>
 
 #define OPENMP
 

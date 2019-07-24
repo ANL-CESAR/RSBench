@@ -10,7 +10,7 @@ void logo(int version)
 "                   | |__) | (___ | |_) | ___ _ __   ___| |__  \n"
 "                   |  _  / \\___ \\|  _ < / _ \\ '_ \\ / __| '_ \\ \n"
 "                   | | \\ \\ ____) | |_) |  __/ | | | (__| | | |\n"
-"                   |_|  \\_\\_____/|____/ \\___|_| |_|\\___|_| |_|\n"
+"                   |_|  \\_\\_____/|____/ \\___|_| |_|\\___|_| |_|\n\n"
 	);
 	border_print();
 	center_print("Developed at Argonne National Laboratory", 79);
@@ -306,13 +306,13 @@ int validate_and_print_results(Input input, double runtime, unsigned long vhash)
 	unsigned long long small = 0;
 	if(input.simulation_method == HISTORY_BASED )
 	{
-		large = 351414;
-		small = 879238;
+		large = 351485;
+		small = 879693;
 	}
 	else if( input.simulation_method == EVENT_BASED )
 	{
-		large = 358421;
-		small = 879382;
+		large = 358389;
+		small = 880018;
 	}
 
 	if( input.HM  == LARGE )

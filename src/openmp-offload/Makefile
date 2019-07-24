@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER  = clang
+COMPILER  = ibm
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
@@ -40,12 +40,18 @@ endif
 ifeq ($(COMPILER),clang)
   CC = clang
   CFLAGS += -fopenmp -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_60
+  ifeq ($(OPTIMIZE),yes)
+    CFLAGS += -O3
+  endif
 endif
 
 # IBM XL Compiler Targeting K80
 ifeq ($(COMPILER),ibm)
   CC = xlc_r
   CFLAGS += -qsmp=omp -qoffload
+  ifeq ($(OPTIMIZE),yes)
+    CFLAGS += -O2 # O3 gets the wrong verification answer
+  endif
 endif
 
 # Linker Flags
@@ -61,11 +67,6 @@ endif
 ifeq ($(PROFILE),yes)
   CFLAGS += -pg
   LDFLAGS  += -pg
-endif
-
-# Optimization Flags
-ifeq ($(OPTIMIZE),yes)
-  CFLAGS += -Ofast
 endif
 
 #===============================================================================

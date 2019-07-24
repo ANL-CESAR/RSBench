@@ -160,7 +160,6 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, Simu
 	printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
 	E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
 	*/
-	
 }
 
 // No Temperature dependence (i.e., 0K evaluation)
@@ -469,6 +468,21 @@ double c_abs( RSComplex A)
 	return sqrt(A.r*A.r + A.i * A.i);
 }
 
+// Fast (but inaccurate) exponential function
+// Written By "ACMer":
+// https://codingforspeed.com/using-faster-exponential-approximation/
+// We use our own to avoid small differences in compiler specific
+// exp() intrinsic implementations that make it difficult to verify
+// if the code is working correctly or not.
+double fast_exp(double x)
+{
+  x = 1.0 + x * 0.000244140625;
+  x *= x; x *= x; x *= x; x *= x;
+  x *= x; x *= x; x *= x; x *= x;
+  x *= x; x *= x; x *= x; x *= x;
+  return x;
+}
+
 // Implementation based on:
 // z = x + iy
 // cexp(z) = e^x * (cos(y) + i * sin(y))
@@ -477,7 +491,10 @@ RSComplex fast_cexp( RSComplex z )
 	double x = z.r;
 	double y = z.i;
 
-	double t1 = exp(x);
+	// For consistency across architectures, we
+	// will use our own exponetial implementation
+	//double t1 = exp(x);
+	double t1 = fast_exp(x);
 	double t2 = cos(y);
 	double t3 = sin(y);
 	RSComplex t4 = {t2, t3};

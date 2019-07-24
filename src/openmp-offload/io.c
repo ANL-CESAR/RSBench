@@ -107,7 +107,7 @@ Input read_CLI( int argc, char * argv[] )
 		// Simulation Method (-m)
 		else if( strcmp(arg, "-m") == 0 )
 		{
-			char * sim_type;
+			char * sim_type = NULL;
 			if( ++i < argc )
 				sim_type = argv[i];
 			else
@@ -306,13 +306,13 @@ int validate_and_print_results(Input input, double runtime, unsigned long vhash)
 	unsigned long long small = 0;
 	if(input.simulation_method == HISTORY_BASED )
 	{
-		large = 351414;
-		small = 879238;
+		large = 351485;
+		small = 879693;
 	}
 	else if( input.simulation_method == EVENT_BASED )
 	{
-		large = 358421;
-		small = 879382;
+		large = 358389;
+		small = 880018;
 	}
 
 	if( input.HM  == LARGE )
