@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER  = ibm
+COMPILER  = clang
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
@@ -41,7 +41,8 @@ ifeq ($(COMPILER),clang)
   CC = clang
   CFLAGS += -fopenmp -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_60
   ifeq ($(OPTIMIZE),yes)
-    CFLAGS += -O3
+    #CFLAGS += -O3
+    CFLAGS += -Ofast
   endif
 endif
 

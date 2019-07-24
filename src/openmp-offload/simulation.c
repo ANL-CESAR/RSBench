@@ -21,7 +21,7 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 
 	// Main simulation loop over macroscopic cross section lookups
 
-	// #pragma omp parallel for reduction(+:verification)
+	//#pragma omp parallel for reduction(+:verification)
 	#pragma omp target teams distribute parallel for\
 	map(to:data.n_poles[:data.length_n_poles])\
 	map(to:data.n_windows[:data.length_n_windows])\
