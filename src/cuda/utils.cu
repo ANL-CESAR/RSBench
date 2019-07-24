@@ -14,9 +14,6 @@ size_t get_mem_estimate( Input input )
 
 double get_time(void)
 {
-	#ifdef OPENMP
-	return omp_get_wtime();
-	#endif
 
 	// If using C, we can do this:
 	/* 
@@ -24,11 +21,11 @@ double get_time(void)
 	gettimeofday(&timecheck, NULL);
 	long ms = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
 	double time = (double) ms / 1000.0;
+	return time;
 	*/
 	
 	// If using C++, we can do this:
 	unsigned long us_since_epoch = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
 	return (double) us_since_epoch / 1.0e6;
 
-	return time;
 }

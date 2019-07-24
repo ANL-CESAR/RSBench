@@ -22,14 +22,14 @@ init.cu \
 material.cu \
 utils.cu
 
-obj = $(source:.c=.o)
+obj = $(source:.cu=.o)
 
 #===============================================================================
 # Sets Flags
 #===============================================================================
 
 # Standard Flags
-CFLAGS := -Wall
+CFLAGS := 
 
 # Regular gcc Compiler
 ifeq ($(COMPILER),nvidia)

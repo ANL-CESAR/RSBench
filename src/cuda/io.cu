@@ -68,7 +68,7 @@ Input read_CLI( int argc, char * argv[] )
 	// defaults to the history based simulation method
 	input.simulation_method = HISTORY_BASED;
 	// defaults to max threads on the system	
-	input.nthreads = omp_get_num_procs();
+	input.nthreads = 1;
 	// defaults to 355 (corresponding to H-M Large benchmark)
 	input.n_nuclides = 355;
 	// defaults to 300,000

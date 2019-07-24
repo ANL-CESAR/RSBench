@@ -12,7 +12,7 @@
 // line argument.
 ////////////////////////////////////////////////////////////////////////////////////
 
-void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result )
+void run_event_based_simulation(Input input, SimulationData GSD, unsigned long * vhash_result )
 {
 	////////////////////////////////////////////////////////////////////////////////
 	// Configure & Launch Simulation Kernel
@@ -20,7 +20,7 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	printf("Running baseline event-based simulation...\n");
 
 	int nthreads = 32;
-	int nblocks = ceil( (double) in.lookups / 32.0);
+	int nblocks = ceil( (double) input.lookups / 32.0);
 
 	xs_lookup_kernel_baseline<<<nblocks, nthreads>>>( input, GSD );
 	gpuErrchk( cudaPeekAtLastError() );
@@ -31,17 +31,17 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	////////////////////////////////////////////////////////////////////////////////
 	printf("Reducing verification results...\n");
 
-	unsigned long verification_scalar = thrust::reduce(thrust::device, GSD.verification, GSD.verification + in.lookups, 0);
+	unsigned long verification_scalar = thrust::reduce(thrust::device, GSD.verification, GSD.verification + input.lookups, 0);
 	gpuErrchk( cudaPeekAtLastError() );
 	gpuErrchk( cudaDeviceSynchronize() );
 
-	*vhash_results = verification_scalar;
+	*vhash_result = verification_scalar;
 }
 
 // In this kernel, we perform a single lookup with each thread. Threads within a warp
 // do not really have any relation to each other, and divergence due to high nuclide count fuel
 // material lookups are costly. This kernel constitutes baseline performance.
-__global__ void xs_lookup_kernel_baseline(Inputs in, SimulationData GSD )
+__global__ void xs_lookup_kernel_baseline(Input in, SimulationData GSD )
 {
 	// The lookup ID. Used to set the seed, and to store the verification value
 	const int i = blockIdx.x *blockDim.x + threadIdx.x;
@@ -61,7 +61,7 @@ __global__ void xs_lookup_kernel_baseline(Inputs in, SimulationData GSD )
 
 	double macro_xs[4] = {0};
 
-	calculate_macro_xs( macro_xs, mat, E, input, GSD.num_nucs, GSD.mats, GSD.max_num_nucs, GSD.concs, GSD.n_windows, GSD.pseudo_K0RS, GSD.windows, GSD.poles, GSD.max_num_windows, GSD.max_num_poles );
+	calculate_macro_xs( macro_xs, mat, E, in, GSD.num_nucs, GSD.mats, GSD.max_num_nucs, GSD.concs, GSD.n_windows, GSD.pseudo_K0RS, GSD.windows, GSD.poles, GSD.max_num_windows, GSD.max_num_poles );
 
 	// For verification, and to prevent the compiler from optimizing
 	// all work out, we interrogate the returned macro_xs_vector array
@@ -78,7 +78,7 @@ __global__ void xs_lookup_kernel_baseline(Inputs in, SimulationData GSD )
 			max_idx = x;
 		}
 	}
-	verification[i] = max_idx+1;
+	GSD.verification[i] = max_idx+1;
 }
 
 __device__ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles ) 
@@ -429,7 +429,7 @@ __device__ RSComplex c_sub( RSComplex A, RSComplex B)
 	return C;
 }
 
-__device__ RSComplex c_mul( RSComplex A, RSComplex B)
+__host__ __device__ RSComplex c_mul( RSComplex A, RSComplex B)
 {
 	double a = A.r;
 	double b = A.i;
