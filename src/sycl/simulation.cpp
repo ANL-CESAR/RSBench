@@ -19,11 +19,13 @@ void run_event_based_simulation(Input in, SimulationData SD, unsigned long * vha
 	// Let's create an extra verification array to reduce manually later on
 	printf("Allocating an additional %.1lf MB of memory for verification arrays...\n", in.lookups * sizeof(int) /1024.0/1024.0);
 	int * verification_host = (int *) malloc(in.lookups * sizeof(int));
+	
+	// Timers
+	double start = get_time();
+	double stop;
 
 	// Scope here is important, as when we exit this blocl we will automatically sync with device
 	// to ensure all work is done and that we can read from verification_host array.
-	double start = get_time();
-	double stop;
 	{
 		// create a queue using the default device for the platform (cpu, gpu)
 
