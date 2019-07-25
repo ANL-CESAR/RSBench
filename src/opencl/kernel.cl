@@ -42,6 +42,75 @@ typedef struct{
 	int start;
 	int end;
 } Window;
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, __global const int * num_nucs, __global const int * mats, int max_num_nucs, __global const double * concs, __global const int * n_windows, __global const double * pseudo_K0Rs, __global const Window * windows, __global const Pole * poles, int max_num_windows, int max_num_poles ) ;
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, __global const int * n_windows, __global const double * pseudo_K0RS, __global const Window * windows, __global const Pole * poles, int max_num_windows, int max_num_poles);
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, __global const int * n_windows, __global const double * pseudo_K0RS, __global const Window * windows, __global const Pole * poles, int max_num_windows, int max_num_poles );
+int pick_mat( unsigned long * seed );
+void calculate_sig_T( int nuc, double E, Input input, __global const double * pseudo_K0RS, RSComplex * sigTfactors );
+RSComplex fast_nuclear_W( RSComplex Z );
+double LCG_random_double(unsigned long * seed);
+unsigned long LCG_random_int(unsigned long * seed);
+unsigned long fast_forward_LCG(unsigned long seed, unsigned long n);
+RSComplex c_add( RSComplex A, RSComplex B);
+RSComplex c_sub( RSComplex A, RSComplex B);
+RSComplex c_mul( RSComplex A, RSComplex B);
+RSComplex c_div( RSComplex A, RSComplex B);
+double c_abs( RSComplex A);
+double fast_exp(double x);
+RSComplex fast_cexp( RSComplex z );
+
+__kernel void macro_xs_lookup_kernel(		Input in,
+											__global const int *num_nucs,
+											__global const int * mats,
+											int max_num_nucs,
+											__global const double *concs,
+											__global const int *n_windows,
+											__global const double *pseudo_K0RS,
+											__global const Window * windows,
+											__global const Pole * poles,
+											int max_num_windows,
+											int max_num_poles,
+											__global int * verification_array )
+{
+	// Get the index of the current element to be processed
+	int i = get_global_id(0);
+		
+	// Set the initial seed value
+	unsigned long seed = STARTING_SEED;	
+
+	// Forward seed to lookup index (we need 2 samples per lookup)
+	seed = fast_forward_LCG(seed, 2*i);
+		
+	// Randomly pick an energy and material for the particle
+	double p_energy = LCG_random_double(&seed);
+	int mat         = pick_mat(&seed); 
+	
+	double macro_xs_vector[4] = {0};
+
+	// Perform macroscopic Cross Section Lookup
+	calculate_macro_xs( macro_xs_vector, mat, p_energy, in, num_nucs, mats, max_num_nucs, concs, n_windows, pseudo_K0RS, windows, poles, max_num_windows, max_num_poles );
+		
+	// For verification, and to prevent the compiler from optimizing
+	// all work out, we interrogate the returned macro_xs_vector array
+	// to find its maximum value index, then increment the verification
+	// value by that index. In this implementation, we prevent thread
+	// contention by using an OMP reduction on the verification value.
+	// For accelerators, a different approach might be required
+	// (e.g., atomics, reduction of thread-specific values in large
+	// array via CUDA thrust, etc).
+	double max = -DBL_MAX;
+	int max_idx = 0;
+	for(int j = 0; j < 4; j++ )
+	{
+		if( macro_xs_vector[j] > max )
+		{
+			max = macro_xs_vector[j];
+			max_idx = j;
+		}
+	}
+	verification_array[i] += max_idx+1;
+
+}
 
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, __global const int * num_nucs, __global const int * mats, int max_num_nucs, __global const double * concs, __global const int * n_windows, __global const double * pseudo_K0Rs, __global const Window * windows, __global const Pole * poles, int max_num_windows, int max_num_poles ) 
 {
@@ -184,7 +253,7 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 }
 
 // picks a material based on a probabilistic distribution
-int pick_mat( uint64_t * seed )
+int pick_mat( unsigned long * seed )
 {
 	// I have a nice spreadsheet supporting these numbers. They are
 	// the fractions (by volume) of material in the core. Not a 
@@ -328,34 +397,34 @@ RSComplex fast_nuclear_W( RSComplex Z )
 	}
 }
 
-double LCG_random_double(uint64_t * seed)
+double LCG_random_double(unsigned long * seed)
 {
-	const uint64_t m = 9223372036854775808ULL; // 2^63
-	const uint64_t a = 2806196910506780709ULL;
-	const uint64_t c = 1ULL;
+	const unsigned long m = 9223372036854775808ULL; // 2^63
+	const unsigned long a = 2806196910506780709ULL;
+	const unsigned long c = 1ULL;
 	*seed = (a * (*seed) + c) % m;
 	return (double) (*seed) / (double) m;
 }	
 
-uint64_t LCG_random_int(uint64_t * seed)
+unsigned long LCG_random_int(unsigned long * seed)
 {
-	const uint64_t m = 9223372036854775808ULL; // 2^63
-	const uint64_t a = 2806196910506780709ULL;
-	const uint64_t c = 1ULL;
+	const unsigned long m = 9223372036854775808ULL; // 2^63
+	const unsigned long a = 2806196910506780709ULL;
+	const unsigned long c = 1ULL;
 	*seed = (a * (*seed) + c) % m;
 	return *seed;
 }	
 
-uint64_t fast_forward_LCG(uint64_t seed, uint64_t n)
+unsigned long fast_forward_LCG(unsigned long seed, unsigned long n)
 {
-	const uint64_t m = 9223372036854775808ULL; // 2^63
-	uint64_t a = 2806196910506780709ULL;
-	uint64_t c = 1ULL;
+	const unsigned long m = 9223372036854775808ULL; // 2^63
+	unsigned long a = 2806196910506780709ULL;
+	unsigned long c = 1ULL;
 
 	n = n % m;
 
-	uint64_t a_new = 1;
-	uint64_t c_new = 0;
+	unsigned long a_new = 1;
+	unsigned long c_new = 0;
 
 	while(n > 0) 
 	{
@@ -457,55 +526,3 @@ RSComplex fast_cexp( RSComplex z )
 	return result;
 }	
 	
-__kernel void macro_xs_lookup_kernel(		Input in,
-											__global const int *num_nucs,
-											__global const int * mats,
-											int max_num_nucs,
-											__global const double *concs,
-											__global const int *n_windows,
-											__global const double *pseudo_K0RS,
-											__global const Window * windows,
-											__global const Pole * poles,
-											int max_num_windows,
-											int max_num_poles,
-											__global int * verification_array )
-{
-	// Get the index of the current element to be processed
-	int i = get_global_id(0);
-		
-	// Set the initial seed value
-	unsigned long seed = STARTING_SEED;	
-
-	// Forward seed to lookup index (we need 2 samples per lookup)
-	seed = fast_forward_LCG(seed, 2*i);
-		
-	// Randomly pick an energy and material for the particle
-	double p_energy = LCG_random_double(&seed);
-	int mat         = pick_mat(&seed); 
-	
-	double macro_xs_vector[4] = {0};
-
-	// Perform macroscopic Cross Section Lookup
-	calculate_macro_xs( macro_xs_vector, mat, p_energy, i, num_nucs, mats, max_num_nucs, concs, n_windows, pseudo_K0RS, windows, poles, max_num_windows, max_num_poles );
-		
-	// For verification, and to prevent the compiler from optimizing
-	// all work out, we interrogate the returned macro_xs_vector array
-	// to find its maximum value index, then increment the verification
-	// value by that index. In this implementation, we prevent thread
-	// contention by using an OMP reduction on the verification value.
-	// For accelerators, a different approach might be required
-	// (e.g., atomics, reduction of thread-specific values in large
-	// array via CUDA thrust, etc).
-	double max = -DBL_MAX;
-	int max_idx = 0;
-	for(int j = 0; j < 4; j++ )
-	{
-		if( macro_xs_vector[j] > max )
-		{
-			max = macro_xs_vector[j];
-			max_idx = j;
-		}
-	}
-	verification_array[i] += max_idx+1;
-
-}

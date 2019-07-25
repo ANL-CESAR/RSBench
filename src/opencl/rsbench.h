@@ -91,7 +91,7 @@ void fancy_int( int a );
 Input read_CLI( int argc, char * argv[] );
 void print_CLI_error(void);
 void print_input_summary(Input input);
-int validate_and_print_results(Input input, double runtime, unsigned long vhash);
+int validate_and_print_results(Input input, double runtime, unsigned long vhash, double sim_runtime);
 
 // init.c
 SimulationData initialize_simulation( Input input );
@@ -112,28 +112,11 @@ size_t get_mem_estimate( Input input );
 RSComplex fast_cexp( RSComplex z );
 double get_time(void);
 
-// xs_kernel.c
-RSComplex fast_nuclear_W( RSComplex Z );
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles ) ;
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles);
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles );
-
 // simulation.c
-void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result );
-void run_history_based_simulation(Input input, SimulationData data, unsigned long * vhash_result );
+unsigned long long run_event_based_simulation(Input in, SimulationData SD, double * sim_runtime);
 double LCG_random_double(uint64_t * seed);
 uint64_t LCG_random_int(uint64_t * seed);
-uint64_t fast_forward_LCG(uint64_t seed, uint64_t n);
-void run_event_based_simulation_optimization_1(Input in, SimulationData SD, unsigned long * vhash_result );
-int pick_mat( uint64_t * seed );
-void calculate_sig_T( int nuc, double E, Input input, double * pseudo_K0RS, RSComplex * sigTfactors );
-
-// rscomplex.c
-RSComplex c_add( RSComplex A, RSComplex B);
-RSComplex c_sub( RSComplex A, RSComplex B);
 RSComplex c_mul( RSComplex A, RSComplex B);
-RSComplex c_div( RSComplex A, RSComplex B);
-double c_abs( RSComplex A);
 
 // CLutils.c
 const char *getErrorString(cl_int error);

@@ -249,7 +249,7 @@ void print_input_summary(Input input)
 	// Calculate Estimate of Memory Usage
 	size_t mem = get_mem_estimate(input);
 
-	printf("Programming Model:           OpenMP Taget Offloading");
+	printf("Programming Model:           OpenMP Taget Offloading\n");
 	if( input.simulation_method == EVENT_BASED )
 		printf("Simulation Method:           Event Based\n");
 	else

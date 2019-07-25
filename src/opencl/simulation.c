@@ -12,79 +12,6 @@
 // line argument.
 ////////////////////////////////////////////////////////////////////////////////////
 
-void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result )
-{
-	printf("Beginning baseline event based simulation on device...\n");
-	unsigned long verification = 0;
-
-	int offloaded_to_device = 0;
-
-	// Main simulation loop over macroscopic cross section lookups
-
-	//#pragma omp parallel for reduction(+:verification)
-	#pragma omp target teams distribute parallel for\
-	map(to:data.n_poles[:data.length_n_poles])\
-	map(to:data.n_windows[:data.length_n_windows])\
-	map(to:data.poles[:data.length_poles])\
-	map(to:data.windows[:data.length_windows])\
-	map(to:data.pseudo_K0RS[:data.length_pseudo_K0RS])\
-	map(to:data.num_nucs[:data.length_num_nucs])\
-	map(to:data.mats[:data.length_mats])\
-	map(to:data.concs[:data.length_concs])\
-	map(to:data.max_num_nucs)\
-	map(to:data.max_num_poles)\
-	map(to:data.max_num_windows)\
-	map(tofrom:offloaded_to_device)\
-	reduction(+:verification)
-	for( int i = 0; i < input.lookups; i++ )
-	{
-		// Set the initial seed value
-		uint64_t seed = STARTING_SEED;	
-
-		// Forward seed to lookup index (we need 2 samples per lookup)
-		seed = fast_forward_LCG(seed, 2*i);
-
-		// Randomly pick an energy and material for the particle
-		double E = LCG_random_double(&seed);
-		int mat  = pick_mat(&seed);
-
-		double macro_xs[4] = {0};
-
-		calculate_macro_xs( macro_xs, mat, E, input, data.num_nucs, data.mats, data.max_num_nucs, data.concs, data.n_windows, data.pseudo_K0RS, data.windows, data.poles, data.max_num_windows, data.max_num_poles );
-
-		// For verification, and to prevent the compiler from optimizing
-		// all work out, we interrogate the returned macro_xs_vector array
-		// to find its maximum value index, then increment the verification
-		// value by that index. In this implementation, we prevent thread
-		// contention by using an OMP reduction on it. For other accelerators,
-		// a different approach might be required (e.g., atomics, reduction
-		// of thread-specific values in large array via CUDA thrust, etc)
-		double max = -DBL_MAX;
-		int max_idx = 0;
-		for(int x = 0; x < 4; x++ )
-		{
-			if( macro_xs[x] > max )
-			{
-				max = macro_xs[x];
-				max_idx = x;
-			}
-		}
-		verification += max_idx+1;
-
-		// Check if we are currently running on the device or not
-		if( i == 0 )
-			offloaded_to_device = !omp_is_initial_device();
-	}
-
-	// Print if kernel actually ran on the device
-	if( offloaded_to_device )
-		printf( "Kernel ran accelerator device.\n" );
-	else
-		printf( "NOTE - Kernel ran on the host!\n" );
-
-	*vhash_result = verification;
-}
-
 unsigned long long run_event_based_simulation(Input in, SimulationData SD, double * sim_runtime)
 {
 	printf("Initializing OpenCL data structures and JIT compiling kernel...\n");
@@ -203,8 +130,6 @@ unsigned long long run_event_based_simulation(Input in, SimulationData SD, doubl
 	// Create the OpenCL kernel
 	cl_kernel kernel = clCreateKernel(program, "macro_xs_lookup_kernel", &ret);
 	check(ret);
-		
-	calculate_macro_xs( macro_xs, mat, E, input, data.num_nucs, data.mats, data.max_num_nucs, data.concs, data.n_windows, data.pseudo_K0RS, data.windows, data.poles, data.max_num_windows, data.max_num_poles );
 
 	// Set the arguments of the kernel
 	ret = clSetKernelArg(kernel, 0, sizeof(Input), (void *)&in);
@@ -217,7 +142,7 @@ unsigned long long run_event_based_simulation(Input in, SimulationData SD, doubl
 	check(ret);
 	ret = clSetKernelArg(kernel, 4, sizeof(cl_mem), (void *)&concs_d);
 	check(ret);
-	ret = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *)&n_windws_d);
+	ret = clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *)&n_windows_d);
 	check(ret);
 	ret = clSetKernelArg(kernel, 6, sizeof(cl_mem), (void *)&pseudo_K0RS_d);
 	check(ret);
@@ -233,14 +158,14 @@ unsigned long long run_event_based_simulation(Input in, SimulationData SD, doubl
 	check(ret);
 	
 	double stop = get_time();
-	if( mype == 0) printf("OpenCL initialization time: %.3lf seconds\n", stop-start);
+	printf("OpenCL initialization time: %.3lf seconds\n", stop-start);
 	start = stop;
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// Run Simulation Kernel
 	////////////////////////////////////////////////////////////////////////////////
 	
-	if( mype == 0) printf("Running event based simulation...\n");
+	printf("Running event based simulation...\n");
 
 	// Execute the OpenCL kernel on the list
 	size_t global_item_size = in.lookups; // Process the entire lists
@@ -256,7 +181,7 @@ unsigned long long run_event_based_simulation(Input in, SimulationData SD, doubl
 	ret = clEnqueueReadBuffer(command_queue, verification_array, CL_TRUE, 0, in.lookups * sizeof(int), verification_array_host, 0, NULL, NULL);
 	check(ret);
 	
-	if( mype == 0) printf("Reducing verification value...\n");
+	printf("Reducing verification value...\n");
 	
 	unsigned long long verification = 0;
 
@@ -265,7 +190,7 @@ unsigned long long run_event_based_simulation(Input in, SimulationData SD, doubl
 
 	stop = get_time();
 	*sim_runtime = stop-start;
-	if( mype == 0) printf("Simulation + Verification Reduction Runtime: %.3lf seconds\n", *sim_runtime);
+	printf("Simulation + Verification Reduction Runtime: %.3lf seconds\n", *sim_runtime);
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// OpenCL cleanup
@@ -318,3 +243,15 @@ uint64_t LCG_random_int(uint64_t * seed)
 	*seed = (a * (*seed) + c) % m;
 	return *seed;
 }	
+
+RSComplex c_mul( RSComplex A, RSComplex B)
+{
+	double a = A.r;
+	double b = A.i;
+	double c = B.r;
+	double d = B.i;
+	RSComplex C;
+	C.r = (a*c) - (b*d);
+	C.i = (a*d) + (b*c);
+	return C;
+}

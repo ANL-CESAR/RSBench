@@ -249,7 +249,7 @@ void print_input_summary(Input input)
 	// Calculate Estimate of Memory Usage
 	size_t mem = get_mem_estimate(input);
 
-	printf("Programming Model:           OpenMP Taget Offloading");
+	printf("Programming Model:           OpenCL\n");
 	if( input.simulation_method == EVENT_BASED )
 		printf("Simulation Method:           Event Based\n");
 	else
@@ -279,16 +279,24 @@ void print_input_summary(Input input)
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);
 }
 
-int validate_and_print_results(Input input, double runtime, unsigned long vhash)
+int validate_and_print_results(Input input, double runtime, unsigned long vhash, double sim_runtime)
 {
-	printf("Runtime:               %.3lf seconds\n", runtime);
 	int lookups = 0;
 	if( input.simulation_method == HISTORY_BASED )
 		lookups = input.lookups*input.particles;
 	else
 		lookups = input.lookups;
-	printf("Lookups:               "); fancy_int(lookups);
-	printf("Lookups/s:             "); fancy_int((double) lookups / (runtime));
+	int lookups_per_sec = (int) ((double) lookups / runtime);
+	int sim_only_lookups_per_sec = (int) ((double) lookups/ sim_runtime);
+	printf("Total Time Statistics (OpenCL Init / JIT Compilation + Simulation Kernel)\n");
+	printf("Runtime:     %.3lf seconds\n", runtime);
+	printf("Lookups:     "); fancy_int(lookups);
+	printf("Lookups/s:   ");
+	fancy_int(lookups_per_sec);
+	printf("Simulation Kernel Only Statistics\n");
+	printf("Runtime:     %.3lf seconds\n", sim_runtime);
+	printf("Lookups/s:   ");
+	fancy_int(sim_only_lookups_per_sec);
 
 	int is_invalid = 1;
 
