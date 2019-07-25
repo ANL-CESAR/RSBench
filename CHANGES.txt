@@ -41,7 +41,7 @@ NEW IN VERSION 12
   verifying results was developed and added, making it have much less
   of an impact on performance than the previous methods did. As the
   new method generates a different hash than the old one, the expected
-  has values have changed in v19.
+  has values have changed in v12.
 
 - (Removal) Removed PAPI performance counters from code and Makefile.
 
