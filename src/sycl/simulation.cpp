@@ -13,22 +13,25 @@ using namespace cl::sycl;
 // line argument.
 ////////////////////////////////////////////////////////////////////////////////////
 
-void run_event_based_simulation(Input in, SimulationData SD, unsigned long * vhash_result )
+void run_event_based_simulation(Input in, SimulationData SD, unsigned long * vhash_result, double * kernel_init_time )
 {
-	printf("Beginning event based simulation...\n");
 	
 	// Let's create an extra verification array to reduce manually later on
+	printf("Allocating an additional %.1lf MB of memory for verification arrays...\n", in.lookups * sizeof(int) /1024.0/1024.0);
 	int * verification_host = (int *) malloc(in.lookups * sizeof(int));
 
 	// Scope here is important, as when we exit this blocl we will automatically sync with device
 	// to ensure all work is done and that we can read from verification_host array.
+	double start = get_time();
+	double stop;
 	{
 		// create a queue using the default device for the platform (cpu, gpu)
 
 		//queue sycl_q{default_selector()};
-		//queue sycl_q{gpu_selector()};
-		queue sycl_q{cpu_selector()};
+		queue sycl_q{gpu_selector()};
+		//queue sycl_q{cpu_selector()};
 		printf("Running on: %s\n", sycl_q.get_device().get_info<cl::sycl::info::device::name>().c_str());
+		printf("Initializing device buffers and JIT compiling kernel...\n");
 	
 		////////////////////////////////////////////////////////////////////////////////
 		// Create Device Buffers
@@ -108,6 +111,9 @@ void run_event_based_simulation(Input in, SimulationData SD, unsigned long * vha
 
 					});
 				});
+		stop = get_time();
+		printf("Kernel initialization, compilation, and launch took %.2lf seconds.\n", stop-start);
+		printf("Beginning event based simulation...\n");
 	}
 
 	// Host reduces the verification array
@@ -116,6 +122,7 @@ void run_event_based_simulation(Input in, SimulationData SD, unsigned long * vha
 		verification_scalar += verification_host[i];
 
 	*vhash_result = verification_scalar;
+	*kernel_init_time = stop-start;
 }
 
 template <class INT_T, class DOUBLE_T, class WINDOW_T, class POLE_T >

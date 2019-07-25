@@ -96,16 +96,8 @@ Input read_CLI( int argc, char * argv[] )
 	{
 		char * arg = argv[i];
 
-		// nthreads (-t)
-		if( strcmp(arg, "-t") == 0 )
-		{
-			if( ++i < argc )
-				input.nthreads = atoi(argv[i]);
-			else
-				print_CLI_error();
-		}
 		// Simulation Method (-m)
-		else if( strcmp(arg, "-m") == 0 )
+		if( strcmp(arg, "-m") == 0 )
 		{
 			char * sim_type = NULL;
 			if( ++i < argc )
@@ -241,7 +233,6 @@ void print_CLI_error(void)
 {
 	printf("Usage: ./multibench <options>\n");
 	printf("Options include:\n");
-	printf("  -t <threads>     Number of OpenMP threads to run\n");
 	printf("  -s <size>        Size of H-M Benchmark to run (small, large)\n");
 	printf("  -l <lookups>     Number of Cross-section (XS) lookups per particle history\n");
 	printf("  -p <particles>   Number of particle histories\n");
@@ -258,6 +249,7 @@ void print_input_summary(Input input)
 	// Calculate Estimate of Memory Usage
 	size_t mem = get_mem_estimate(input);
 
+	printf("Programming Model:           SYCL\n");
 	if( input.simulation_method == EVENT_BASED )
 		printf("Simulation Method:           Event Based\n");
 	else
@@ -284,21 +276,29 @@ void print_input_summary(Input input)
 		lookups *= input.particles;
 	}
 	printf("Total XS Lookups:            "); fancy_int(lookups);
-	printf("Threads:                     %d\n", input.nthreads);
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);
 }
 
-int validate_and_print_results(Input input, double runtime, unsigned long vhash)
+int validate_and_print_results(Input input, double runtime, unsigned long vhash, double kernel_init_time)
 {
-	printf("Threads:               %d\n", input.nthreads);
-	printf("Runtime:               %.3lf seconds\n", runtime);
 	int lookups = 0;
 	if( input.simulation_method == HISTORY_BASED )
 		lookups = input.lookups*input.particles;
 	else
 		lookups = input.lookups;
+	
+	int lookups_per_sec = (int) ((double) lookups / runtime);
+	int sim_only_lookups_per_sec = (int) ((double) lookups/ (runtime-kernel_init_time));
+
+	printf("Total Time Statistics (SYCL+OpenCL Init / JIT Compilation + Simulation Kernel)\n");
+	printf("Runtime:               %.3lf seconds\n", runtime);
 	printf("Lookups:               "); fancy_int(lookups);
-	printf("Lookups/s:             "); fancy_int((double) lookups / (runtime));
+	printf("Lookups/s:             ");
+	fancy_int(lookups_per_sec);
+	printf("Simulation Kernel Only Statistics\n");
+	printf("Runtime:               %.3lf seconds\n", runtime-kernel_init_time);
+	printf("Lookups/s:             ");
+	fancy_int(sim_only_lookups_per_sec);
 
 	int is_invalid = 1;
 
