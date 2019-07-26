@@ -10,7 +10,7 @@ void logo(int version)
 "                   | |__) | (___ | |_) | ___ _ __   ___| |__  \n"
 "                   |  _  / \\___ \\|  _ < / _ \\ '_ \\ / __| '_ \\ \n"
 "                   | | \\ \\ ____) | |_) |  __/ | | | (__| | | |\n"
-"                   |_|  \\_\\_____/|____/ \\___|_| |_|\\___|_| |_|\n"
+"                   |_|  \\_\\_____/|____/ \\___|_| |_|\\___|_| |_|\n\n"
 	);
 	border_print();
 	center_print("Developed at Argonne National Laboratory", 79);
@@ -68,7 +68,7 @@ Input read_CLI( int argc, char * argv[] )
 	// defaults to the history based simulation method
 	input.simulation_method = HISTORY_BASED;
 	// defaults to max threads on the system	
-	input.nthreads = omp_get_num_procs();
+	input.nthreads = 1;
 	// defaults to 355 (corresponding to H-M Large benchmark)
 	input.n_nuclides = 355;
 	// defaults to 300,000
@@ -85,6 +85,8 @@ Input read_CLI( int argc, char * argv[] )
 	input.numL = 4;
 	// defaults to no temperature dependence (Doppler broadening)
 	input.doppler = 1;
+	// defaults to baseline simulation kernel
+	input.kernel_id = 0;
 	
 	int default_lookups = 1;
 	int default_particles = 1;
@@ -94,18 +96,10 @@ Input read_CLI( int argc, char * argv[] )
 	{
 		char * arg = argv[i];
 
-		// nthreads (-t)
-		if( strcmp(arg, "-t") == 0 )
-		{
-			if( ++i < argc )
-				input.nthreads = atoi(argv[i]);
-			else
-				print_CLI_error();
-		}
 		// Simulation Method (-m)
-		else if( strcmp(arg, "-m") == 0 )
+		if( strcmp(arg, "-m") == 0 )
 		{
-			char * sim_type;
+			char * sim_type = NULL;
 			if( ++i < argc )
 				sim_type = argv[i];
 			else
@@ -192,6 +186,14 @@ Input read_CLI( int argc, char * argv[] )
 			else
 				print_CLI_error();
 		}
+		// Kernel ID (-k)
+		else if( strcmp(arg, "-k") == 0 )
+		{
+			if( ++i < argc )
+				input.kernel_id = atoi(argv[i]);
+			else
+				print_CLI_error();
+		}
 		else
 			print_CLI_error();
 	}
@@ -231,15 +233,13 @@ void print_CLI_error(void)
 {
 	printf("Usage: ./multibench <options>\n");
 	printf("Options include:\n");
-	printf("  -t <threads>            Number of OpenMP threads to run\n");
-	printf("  -m <simulation method>  Simulation method (history, event)\n");
-	printf("  -s <size>               Size of H-M Benchmark to run (small, large)\n");
-	printf("  -l <lookups>            Number of Cross-section (XS) lookups per particle history\n");
-	printf("  -p <particles>          Number of particle histories\n");
-	printf("  -P <poles>              Average Number of Poles per Nuclide\n");
-	printf("  -W <poles>              Average Number of Windows per Nuclide\n");
-	printf("  -d                      Disables Temperature Dependence (Doppler Broadening)\n");
-	printf("Default is equivalent to: -s large -m history -l 34 -p 300000 -P 1000 -W 100\n");
+	printf("  -s <size>        Size of H-M Benchmark to run (small, large)\n");
+	printf("  -l <lookups>     Number of Cross-section (XS) lookups per particle history\n");
+	printf("  -p <particles>   Number of particle histories\n");
+	printf("  -P <poles>       Average Number of Poles per Nuclide\n");
+	printf("  -W <poles>       Average Number of Windows per Nuclide\n");
+	printf("  -d               Disables Temperature Dependence (Doppler Broadening)\n");
+	printf("Default is equivalent to: -s large -l 34 -p 300000 -P 1000 -W 100\n");
 	printf("See readme for full description of default run values\n");
 	exit(4);
 }
@@ -249,6 +249,7 @@ void print_input_summary(Input input)
 	// Calculate Estimate of Memory Usage
 	size_t mem = get_mem_estimate(input);
 
+	printf("Programming Model:           OpenMP Taget Offloading\n");
 	if( input.simulation_method == EVENT_BASED )
 		printf("Simulation Method:           Event Based\n");
 	else
@@ -275,9 +276,55 @@ void print_input_summary(Input input)
 		lookups *= input.particles;
 	}
 	printf("Total XS Lookups:            "); fancy_int(lookups);
-	printf("Threads:                     %d\n", input.nthreads);
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);
-	#ifdef PAPI
-	printf("PAPI Performance Counters:   ON\n");
-	#endif
+}
+
+int validate_and_print_results(Input input, double runtime, unsigned long vhash)
+{
+	printf("Runtime:               %.3lf seconds\n", runtime);
+	int lookups = 0;
+	if( input.simulation_method == HISTORY_BASED )
+		lookups = input.lookups*input.particles;
+	else
+		lookups = input.lookups;
+	printf("Lookups:               "); fancy_int(lookups);
+	printf("Lookups/s:             "); fancy_int((double) lookups / (runtime));
+
+	int is_invalid = 1;
+
+	unsigned long long large = 0;
+	unsigned long long small = 0;
+	if(input.simulation_method == HISTORY_BASED )
+	{
+		large = 351485;
+		small = 879693;
+	}
+	else if( input.simulation_method == EVENT_BASED )
+	{
+		large = 358389;
+		small = 880018;
+	}
+
+	if( input.HM  == LARGE )
+	{
+		if( vhash == large )
+		{
+			printf("Verification checksum: %lu (Valid)\n", vhash);
+			is_invalid = 0;
+		}
+		else
+			printf("Verification checksum: %lu (WARNING - INAVALID CHECKSUM!)\n", vhash);
+	}
+	else if( input.HM  == SMALL )
+	{
+		if( vhash == small )
+		{
+			printf("Verification checksum: %lu (Valid)\n", vhash);
+			is_invalid = 0;
+		}
+		else
+			printf("Verification checksum: %lu (WARNING - INAVALID CHECKSUM!)\n", vhash);
+	}
+
+	return is_invalid;
 }

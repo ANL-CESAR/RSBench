@@ -2,13 +2,10 @@
 # User Options
 #===============================================================================
 
-COMPILER  = gnu
+COMPILER  = clang
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
-STATUS    = yes
-PAPI      = no
-VERIFY    = no
 
 #===============================================================================
 # Program name & source code list
@@ -17,48 +14,48 @@ VERIFY    = no
 program = rsbench
 
 source = \
-main.c \
-simulation.c \
-xs_kernel.c \
-io.c \
-init.c \
-material.c \
-utils.c 
+main.cpp \
+simulation.cpp\
+io.cpp \
+init.cpp \
+material.cpp \
+utils.cpp
 
-obj = $(source:.c=.o)
+obj = $(source:.cpp=.o)
 
 #===============================================================================
 # Sets Flags
 #===============================================================================
 
 # Standard Flags
-CFLAGS := -std=gnu99 -Wall
-
-# gcc Compiler
-ifeq ($(COMPILER),gnu)
-  CC = gcc
-  CFLAGS += -fopenmp -ffast-math
-endif
-
-# intel compiler
-ifeq ($(COMPILER),intel)
-  CC = icc
-  CFLAGS += -qopenmp -xhost -ansi-alias -no-prec-div
-endif
-
-# PGI compiler (thanks Chip!)
-ifeq ($(COMPILER),pgi)
-  CC = pgcc
-  CFLAGS := -mp -fastsse
-endif
+CFLAGS := -std=c++14 -Wall
 
 # Linker Flags
 LDFLAGS = -lm
 
+# Regular gcc Compiler
+ifeq ($(COMPILER),gnu)
+  CC = gcc
+  CFLAGS += -flto
+endif
+
+# Codeplay Compiler
+ifeq ($(COMPILER),codeplay)
+  CC = compute++
+  CFLAGS += -sycl -sycl-driver
+  LDFLAGS += -lComputeCpp
+endif
+
+ifeq ($(COMPILER),clang)
+  CC = clang++
+  CFLAGS += -fsycl
+  LDFLAGS += -lOpenCL
+endif
+
 # Debug Flags
 ifeq ($(DEBUG),yes)
   CFLAGS += -g
-  LDFLAGS += -g
+  LDFLAGS  += -g
 endif
 
 # Profiling Flags
@@ -69,24 +66,7 @@ endif
 
 # Optimization Flags
 ifeq ($(OPTIMIZE),yes)
-  CFLAGS += -Ofast
-endif
-
-# Calculation Status % Complete Indicator
-ifeq ($(STATUS),yes)
-  CFLAGS += -DSTATUS
-endif
-
-# PAPI Performance Counters
-ifeq ($(PAPI),yes)
-  CFLAGS += -DPAPI
-  source += papi.c
-  LDFLAGS += -lpapi
-endif
-
-# Verification of results mode
-ifeq ($(VERIFY),yes)
-  CFLAGS += -DVERIFICATION
+  CFLAGS += -O3
 endif
 
 #===============================================================================
@@ -96,14 +76,14 @@ endif
 $(program): $(obj) rsbench.h Makefile
 	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
 
-%.o: %.c rsbench.h Makefile
+%.o: %.cpp rsbench.h Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -rf rsbench $(obj)
 
 edit:
-	vim -p $(source) papi.c rsbench.h
+	vim -p $(source) rsbench.h
 
 run:
 	./rsbench

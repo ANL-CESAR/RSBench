@@ -1,14 +1,19 @@
 #include "rsbench.h"
 
 // Handles all material creation tasks - returns Material struct
-Materials get_materials(Input input, unsigned long * seed)
+SimulationData get_materials(Input input, uint64_t * seed)
 {
-	Materials M;
-	M.num_nucs = load_num_nucs(input);
-	M.mats = load_mats(input, M.num_nucs);
-	M.concs = load_concs(M.num_nucs, seed);
+	SimulationData SD;
 
-	return M;
+	SD.num_nucs = load_num_nucs(input);
+	SD.length_num_nucs = 12;
+
+	SD.mats = load_mats(input, SD.num_nucs, &SD.max_num_nucs, &SD.length_mats);
+
+	SD.concs = load_concs(SD.num_nucs, seed, SD.max_num_nucs);
+	SD.length_concs = 12 * SD.max_num_nucs; 
+
+	return SD;
 }
 
 // num_nucs represents the number of nuclides that each material contains
@@ -39,11 +44,17 @@ int * load_num_nucs(Input input)
 }
 
 // Assigns an array of nuclide ID's to each material
-int ** load_mats( Input input, int * num_nucs )
+int * load_mats( Input input, int * num_nucs, int * max_num_nucs, unsigned long * length_mats )
 {
-	int ** mats = (int **) malloc( 12 * sizeof(int *) );
-	for( int i = 0; i < 12; i++ )
-		mats[i] = (int *) malloc(num_nucs[i] * sizeof(int) );
+	*max_num_nucs = 0;
+	int num_mats = 12;
+	for( int m = 0; m < num_mats; m++ )
+	{
+		if( num_nucs[m] > *max_num_nucs )
+			*max_num_nucs = num_nucs[m];
+	}
+	int * mats = (int *) malloc( num_mats * (*max_num_nucs) * sizeof(int) );
+	*length_mats = num_mats * (*max_num_nucs);
 
 	// Small H-M has 34 fuel nuclides
 	int mats0_Sml[] =  { 58, 59, 60, 61, 40, 42, 43, 44, 45, 46, 1, 2, 3, 7,
@@ -78,66 +89,45 @@ int ** load_mats( Input input, int * num_nucs )
 	
 	// H-M large v small dependency
 	if( input.n_nuclides == 68 )
-		memcpy( mats[0],  mats0_Sml,  num_nucs[0]  * sizeof(int) );	
+		memcpy( mats,  mats0_Sml,  num_nucs[0]  * sizeof(int) );	
 	else
-		memcpy( mats[0],  mats0_Lrg,  num_nucs[0]  * sizeof(int) );
+		memcpy( mats,  mats0_Lrg,  num_nucs[0]  * sizeof(int) );
 	
 	// Copy other materials
-	memcpy( mats[1],  mats1,  num_nucs[1]  * sizeof(int) );	
-	memcpy( mats[2],  mats2,  num_nucs[2]  * sizeof(int) );	
-	memcpy( mats[3],  mats3,  num_nucs[3]  * sizeof(int) );	
-	memcpy( mats[4],  mats4,  num_nucs[4]  * sizeof(int) );	
-	memcpy( mats[5],  mats5,  num_nucs[5]  * sizeof(int) );	
-	memcpy( mats[6],  mats6,  num_nucs[6]  * sizeof(int) );	
-	memcpy( mats[7],  mats7,  num_nucs[7]  * sizeof(int) );	
-	memcpy( mats[8],  mats8,  num_nucs[8]  * sizeof(int) );	
-	memcpy( mats[9],  mats9,  num_nucs[9]  * sizeof(int) );	
-	memcpy( mats[10], mats10, num_nucs[10] * sizeof(int) );	
-	memcpy( mats[11], mats11, num_nucs[11] * sizeof(int) );	
-	
-	// test
-	/*
-	for( int i = 0; i < 12; i++ )
-		for( int j = 0; j < num_nucs[i]; j++ )
-			printf("material %d - Nuclide %d: %d\n",
-			       i, j, mats[i][j]);
-	*/
+	memcpy( mats + *max_num_nucs * 1,  mats1,  num_nucs[1]  * sizeof(int) );	
+	memcpy( mats + *max_num_nucs * 2,  mats2,  num_nucs[2]  * sizeof(int) );	
+	memcpy( mats + *max_num_nucs * 3,  mats3,  num_nucs[3]  * sizeof(int) );	
+	memcpy( mats + *max_num_nucs * 4,  mats4,  num_nucs[4]  * sizeof(int) );	
+	memcpy( mats + *max_num_nucs * 5,  mats5,  num_nucs[5]  * sizeof(int) );	
+	memcpy( mats + *max_num_nucs * 6,  mats6,  num_nucs[6]  * sizeof(int) );	
+	memcpy( mats + *max_num_nucs * 7,  mats7,  num_nucs[7]  * sizeof(int) );	
+	memcpy( mats + *max_num_nucs * 8,  mats8,  num_nucs[8]  * sizeof(int) );	
+	memcpy( mats + *max_num_nucs * 9,  mats9,  num_nucs[9]  * sizeof(int) );	
+	memcpy( mats + *max_num_nucs * 10, mats10, num_nucs[10] * sizeof(int) );	
+	memcpy( mats + *max_num_nucs * 11, mats11, num_nucs[11] * sizeof(int) );	
 
 	return mats;
 }
 
 // Creates a randomized array of 'concentrations' of nuclides in each mat
-double ** load_concs( int * num_nucs, unsigned long * seed )
+double * load_concs( int * num_nucs, uint64_t * seed, int max_num_nucs )
 {
-	double ** concs = (double **)malloc( 12 * sizeof( double *) );
-	
-	for( int i = 0; i < 12; i++ )
-		concs[i] = (double *)malloc( num_nucs[i] * sizeof(double) );
-	
-	for( int i = 0; i < 12; i++ )
-		for( int j = 0; j < num_nucs[i]; j++ )
-			concs[i][j] = rn(seed);
+	double * concs = (double *) malloc( 12 * max_num_nucs * sizeof( double ) );
 
-	// test
-	/*
 	for( int i = 0; i < 12; i++ )
 		for( int j = 0; j < num_nucs[i]; j++ )
-			printf("concs[%d][%d] = %lf\n", i, j, concs[i][j] );
-	*/
+			concs[i * max_num_nucs + j] = LCG_random_double(seed);
 
 	return concs;
 }
 
 // picks a material based on a probabilistic distribution
-int pick_mat( unsigned long * seed )
+int pick_mat( uint64_t * seed )
 {
 	// I have a nice spreadsheet supporting these numbers. They are
 	// the fractions (by volume) of material in the core. Not a 
 	// *perfect* approximation of where XS lookups are going to occur,
 	// but this will do a good job of biasing the system nonetheless.
-
-	// Also could be argued that doing fractions by weight would be 
-	// a better approximation, but volume does a good enough job for now.
 
 	double dist[12];
 	dist[0]  = 0.140;	// fuel
@@ -152,8 +142,8 @@ int pick_mat( unsigned long * seed )
 	dist[9]  = 0.015;	// top nozzle
 	dist[10] = 0.025;	// top of fuel assemblies
 	dist[11] = 0.013;	// bottom of fuel assemblies
-	
-	double roll = rn(seed);
+
+	double roll = LCG_random_double(seed);
 
 	// makes a pick based on the distro
 	for( int i = 0; i < 12; i++ )
