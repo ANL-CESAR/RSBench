@@ -273,20 +273,19 @@ Legacy versions of RSBench had a special "Verification" compiler flag option
 to enable verification of the results. However, a much more performant and
 portable verification scheme was developed and is now used for all
 configurations -- therefore, it is not necessary to compile with or without
-the verification mode as it is always enabled by default.
+the verification mode as it is always enabled.
 
 RSBench generates a hash of the results at the end of the simulation and displays
 it with the other data once the code has completed executing. This hash can
 then be verified against hashes that other versions or configurations of
 the code generate. For instance, running RSBench with 4 threads vs 8 threads
 (on a machine that supports that configuration) should generate the
-same hash number. Running on GPU vs CPU should not change the hash number.
-However, changing the model / run parameters is expected to generate a totally
-different hash number (i.e., increasing the number of particles, number
-of gridpoints, etc, will result in different hashes). However, changing
-the type of lookup performed (e.g., nuclide, unionized, or hash) should result
-in the same hash being generated. Changing the simulation mode (history or
-event) will generate different hashes. 
+same hash number. Running on GPU vs CPU, or using a different programming model,
+ should not change the hash number. However, changing the simulation model or
+run parameters is expected to generate a totally different hash number
+(e.g., increasing the number of particles, number of poles, etc, will result
+in different hashes). Changing the simulation mode (history or event) will
+also generate different hashes. 
 
 ==============================================================================
 Citing RSBench
