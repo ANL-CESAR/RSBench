@@ -2,7 +2,12 @@
 # User Options
 #===============================================================================
 
+# Compiler options are "gnu", "llvm", and "intel".
+# This can be set below, or with the "COMPILER" environment variable.
+# Default is gnu.
+ifeq ($(COMPILER),)
 COMPILER  = gnu
+endif
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
@@ -33,13 +38,19 @@ CFLAGS := -std=gnu99 -Wall
 # gcc Compiler
 ifeq ($(COMPILER),gnu)
   CC = gcc
-  CFLAGS += -fopenmp -ffast-math -flto
+  CFLAGS += -fopenmp -flto
+endif
+
+# LLVM Compiler
+ifeq ($(COMPILER),llvm)
+  CC = clang
+  CFLAGS += -fopenmp -flto
 endif
 
 # intel compiler
 ifeq ($(COMPILER),intel)
   CC = icc
-  CFLAGS += -qopenmp -xhost -ansi-alias -no-prec-div -ipo
+  CFLAGS += -qopenmp -ipo
 endif
 
 # Linker Flags
@@ -59,7 +70,7 @@ endif
 
 # Optimization Flags
 ifeq ($(OPTIMIZE),yes)
-  CFLAGS += -Ofast
+  CFLAGS += -O3
 endif
 
 #===============================================================================
