@@ -241,14 +241,15 @@ void print_CLI_error(void)
 {
 	printf("Usage: ./multibench <options>\n");
 	printf("Options include:\n");
-	printf("  -t <threads>     Number of OpenMP threads to run\n");
-	printf("  -s <size>        Size of H-M Benchmark to run (small, large)\n");
-	printf("  -l <lookups>     Number of Cross-section (XS) lookups per particle history\n");
-	printf("  -p <particles>   Number of particle histories\n");
-	printf("  -P <poles>       Average Number of Poles per Nuclide\n");
-	printf("  -W <poles>       Average Number of Windows per Nuclide\n");
-	printf("  -d               Disables Temperature Dependence (Doppler Broadening)\n");
-	printf("Default is equivalent to: -s large -l 34 -p 300000 -P 1000 -W 100\n");
+	printf("  -t <threads>            Number of OpenMP threads to run\n");
+	printf("  -m <simulation method>  Simulation method (history, event)\n");
+	printf("  -s <size>               Size of H-M Benchmark to run (small, large)\n");
+	printf("  -l <lookups>            Number of Cross-section (XS) lookups per particle history\n");
+	printf("  -p <particles>          Number of particle histories\n");
+	printf("  -P <poles>              Average Number of Poles per Nuclide\n");
+	printf("  -W <poles>              Average Number of Windows per Nuclide\n");
+	printf("  -d                      Disables Temperature Dependence (Doppler Broadening)\n");
+	printf("Default is equivalent to: -s large -m history -l 34 -p 300000 -P 1000 -W 100\n");
 	printf("See readme for full description of default run values\n");
 	exit(4);
 }

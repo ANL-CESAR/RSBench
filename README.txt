@@ -152,15 +152,28 @@ Running RSBench---------------------------------------------------------------
 		They key difference between the two methods is the dependence/independence
 		of the macroscopic cross section loop.
 
+	-m <simulation method>
+
+		Sets the simulation method, either "history" or "event". These
+		options represent the history based or event based algorithms
+		respectively. The default is the history based method. These two
+		methods represent different methods of parallelizing the Monte
+		Carlo transport method. In the history based method, the central
+		mode of parallelism is expressed over particles, which each require
+		some number of macroscopic cross sections to be executed in series
+		and in a dependent order. The event based method expresses its
+		parallelism over a large pool of independent macroscopic cross
+		section lookups that can be executed in any order without dependence.
+		They key difference between the two methods is the dependence/independence
+		of the macroscopic cross section loop.
+
 	-t <threads>
 
 		Sets the number of OpenMP threads to run. By default, RSBench
 		will run with 1 thread per hardware core. If the architecture
 		supports hyperthreading, multiple threads will be run per
-		core.
-
-		If running in MPI mode, this will be the number of threads
-		per MPI rank.
+		core. This command is only available with the openmp-threading
+		programming model.
 
 	-s <size>
 		
