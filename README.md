@@ -189,10 +189,7 @@ Bibtex Entry:
 
 ```bibtex
 @inproceedings{Tramm:rs,
-author="Tramm, John R.
-and Siegel, Andrew R.
-and Forget, Benoit
-and Josey, Colin",
+author="Tramm, John R. and Siegel, Andrew R. and Forget, Benoit and Josey, Colin",
 title="Performance Analysis of a Reduced Data Movement Algorithm for Neutron Cross Section Data in Monte Carlo Simulations",
 booktitle = {{EASC} 2014 - Solving Software Challenges for Exascale},
 address = {Stockholm},
