@@ -69,9 +69,5 @@ script:
     - $CC --version
     - cd openmp-threading
     - make
-    - ./rsbench -s small -t 4 
-    - ./rsbench -s small -t 4 
-    - ./rsbench -s small -t 4
-    - ./rsbench -s small -t 4 
-    - ./rsbench -s small -t 4 
-    - ./rsbench -s small -t 4 
+    - ./rsbench -s small -t 4 -m history
+    - ./rsbench -s small -t 4 -m event
