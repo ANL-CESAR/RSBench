@@ -113,9 +113,9 @@ double get_time(void);
 
 // xs_kernel.c
 RSComplex fast_nuclear_W( RSComplex Z );
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles ) ;
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles);
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles );
+void calculate_macro_xs( double * macro_xs, int mat, double E, int doppler, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles );
+void calculate_micro_xs( double * micro_xs, int nuc, double E, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles);
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles );
 
 // simulation.c
 void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result );
@@ -125,7 +125,7 @@ uint64_t LCG_random_int(uint64_t * seed);
 uint64_t fast_forward_LCG(uint64_t seed, uint64_t n);
 void run_event_based_simulation_optimization_1(Input in, SimulationData SD, unsigned long * vhash_result );
 int pick_mat( uint64_t * seed );
-void calculate_sig_T( int nuc, double E, Input input, double * pseudo_K0RS, RSComplex * sigTfactors );
+void calculate_sig_T( int nuc, double E, double * pseudo_K0RS, RSComplex * sigTfactors );
 
 // rscomplex.c
 RSComplex c_add( RSComplex A, RSComplex B);

@@ -21,7 +21,30 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 
 	// Main simulation loop over macroscopic cross section lookups
 
+	int * n_poles = data.n_poles;
+	int length_n_poles = data.length_n_poles;
+	int * n_windows = data.n_windows;
+	int length_n_windows = data.length_n_windows;
+	Pole * poles = data.poles;
+	int length_poles = data.length_poles;
+	Window * windows = data.windows;
+	int length_windows = data.length_windows;
+	double * pseudo_K0RS = data.pseudo_K0RS;
+	int length_pseudo_K0RS = data.length_pseudo_K0RS;
+	int * num_nucs = data.num_nucs;
+	int length_num_nucs = data.length_num_nucs;
+	int * mats = data.mats;
+	int length_mats = data.length_mats;
+	double * concs = data.concs;
+	int length_concs = data.length_concs;
+	int max_num_nucs = data.max_num_nucs;
+	int max_num_poles = data.max_num_poles;
+	int max_num_windows = data.max_num_windows;
+	int lookups = input.lookups;
+	int doppler = input.doppler;
+
 	//#pragma omp parallel for reduction(+:verification)
+/*
 	#pragma omp target teams distribute parallel for\
 	map(to:data.n_poles[:data.length_n_poles])\
 	map(to:data.n_windows[:data.length_n_windows])\
@@ -34,6 +57,19 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	map(to:data.max_num_nucs)\
 	map(to:data.max_num_poles)\
 	map(to:data.max_num_windows)\
+	map(tofrom:offloaded_to_device)\
+	reduction(+:verification)
+*/
+	#pragma omp target teams distribute parallel for\
+	map(to:n_poles[:length_n_poles])\
+	map(to:n_windows[:length_n_windows])\
+	map(to:poles[:length_poles])\
+	map(to:windows[:length_windows])\
+	map(to:pseudo_K0RS[:length_pseudo_K0RS])\
+	map(to:num_nucs[:length_num_nucs])\
+	map(to:mats[:length_mats])\
+	map(to:concs[:length_concs])\
+	map(to:lookups, doppler, max_num_nucs, max_num_windows, max_num_poles)\
 	map(tofrom:offloaded_to_device)\
 	reduction(+:verification)
 	for( int i = 0; i < input.lookups; i++ )
@@ -50,7 +86,21 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 
 		double macro_xs[4] = {0};
 
-		calculate_macro_xs( macro_xs, mat, E, input, data.num_nucs, data.mats, data.max_num_nucs, data.concs, data.n_windows, data.pseudo_K0RS, data.windows, data.poles, data.max_num_windows, data.max_num_poles );
+		//calculate_macro_xs( macro_xs, mat, E, input, data.num_nucs, data.mats, data.max_num_nucs, data.concs, data.n_windows, data.pseudo_K0RS, data.windows, data.poles, data.max_num_windows, data.max_num_poles );
+		calculate_macro_xs( macro_xs,
+				mat,
+				E,
+				doppler,
+				num_nucs,
+				mats,
+				max_num_nucs,
+				concs,
+				n_windows,
+				pseudo_K0RS,
+				windows,
+				poles,
+				max_num_windows,
+				max_num_poles );
 
 		// For verification, and to prevent the compiler from optimizing
 		// all work out, we interrogate the returned macro_xs_vector array
@@ -85,7 +135,8 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	*vhash_result = verification;
 }
 
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles ) 
+//void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles ) 
+void calculate_macro_xs( double * macro_xs, int mat, double E, int doppler, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles )
 {
 	// zero out macro vector
 	for( int i = 0; i < 4; i++ )
@@ -97,10 +148,11 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int 
 		double micro_xs[4];
 		int nuc = mats[mat * max_num_nucs + i];
 
-		if( input.doppler == 1 )
-			calculate_micro_xs_doppler( micro_xs, nuc, E, input, n_windows, pseudo_K0Rs, windows, poles, max_num_windows, max_num_poles);
+		if( doppler == 1 )
+
+			calculate_micro_xs_doppler( micro_xs, nuc, E, n_windows, pseudo_K0Rs, windows, poles, max_num_windows, max_num_poles);
 		else
-			calculate_micro_xs( micro_xs, nuc, E, input, n_windows, pseudo_K0Rs, windows, poles, max_num_windows, max_num_poles);
+			calculate_micro_xs( micro_xs, nuc, E, n_windows, pseudo_K0Rs, windows, poles, max_num_windows, max_num_poles);
 
 		for( int j = 0; j < 4; j++ )
 		{
@@ -108,20 +160,20 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int 
 		}
 		// Debug
 		/*
-		printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
-		E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
-		*/
+		   printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
+		   E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
+		   */
 	}
 
 	// Debug
 	/*
-	printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
-	E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
-	*/
+	   printf("E = %.2lf, mat = %d, macro_xs[0] = %.2lf, macro_xs[1] = %.2lf, macro_xs[2] = %.2lf, macro_xs[3] = %.2lf\n",
+	   E, mat, macro_xs[0], macro_xs[1], macro_xs[2], macro_xs[3] );
+	   */
 }
 
 // No Temperature dependence (i.e., 0K evaluation)
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles)
+void calculate_micro_xs( double * micro_xs, int nuc, double E, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles)
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -137,7 +189,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, int 
 
 	// Calculate sigTfactors
 	RSComplex sigTfactors[4]; // Of length input.numL, which is always 4
-	calculate_sig_T(nuc, E, input, pseudo_K0RS, sigTfactors );
+	calculate_sig_T(nuc, E, pseudo_K0RS, sigTfactors );
 
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = windows[nuc * max_num_windows + window];
@@ -172,7 +224,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, int 
 // Temperature Dependent Variation of Kernel
 // (This involves using the Complex Faddeeva function to
 // Doppler broaden the poles within the window)
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles )
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles )
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -188,7 +240,7 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 
 	// Calculate sigTfactors
 	RSComplex sigTfactors[4]; // Of length input.numL, which is always 4
-	calculate_sig_T(nuc, E, input, pseudo_K0RS, sigTfactors );
+	calculate_sig_T(nuc, E, pseudo_K0RS, sigTfactors );
 
 	// Calculate contributions from window "background" (i.e., poles outside window (pre-calculated)
 	Window w = windows[nuc * max_num_windows + window];
@@ -262,13 +314,13 @@ int pick_mat( uint64_t * seed )
 	return 0;
 }
 
-void calculate_sig_T( int nuc, double E, Input input, double * pseudo_K0RS, RSComplex * sigTfactors )
+void calculate_sig_T( int nuc, double E, double * pseudo_K0RS, RSComplex * sigTfactors )
 {
 	double phi;
 
 	for( int i = 0; i < 4; i++ )
 	{
-		phi = pseudo_K0RS[nuc * input.numL + i] * sqrt(E);
+		phi = pseudo_K0RS[nuc * 4 + i] * sqrt(E);
 
 		if( i == 1 )
 			phi -= - atan( phi );
@@ -472,11 +524,11 @@ double c_abs( RSComplex A)
 // if the code is working correctly or not.
 double fast_exp(double x)
 {
-  x = 1.0 + x * 0.000244140625;
-  x *= x; x *= x; x *= x; x *= x;
-  x *= x; x *= x; x *= x; x *= x;
-  x *= x; x *= x; x *= x; x *= x;
-  return x;
+	x = 1.0 + x * 0.000244140625;
+	x *= x; x *= x; x *= x; x *= x;
+	x *= x; x *= x; x *= x; x *= x;
+	x *= x; x *= x; x *= x; x *= x;
+	return x;
 }
 
 // Implementation based on:
