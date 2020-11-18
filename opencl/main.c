@@ -38,9 +38,6 @@ int main(int argc, char * argv[])
 	// =====================================================================
 	// Cross Section (XS) Parallel Lookup Simulation Begins
 	// =====================================================================
-	border_print();
-	center_print("SIMULATION", 79);
-	border_print();
 
 	unsigned long vhash = 0;
 

@@ -7,9 +7,11 @@
 #include<stdint.h>
 #include<float.h>
 #include<assert.h>
-#define CL_TARGET_OPENCL_VERSION 200
+#define CL_TARGET_OPENCL_VERSION 120
 #include <CL/cl.h>
 #define MAX_SOURCE_SIZE (0x100000)
+
+#include "cl_utils.h"
 
 #define PI 3.14159265359
 
@@ -39,6 +41,8 @@ typedef struct{
 	int particles;
 	int simulation_method;
 	int kernel_id;
+  int platform_id;
+  int device_id;
 } Input;
 
 typedef struct{

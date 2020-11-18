@@ -25,6 +25,8 @@ typedef struct{
 	int particles;
 	int simulation_method;
 	int kernel_id;
+  int platform_id;
+  int device_id;
 } Input;
 
 typedef struct{

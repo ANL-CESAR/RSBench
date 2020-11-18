@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER  = ibm
+COMPILER  = intel
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
@@ -34,6 +34,16 @@ CFLAGS := -std=gnu99 -Wall
 ifeq ($(COMPILER),gnu)
   CC = gcc
   CFLAGS += -fopenmp -ffast-math -flto
+endif
+
+# Intel Compiler
+ifeq ($(COMPILER),intel)
+  CC = icx 
+  CFLAGS += -fiopenmp -fopenmp-targets=spir64 -D__STRICT_ANSI__ 
+  # Optimization Flags
+  ifeq ($(OPTIMIZE),yes)
+    CFLAGS += -O3
+  endif
 endif
 
 # Clang-ykt compiler Targeting P100

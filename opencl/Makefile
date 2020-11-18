@@ -20,7 +20,7 @@ io.c \
 init.c \
 material.c \
 utils.c\
-CLutils.c
+cl_utils.c
 
 obj = $(source:.c=.o)
 
@@ -61,17 +61,17 @@ endif
 # Targets to Build
 #===============================================================================
 
-$(program): $(obj) rsbench.h Makefile
+$(program): $(obj) rsbench.h cl_utils.h Makefile
 	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
 
-%.o: %.c rsbench.h Makefile
+%.o: %.c rsbench.h cl_utils.h Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -rf rsbench $(obj)
 
 edit:
-	vim -p $(source) kernel.cl rsbench.h
+	vim -p $(source) kernel.cl rsbench.h cl_utils.h
 
 run:
 	./rsbench
