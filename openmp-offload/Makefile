@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER  = intel
+COMPILER  = aomp
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
@@ -34,6 +34,12 @@ CFLAGS := -std=gnu99 -Wall
 ifeq ($(COMPILER),gnu)
   CC = gcc
   CFLAGS += -fopenmp -ffast-math -flto
+endif
+
+# aomp Compiler
+ifeq ($(COMPILER),aomp)
+  CC = clang
+  CFLAGS += -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx906
 endif
 
 # Intel Compiler
