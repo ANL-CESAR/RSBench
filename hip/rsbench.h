@@ -8,7 +8,6 @@
 #include<float.h>
 #include<assert.h>
 #include<hip/hip_runtime.h>
-//#include <thrust/reduce.h>
 #include <chrono> 
 
 #define PI 3.14159265359

@@ -290,6 +290,7 @@ int validate_and_print_results(Input input, double runtime, unsigned long vhash,
 	int lookups_per_sec = (int) ((double) lookups / runtime);
 	int sim_only_lookups_per_sec = (int) ((double) lookups/ (runtime-kernel_init_time));
 
+  printf("NOTE: Timings are estimated -- use nvprof/nsys/iprof/rocprof for formal analysis\n");
 	printf("Total Time Statistics (SYCL+OpenCL Init / JIT Compilation + Simulation Kernel)\n");
 	printf("Runtime:               %.3lf seconds\n", runtime);
 	printf("Lookups:               "); fancy_int(lookups);

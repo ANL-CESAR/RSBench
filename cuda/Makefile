@@ -6,7 +6,7 @@ COMPILER    = nvidia
 OPTIMIZE    = yes
 DEBUG       = no
 PROFILE     = no
-SM_VERSION  = 70
+SM_VERSION  = 80
 
 #===============================================================================
 # Program name & source code list
@@ -31,10 +31,10 @@ obj = $(source:.cu=.o)
 # Standard Flags
 CFLAGS := 
 
-# Regular gcc Compiler
+# NVIDIA Compiler
 ifeq ($(COMPILER),nvidia)
   CC = nvcc
-  CFLAGS += -Xcompiler -Wall -Xcompiler -O3 -arch=sm_$(SM_VERSION) -std=c++11
+  CFLAGS += -Xcompiler -Wall -Xcompiler -O3 -arch=sm_$(SM_VERSION) -std=c++14
 endif
 
 # Linker Flags

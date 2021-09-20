@@ -19,8 +19,8 @@ void run_event_based_simulation(Input input, SimulationData GSD, unsigned long *
 	////////////////////////////////////////////////////////////////////////////////
 	printf("Running baseline event-based simulation on device...\n");
 
-	int nthreads = 32;
-	int nblocks = ceil( (double) input.lookups / 32.0);
+	int nthreads = 256;
+	int nblocks = ceil( (double) input.lookups / (double) nthreads);
 
 	xs_lookup_kernel_baseline<<<nblocks, nthreads>>>( input, GSD );
 	gpuErrchk( cudaPeekAtLastError() );

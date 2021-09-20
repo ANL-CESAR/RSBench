@@ -20,8 +20,8 @@ void run_event_based_simulation(Input input, SimulationData GSD, unsigned long *
 	////////////////////////////////////////////////////////////////////////////////
 	printf("Running baseline event-based simulation on device...\n");
 
-	int nthreads = 32;
-	int nblocks = ceil( (double) input.lookups / 32.0);
+	int nthreads = 256;
+	int nblocks = ceil( (double) input.lookups / (double) nthreads);
 
 	hipLaunchKernelGGL(xs_lookup_kernel_baseline, dim3(nblocks), dim3(nthreads), 0, 0,  input, GSD );
 	gpuErrchk( hipPeekAtLastError() );
@@ -32,19 +32,13 @@ void run_event_based_simulation(Input input, SimulationData GSD, unsigned long *
 	////////////////////////////////////////////////////////////////////////////////
 	printf("Reducing verification results...\n");
 
-size_t sz = input.lookups * sizeof(unsigned long);
+  size_t sz = input.lookups * sizeof(unsigned long);
   unsigned long * v = (unsigned long *) malloc(sz);
-	gpuErrchk( hipMemcpy(v, GSD.verification, sz, hipMemcpyDeviceToHost) );
+  gpuErrchk( hipMemcpy(v, GSD.verification, sz, hipMemcpyDeviceToHost) );
 
-unsigned long verification_scalar = 0;
+  unsigned long verification_scalar = 0;
   for( int i =0; i < input.lookups; i++ )
     verification_scalar += v[i];
-
-/*
-	unsigned long verification_scalar = thrust::reduce(thrust::device, GSD.verification, GSD.verification + input.lookups, 0);
-	gpuErrchk( hipPeekAtLastError() );
-	gpuErrchk( hipDeviceSynchronize() );
-*/
 
 	*vhash_result = verification_scalar;
 }

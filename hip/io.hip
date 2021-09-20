@@ -288,6 +288,7 @@ void print_input_summary(Input input)
 
 int validate_and_print_results(Input input, double runtime, unsigned long vhash)
 {
+  printf("NOTE: Timings are estimated -- use nvprof/nsys/iprof/rocprof for formal analysis\n");
 	printf("Runtime:               %.3lf seconds\n", runtime);
 	int lookups = 0;
 	if( input.simulation_method == HISTORY_BASED )

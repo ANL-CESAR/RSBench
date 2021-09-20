@@ -15,7 +15,7 @@
 void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result )
 {
 	printf("Beginning baseline event based simulation on device...\n");
-	unsigned long verification = 0;
+	unsigned long long * verification = (unsigned long long *) malloc(input.lookups * sizeof(unsigned long long));
 
 	int offloaded_to_device = 0;
 
@@ -34,7 +34,7 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	map(to:data.max_num_poles)\
 	map(to:data.max_num_windows)\
 	map(tofrom:offloaded_to_device)\
-	reduction(+:verification)
+  map(from:verification[:input.lookups])
 	for( int i = 0; i < input.lookups; i++ )
 	{
 		// Set the initial seed value
@@ -68,12 +68,17 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 				max_idx = x;
 			}
 		}
-		verification += max_idx+1;
+		verification[i] = max_idx+1;
 
 		// Check if we are currently running on the device or not
 		if( i == 0 )
 			offloaded_to_device = !omp_is_initial_device();
 	}
+  
+  // Reduce validation hash on the host
+  unsigned long long validation_hash = 0;
+	for( int i = 0; i < input.lookups; i++ )
+    validation_hash += verification[i];
 
 	// Print if kernel actually ran on the device
 	if( offloaded_to_device )
@@ -81,7 +86,7 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	else
 		printf( "NOTE - Kernel ran on the host!\n" );
 
-	*vhash_result = verification;
+	*vhash_result = validation_hash;
 }
 
 void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles ) 

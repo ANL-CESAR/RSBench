@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER  = aomp
+COMPILER  = llvm
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
@@ -30,49 +30,38 @@ obj = $(source:.c=.o)
 # Standard Flags
 CFLAGS := -std=gnu99 -Wall
 
-# gcc Compiler
-ifeq ($(COMPILER),gnu)
-  CC = gcc
-  CFLAGS += -fopenmp -ffast-math -flto
-endif
-
-# aomp Compiler
-ifeq ($(COMPILER),aomp)
-  CC = clang
-  CFLAGS += -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx906
-endif
+# Linker Flags
+LDFLAGS = -lm
 
 # Intel Compiler
 ifeq ($(COMPILER),intel)
   CC = icx 
   CFLAGS += -fiopenmp -fopenmp-targets=spir64 -D__STRICT_ANSI__ 
-  # Optimization Flags
-  ifeq ($(OPTIMIZE),yes)
-    CFLAGS += -O3
-  endif
 endif
 
-# Clang-ykt compiler Targeting P100
-ifeq ($(COMPILER),clang)
+# LLVM Compiler Targeting A100 -- Change SM Level to Target Other GPUs
+ifeq ($(COMPILER),llvm)
   CC = clang
-  CFLAGS += -fopenmp -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_60
-  ifeq ($(OPTIMIZE),yes)
-    #CFLAGS += -O3
-    CFLAGS += -Ofast
-  endif
+  CFLAGS += -fopenmp -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_80
 endif
 
-# IBM XL Compiler Targeting K80
+# IBM XL Compiler
 ifeq ($(COMPILER),ibm)
   CC = xlc_r
   CFLAGS += -qsmp=omp -qoffload
-  ifeq ($(OPTIMIZE),yes)
-    CFLAGS += -O2 # O3 gets the wrong verification answer
-  endif
 endif
 
-# Linker Flags
-LDFLAGS = -lm
+# NVIDIA Compiler Targeting A100 -- Change SM Level to Target Other GPUs
+ifeq ($(COMPILER),nvidia)
+  CC = nvc
+  CFLAGS += -mp=gpu -Minfo=mp -gpu=cc80
+endif
+
+# AOMP Targeting MI100 -- Change march to Target Other GPUs
+ifeq ($(COMPILER),amd)
+  CC = clang
+  CFLAGS += -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx908
+endif
 
 # Debug Flags
 ifeq ($(DEBUG),yes)
