@@ -30,6 +30,7 @@ int main(int argc, char * argv[])
 	start = get_time();
 	
 	SimulationData SD = initialize_simulation( input );
+	SimulationData GSD = move_simulation_data_to_device( input, SD );
 
 	stop = get_time();
 
@@ -51,7 +52,7 @@ int main(int argc, char * argv[])
 	if( input.simulation_method == EVENT_BASED )
 	{
 		if( input.kernel_id == 0 )
-			run_event_based_simulation(input, SD, &vhash );
+			run_event_based_simulation(input, GSD, &vhash );
 		else
 		{
 			printf("Error: No kernel ID %d found!\n", input.kernel_id);

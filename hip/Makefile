@@ -2,10 +2,10 @@
 # User Options
 #===============================================================================
 
-CC        = llvm
-OPTIMIZE  = yes
-DEBUG     = no
-PROFILE   = no
+COMPILER    = amd
+OPTIMIZE    = yes
+DEBUG       = no
+PROFILE     = no
 
 #===============================================================================
 # Program name & source code list
@@ -14,42 +14,35 @@ PROFILE   = no
 program = rsbench
 
 source = \
-main.cpp \
-simulation.cpp\
-io.cpp \
-init.cpp \
-material.cpp \
-utils.cpp
+main.hip \
+simulation.hip\
+io.hip \
+init.hip \
+material.hip \
+utils.hip
 
-obj = $(source:.cpp=.o)
+obj = $(source:.hip=.o)
 
 #===============================================================================
 # Sets Flags
 #===============================================================================
 
 # Standard Flags
-CFLAGS := -std=c++14 -Wall
+CFLAGS := 
+
+# AMD
+ifeq ($(COMPILER),amd)
+  CC = hipcc
+  CFLAGS += -std=c++14
+endif
 
 # Linker Flags
 LDFLAGS = -lm
 
-# Codeplay Compiler
-ifeq ($(CC),codeplay)
-  CC = compute++
-  CFLAGS += -sycl -sycl-driver
-  LDFLAGS += -lComputeCpp
-endif
-
-ifeq ($(CC),llvm)
-  CC = clang++
-  CFLAGS += -fsycl
-  LDFLAGS += -lOpenCL
-endif
-
 # Debug Flags
 ifeq ($(DEBUG),yes)
-  CFLAGS += -g
-  LDFLAGS  += -g
+  CFLAGS += -g -G
+  LDFLAGS += -g -G
 endif
 
 # Profiling Flags
@@ -70,7 +63,7 @@ endif
 $(program): $(obj) rsbench.h Makefile
 	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
 
-%.o: %.cpp rsbench.h Makefile
+%.o: %.hip rsbench.h Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

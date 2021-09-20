@@ -246,10 +246,17 @@ void print_CLI_error(void)
 
 void print_input_summary(Input input)
 {
+	printf("Programming Model:           HIP\n");
+	// Print CUDA device name
+	hipDeviceProp_t prop;
+	int device;
+	hipGetDevice(&device);
+	hipGetDeviceProperties ( &prop, device );
+	printf("HIP Device:                  %s\n", prop.name); 
+
 	// Calculate Estimate of Memory Usage
 	size_t mem = get_mem_estimate(input);
 
-	printf("Programming Model:           SYCL\n");
 	if( input.simulation_method == EVENT_BASED )
 		printf("Simulation Method:           Event Based\n");
 	else
@@ -279,27 +286,17 @@ void print_input_summary(Input input)
 	printf("Est. Memory Usage (MB):      %.1lf\n", mem / 1024.0 / 1024.0);
 }
 
-int validate_and_print_results(Input input, double runtime, unsigned long vhash, double kernel_init_time)
+int validate_and_print_results(Input input, double runtime, unsigned long vhash)
 {
+  printf("NOTE: Timings are estimated -- use nvprof/nsys/iprof/rocprof for formal analysis\n");
+	printf("Runtime:               %.3lf seconds\n", runtime);
 	int lookups = 0;
 	if( input.simulation_method == HISTORY_BASED )
 		lookups = input.lookups*input.particles;
 	else
 		lookups = input.lookups;
-	
-	int lookups_per_sec = (int) ((double) lookups / runtime);
-	int sim_only_lookups_per_sec = (int) ((double) lookups/ (runtime-kernel_init_time));
-
-  printf("NOTE: Timings are estimated -- use nvprof/nsys/iprof/rocprof for formal analysis\n");
-	printf("Total Time Statistics (SYCL+OpenCL Init / JIT Compilation + Simulation Kernel)\n");
-	printf("Runtime:               %.3lf seconds\n", runtime);
 	printf("Lookups:               "); fancy_int(lookups);
-	printf("Lookups/s:             ");
-	fancy_int(lookups_per_sec);
-	printf("Simulation Kernel Only Statistics\n");
-	printf("Runtime:               %.3lf seconds\n", runtime-kernel_init_time);
-	printf("Lookups/s:             ");
-	fancy_int(sim_only_lookups_per_sec);
+	printf("Lookups/s:             "); fancy_int((double) lookups / (runtime));
 
 	int is_invalid = 1;
 
