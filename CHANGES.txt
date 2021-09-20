@@ -1,4 +1,17 @@
 =====================================================================
+NEW IN VERSION 13
+=====================================================================
+- (Feature) Added HIP port of RSBench. This port is based closely
+  off the CUDA version, and was generated using an automated code
+  conversion utility with only a few manual changes required.
+
+- Fixed threads per block for CUDA/HIP/OpenCL to all use 256 threads.
+  Other models will select this value themselves, but it may be
+  worth testing configurations maually with those models as well.
+
+- Added a warning about GPU timers to output.
+
+=====================================================================
 NEW IN VERSION 12
 =====================================================================
 - (Feature) Ports of RSBench in a variety of accelerator oriented
