@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.com/ANL-CESAR/RSBench.svg?branch=master)](https://travis-ci.com/ANL-CESAR/RSBench)
 [![Published in Proceedings of EASC 2014](https://img.shields.io/badge/Published%20in-Proceedings%20of%20EASC%202014-167DA4.svg)](https://doi.org/10.1007/978-3-319-15976-8_3)
 
-RSBench is a mini-app representing a key computational kernel of the Monte Carlo neutron transport algorithm. Specifically, RSBench represents the multipole method of perfoming continuous energy macroscopic neutron cross section lookups. The mulitpole method is a recently developed strategy for building microscopic cross section data "on-the-fly" that requires orders of magnitude less memory storage as compared to traditional methods (e.g., those represented in [XSBench](https://github.com/ANL-CESAR/XSBench)). RSBench serves as a useful performance stand-in for full neutron transport applications like [OpenMC](https://github.com/openmc-dev/openmc) that support multipole cross section representations.
+RSBench is a mini-app representing a key computational kernel of the Monte Carlo neutron transport algorithm. Specifically, RSBench represents the multipole method of performing continuous energy macroscopic neutron cross section lookups. The mulitpole method is a recently developed strategy for building microscopic cross section data "on-the-fly" that requires orders of magnitude less memory storage as compared to traditional methods (e.g., those represented in [XSBench](https://github.com/ANL-CESAR/XSBench)). RSBench serves as a useful performance stand-in for full neutron transport applications like [OpenMC](https://github.com/openmc-dev/openmc) that support multipole cross section representations.
 
 ## Table of Contents
 
