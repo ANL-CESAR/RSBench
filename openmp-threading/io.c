@@ -87,7 +87,9 @@ Input read_CLI( int argc, char * argv[] )
 	input.doppler = 1;
 	// defaults to baseline simulation kernel
 	input.kernel_id = 0;
-	
+        // default to no binary read/write
+	input.binary_mode = NONE;
+
 	int default_lookups = 1;
 	int default_particles = 1;
 
@@ -191,6 +193,22 @@ Input read_CLI( int argc, char * argv[] )
 		{
 			if( ++i < argc )
 				input.avg_n_poles = atoi(argv[i]);
+			else
+				print_CLI_error();
+		}
+                // binary mode (-b)
+		else if( strcmp(arg, "-b") == 0 )
+		{
+			char * binary_mode;
+			if( ++i < argc )
+				binary_mode = argv[i];
+			else
+				print_CLI_error();
+
+			if( strcmp(binary_mode, "read") == 0 )
+				input.binary_mode = READ;
+			else if( strcmp(binary_mode, "write") == 0 )
+				input.binary_mode = WRITE;
 			else
 				print_CLI_error();
 		}
@@ -338,4 +356,65 @@ int validate_and_print_results(Input input, double runtime, unsigned long vhash)
 	}
 
 	return is_invalid;
+}
+
+void binary_write( Input in, SimulationData SD )
+{
+	char * fname = "RS_data.dat";
+	printf("Writing all data structures to binary file %s...\n", fname);
+	FILE * fp = fopen(fname, "w");
+
+	// Write SimulationData Object. Include pointers, even though we won't be using them.
+	fwrite(&SD, sizeof(SimulationData), 1, fp);
+
+	// Write heap arrays in SimulationData Object
+        fwrite(SD.n_poles,          sizeof(int),    SD.length_n_poles, fp);
+        fwrite(SD.n_windows,        sizeof(int),    SD.length_n_windows, fp);
+        fwrite(SD.poles,            sizeof(Pole),   SD.length_poles, fp);
+        fwrite(SD.windows,          sizeof(Window), SD.length_windows, fp);
+        fwrite(SD.pseudo_K0RS,      sizeof(double), SD.length_pseudo_K0RS, fp);
+        fwrite(SD.num_nucs,         sizeof(int),    SD.length_num_nucs, fp);
+        fwrite(SD.mats,             sizeof(int),    SD.length_mats, fp);
+        fwrite(SD.concs,            sizeof(double), SD.length_concs, fp);
+
+	fclose(fp);
+}
+
+SimulationData binary_read( Input in )
+{
+	SimulationData SD;
+
+	char * fname = "RS_data.dat";
+	printf("Reading all data structures from binary file %s...\n", fname);
+
+	FILE * fp = fopen(fname, "r");
+	assert(fp != NULL);
+
+	// Read SimulationData Object. Include pointers, even though we won't be using them.
+	fread(&SD, sizeof(SimulationData), 1, fp);
+
+	// Allocate space for arrays on heap
+        SD.n_poles =          malloc(SD.length_n_poles * sizeof(int));
+        SD.n_windows =        malloc(SD.length_n_windows * sizeof(int));
+        SD.poles =            malloc(SD.length_poles*sizeof(Pole));
+        SD.windows =          malloc(SD.length_windows*sizeof(Window));
+        SD.pseudo_K0RS =      malloc(SD.length_pseudo_K0RS*sizeof(double));
+        SD.num_nucs =         malloc(SD.length_num_nucs*sizeof(int));
+        SD.mats =             malloc(SD.length_mats*sizeof(int));
+        SD.concs =            malloc(SD.length_concs*sizeof(double));
+        SD.mat_samples =      malloc(SD.length_mat_samples*sizeof(int));
+
+	// Read heap arrays into SimulationData Object
+        fread(SD.n_poles,          sizeof(int),    SD.length_n_poles, fp);
+        fread(SD.n_windows,        sizeof(int),    SD.length_n_windows, fp);
+        fread(SD.poles,            sizeof(Pole),   SD.length_poles, fp);
+        fread(SD.windows,          sizeof(Window), SD.length_windows, fp);
+        fread(SD.pseudo_K0RS,      sizeof(double), SD.length_pseudo_K0RS, fp);
+        fread(SD.num_nucs,         sizeof(int),    SD.length_num_nucs, fp);
+        fread(SD.mats,             sizeof(int),    SD.length_mats, fp);
+        fread(SD.concs,            sizeof(double), SD.length_concs, fp);
+
+	fclose(fp);
+
+	return SD;
 }
