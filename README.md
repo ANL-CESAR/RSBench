@@ -85,7 +85,7 @@ For non-default settings, RSBench supports the following command line options:
 |-------------|------------|---------------|------------|
 |-t           |# of OpenMP threads| integer value | System Default|
 |-m           |Simulation method| history, event| history|
-|-s | Problem Size | small, large, XL, XXL | large|
+|-s | Problem Size | small, large | large|
 -p | # of particle histories (if running using "history" method)| integer value | 500,000 |
 -l | # of Cross-section (XS) lookups. If using using history based method, this is lookups per particle history. If using event-based method, this is total lookups. | integer value | (History: 34) (Event: 17,000,000) |
 -p | # of avg poles per nuclide | integer value | 1,000 |
