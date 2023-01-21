@@ -14,12 +14,13 @@
 
 void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result )
 {
+	int i = 0;
 	printf("Beginning baseline event based simulation...\n");
 	unsigned long verification = 0;
 
 	// Main simulation loop over macroscopic cross section lookups
 	#pragma omp parallel for schedule(dynamic, 1000) default(none) shared(input, data) reduction(+:verification)
-	for( int i = 0; i < input.lookups; i++ )
+	for( i = 0; i < input.lookups; i++ )
 	{
 		// Set the initial seed value
 		uint64_t seed = STARTING_SEED;	
@@ -60,12 +61,13 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 
 void run_history_based_simulation(Input input, SimulationData data, unsigned long * vhash_result )
 {
+	int p = 0;
 	printf("Beginning history based simulation...\n");
 	unsigned long verification = 0;
 
 	// Main simulation loop over particle histories
 	#pragma omp parallel for schedule(dynamic, 1000) default(none) shared(input, data) reduction(+:verification)
-	for( int p = 0; p < input.particles; p++ )
+	for( p = 0; p < input.particles; p++ )
 	{
 		// Set the initial seed value
 		uint64_t seed = STARTING_SEED;	
@@ -692,6 +694,7 @@ void run_event_based_simulation_optimization_1(Input in, SimulationData SD, unsi
 	size_t sz;
 	size_t total_sz = 0;
 	double start, stop;
+	int i, m;
 
 	sz = in.lookups * sizeof(double);
 	SD.p_energy_samples = (double *) malloc(sz);
@@ -714,7 +717,7 @@ void run_event_based_simulation_optimization_1(Input in, SimulationData SD, unsi
 	////////////////////////////////////////////////////////////////////////////////
 	printf("Sampling event data...\n");
 	#pragma omp parallel for schedule(dynamic, 1000)
-	for( int i = 0; i < in.lookups; i++ )
+	for( i = 0; i < in.lookups; i++ )
 	{
 		// Set the initial seed value
 		uint64_t seed = STARTING_SEED;	
@@ -780,10 +783,10 @@ void run_event_based_simulation_optimization_1(Input in, SimulationData SD, unsi
 
 	// Individual Materials
 	offset = 0;
-	for( int m = 0; m < 12; m++ )
+	for( m = 0; m < 12; m++ )
 	{
 		#pragma omp parallel for schedule(dynamic,100) reduction(+:verification)
-		for( int i = offset; i < offset + num_samples_per_mat[m]; i++)
+		for( i = offset; i < offset + num_samples_per_mat[m]; i++)
 		{
 			// load pre-sampled energy and material for the particle
 			double E = SD.p_energy_samples[i];
