@@ -32,12 +32,25 @@ int main(int argc, char * argv[])
 	
 	start = get_time();
 	
-	SimulationData SD = initialize_simulation( input );
+	SimulationData SD;
+
+	// If read from file mode is selected, skip initialization and load
+	// all simulation data structures from file instead
+	if( input.binary_mode == READ )
+		SD = binary_read(input);
+	else
+		SD = initialize_simulation( input );
+
 
 	stop = get_time();
 
 	printf("Initialization Complete. (%.2lf seconds)\n", stop-start);
-	
+
+	// If writing from file mode is selected, write all simulation data
+	// structures to file
+	if( input.binary_mode == WRITE )
+		binary_write(input, SD);
+
 	// =====================================================================
 	// Cross Section (XS) Parallel Lookup Simulation Begins
 	// =====================================================================

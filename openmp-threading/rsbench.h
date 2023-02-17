@@ -6,6 +6,7 @@
 #include<stdint.h>
 #include<float.h>
 #include<omp.h>
+#include<assert.h>
 
 #define OPENMP
 
@@ -16,6 +17,11 @@ typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
 
 #define HISTORY_BASED 1
 #define EVENT_BASED 2
+
+// Binary Mode Type
+#define NONE 0
+#define READ 1
+#define WRITE 2
 
 #define STARTING_SEED 1070
 #define INITIALIZATION_SEED 42
@@ -36,6 +42,7 @@ typedef struct{
 	int doppler;
 	int particles;
 	int simulation_method;
+        int binary_mode;
 	int kernel_id;
 } Input;
 
@@ -90,6 +97,8 @@ Input read_CLI( int argc, char * argv[] );
 void print_CLI_error(void);
 void print_input_summary(Input input);
 int validate_and_print_results(Input input, double runtime, unsigned long vhash);
+void binary_write( Input in, SimulationData SD );
+SimulationData binary_read( Input in );
 
 // init.c
 SimulationData initialize_simulation( Input input );
