@@ -8,6 +8,9 @@
 #include<assert.h>
 #include<cuda.h>
 #include <thrust/reduce.h>
+#include <thrust/count.h>
+#include <thrust/execution_policy.h>
+#include <thrust/sort.h>
 #include <chrono> 
 
 #define PI 3.14159265359
