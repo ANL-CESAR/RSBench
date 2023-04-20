@@ -14,14 +14,14 @@ PROFILE     = no
 program = rsbench
 
 source = \
-main.hip \
-simulation.hip\
-io.hip \
-init.hip \
-material.hip \
-utils.hip
+main.cpp \
+simulation.cpp\
+io.cpp \
+init.cpp \
+material.cpp \
+utils.cpp
 
-obj = $(source:.hip=.o)
+obj = $(source:.cpp=.o)
 
 #===============================================================================
 # Sets Flags
@@ -63,7 +63,7 @@ endif
 $(program): $(obj) rsbench.h Makefile
 	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
 
-%.o: %.hip rsbench.h Makefile
+%.o: %.cpp rsbench.h Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
