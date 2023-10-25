@@ -21,7 +21,7 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 
 	// Main simulation loop over macroscopic cross section lookups
 
-	#pragma omp target teams distribute parallel for\
+	//#pragma omp target teams distribute parallel for\
 	map(to:data.n_poles[:data.length_n_poles])\
 	map(to:data.n_windows[:data.length_n_windows])\
 	map(to:data.poles[:data.length_poles])\
@@ -35,6 +35,20 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	map(to:data.max_num_windows)\
 	map(tofrom:offloaded_to_device)\
   map(from:verification[:input.lookups])
+  #pragma acc parallel loop \
+	copyin(data.n_poles[:data.length_n_poles])\
+	copyin(data.n_windows[:data.length_n_windows])\
+	copyin(data.poles[:data.length_poles])\
+	copyin(data.windows[:data.length_windows])\
+	copyin(data.pseudo_K0RS[:data.length_pseudo_K0RS])\
+	copyin(data.num_nucs[:data.length_num_nucs])\
+	copyin(data.mats[:data.length_mats])\
+	copyin(data.concs[:data.length_concs])\
+	copyin(data.max_num_nucs)\
+	copyin(data.max_num_poles)\
+	copyin(data.max_num_windows)\
+	copy(offloaded_to_device)\
+  copyout(verification[:input.lookups])
 	for( int i = 0; i < input.lookups; i++ )
 	{
 		// Set the initial seed value

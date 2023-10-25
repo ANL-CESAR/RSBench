@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER  = llvm
+COMPILER  = gcc
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
@@ -36,13 +36,19 @@ LDFLAGS = -lm
 # Intel Compiler
 ifeq ($(COMPILER),intel)
   CC = icx 
-  CFLAGS += -fiopenmp -fopenmp-targets=spir64 -D__STRICT_ANSI__ 
+  CFLAGS += -fopenacc -fiopenmp -fopenmp-targets=spir64 -D__STRICT_ANSI__ 
+endif
+
+# GCC Compiler Targeting A100 -- Change SM Level to Target Other GPUs
+ifeq ($(COMPILER),gcc)
+  CC = gcc
+  CFLAGS += -fopenacc
 endif
 
 # LLVM Compiler Targeting A100 -- Change SM Level to Target Other GPUs
 ifeq ($(COMPILER),llvm)
   CC = clang
-  CFLAGS += -fopenmp -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_80
+  CFLAGS += -fopenacc -fopenmp -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_80
 endif
 
 # IBM XL Compiler
