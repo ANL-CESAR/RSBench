@@ -85,8 +85,10 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 		verification[i] = max_idx+1;
 
 		// Check if we are currently running on the device or not
-		if( i == 0 )
-			offloaded_to_device = !omp_is_initial_device();
+		if( i == 0 ) {
+			//offloaded_to_device = !omp_is_initial_device();
+      offloaded_to_device = 1;
+    }
 	}
   
   // Reduce validation hash on the host

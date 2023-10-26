@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER  = gcc
+COMPILER  = nvidia
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
@@ -43,6 +43,7 @@ endif
 ifeq ($(COMPILER),gcc)
   CC = gcc
   CFLAGS += -fopenacc
+	export ACC_DEVICE_TYPE=nvidia
 endif
 
 # LLVM Compiler Targeting A100 -- Change SM Level to Target Other GPUs
@@ -60,7 +61,7 @@ endif
 # NVIDIA Compiler Targeting A100 -- Change SM Level to Target Other GPUs
 ifeq ($(COMPILER),nvidia)
   CC = nvc
-  CFLAGS += -mp=gpu -Minfo=mp -gpu=cc80
+	CFLAGS += -acc -Minfo=accel -gpu=cc80
 endif
 
 # AOMP Targeting MI100 -- Change march to Target Other GPUs
