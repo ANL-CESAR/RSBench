@@ -35,7 +35,7 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	map(to:data.max_num_windows)\
 	map(tofrom:offloaded_to_device)\
   map(from:verification[:input.lookups])
-  #pragma acc parallel loop \
+  #pragma acc parallel loop gang \
   copyin(data)\
 	copyin(data.n_poles[:data.length_n_poles])\
 	copyin(data.n_windows[:data.length_n_windows])\
@@ -112,6 +112,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int 
 		macro_xs[i] = 0;
 
 	// for nuclide in mat
+#pragma acc loop worker
 	for( int i = 0; i < num_nucs[mat]; i++ )
 	{
 		double micro_xs[4];
@@ -166,6 +167,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, int 
 	sigF = E * w.F;
 
 	// Loop over Poles within window, add contributions
+#pragma acc loop vector
 	for( int i = w.start; i < w.end; i++ )
 	{
 		RSComplex PSIIKI;
@@ -219,6 +221,7 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 	double dopp = 0.5;
 
 	// Loop over Poles within window, add contributions
+#pragma acc loop vector
 	for( int i = w.start; i < w.end; i++ )
 	{
 		Pole pole = poles[nuc * max_num_poles + i];
