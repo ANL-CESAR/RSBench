@@ -36,6 +36,7 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	map(tofrom:offloaded_to_device)\
   map(from:verification[:input.lookups])
   #pragma acc parallel loop \
+  copyin(data)\
 	copyin(data.n_poles[:data.length_n_poles])\
 	copyin(data.n_windows[:data.length_n_windows])\
 	copyin(data.poles[:data.length_poles])\
@@ -86,8 +87,7 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 
 		// Check if we are currently running on the device or not
 		if( i == 0 ) {
-			//offloaded_to_device = !omp_is_initial_device();
-      offloaded_to_device = 1;
+      offloaded_to_device = !acc_on_device(acc_device_host);
     }
 	}
   

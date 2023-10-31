@@ -5,7 +5,7 @@
 #include<string.h>
 #include<stdint.h>
 #include<float.h>
-#include<omp.h>
+#include<openacc.h>
 #include<assert.h>
 
 #define OPENMP
