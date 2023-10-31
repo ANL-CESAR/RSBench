@@ -20,21 +20,6 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	int offloaded_to_device = 0;
 
 	// Main simulation loop over macroscopic cross section lookups
-
-	//#pragma omp target teams distribute parallel for\
-	map(to:data.n_poles[:data.length_n_poles])\
-	map(to:data.n_windows[:data.length_n_windows])\
-	map(to:data.poles[:data.length_poles])\
-	map(to:data.windows[:data.length_windows])\
-	map(to:data.pseudo_K0RS[:data.length_pseudo_K0RS])\
-	map(to:data.num_nucs[:data.length_num_nucs])\
-	map(to:data.mats[:data.length_mats])\
-	map(to:data.concs[:data.length_concs])\
-	map(to:data.max_num_nucs)\
-	map(to:data.max_num_poles)\
-	map(to:data.max_num_windows)\
-	map(tofrom:offloaded_to_device)\
-  map(from:verification[:input.lookups])
   #pragma acc parallel loop gang \
   copyin(data)\
 	copyin(data.n_poles[:data.length_n_poles])\
