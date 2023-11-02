@@ -61,7 +61,7 @@ endif
 # NVIDIA Compiler Targeting A100 -- Change SM Level to Target Other GPUs
 ifeq ($(COMPILER),nvidia)
   CC = nvc
-	CFLAGS += -acc -Minfo=accel -gpu=cc80
+	CFLAGS += -acc -Minfo=accel -gpu=cc80 -openmp
 endif
 
 # AOMP Targeting MI100 -- Change march to Target Other GPUs
