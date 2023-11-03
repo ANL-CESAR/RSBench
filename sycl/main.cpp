@@ -47,7 +47,7 @@ int main(int argc, char * argv[])
 	// Run Simulation
 	start = get_time();
 
-	double kernel_init_time;
+	double kernel_init_time = 0;
 
 	// Run simulation
 	if( input.simulation_method == EVENT_BASED )
@@ -72,6 +72,8 @@ int main(int argc, char * argv[])
 	vhash = vhash % 999983;
 
 	printf("Simulation Complete.\n");
+
+    release_memory(SD);
 
 	// =====================================================================
 	// Print / Save Results and Exit
