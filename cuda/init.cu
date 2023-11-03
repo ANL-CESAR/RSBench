@@ -102,7 +102,32 @@ SimulationData initialize_simulation( Input input )
 	SD.pseudo_K0RS = generate_pseudo_K0RS( input, &seed );
 	SD.length_pseudo_K0RS = input.n_nuclides * input.numL;
 
+	SD.verification = (unsigned long *) malloc(input.lookups * sizeof(unsigned long));
+
 	return SD;
+}
+
+void release_memory(SimulationData SD) {
+	free(SD.num_nucs);
+	free(SD.concs);
+	free(SD.mats);
+	free(SD.n_poles);
+	free(SD.n_windows);
+	free(SD.poles);
+	free(SD.windows);
+	free(SD.pseudo_K0RS);
+}
+
+void release_device_memory(SimulationData GSD) {
+	cudaFree(GSD.num_nucs);
+	cudaFree(GSD.concs);
+	cudaFree(GSD.mats);
+	cudaFree(GSD.n_poles);
+	cudaFree(GSD.n_windows);
+	cudaFree(GSD.poles);
+	cudaFree(GSD.windows);
+	cudaFree(GSD.pseudo_K0RS);
+	cudaFree(GSD.verification);
 }
 
 int * generate_n_poles( Input input, uint64_t * seed )

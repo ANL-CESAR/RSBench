@@ -12,30 +12,46 @@
 // line argument.
 ////////////////////////////////////////////////////////////////////////////////////
 
-void run_event_based_simulation(Input input, SimulationData GSD, unsigned long * vhash_result )
-{
+void run_event_based_simulation(Input input, SimulationData SD, unsigned long * vhash_result, double * elapsed_time) {
+	double start, stop;
+	start = get_time();
+	////////////////////////////////////////////////////////////////////////////////
+	// Move Data to Device
+	////////////////////////////////////////////////////////////////////////////////
+	SimulationData GSD = move_simulation_data_to_device(input, SD);
+ 
+ 	stop = get_time();
+	printf("Initialization Complete. (%.2lf seconds)\n", stop - start);
 	////////////////////////////////////////////////////////////////////////////////
 	// Configure & Launch Simulation Kernel
 	////////////////////////////////////////////////////////////////////////////////
 	printf("Running baseline event-based simulation on device...\n");
+
+	start = get_time();
 
 	int nthreads = 256;
 	int nblocks = ceil( (double) input.lookups / (double) nthreads);
 
 	xs_lookup_kernel_baseline<<<nblocks, nthreads>>>( input, GSD );
 	gpuErrchk( cudaPeekAtLastError() );
-	gpuErrchk( cudaDeviceSynchronize() );
+	gpuErrchk(cudaMemcpy(SD.verification, GSD.verification, input.lookups * sizeof(unsigned long), cudaMemcpyDeviceToHost));
 	
 	////////////////////////////////////////////////////////////////////////////////
 	// Reduce Verification Results
 	////////////////////////////////////////////////////////////////////////////////
 	printf("Reducing verification results...\n");
 
-	unsigned long verification_scalar = thrust::reduce(thrust::device, GSD.verification, GSD.verification + input.lookups, 0);
-	gpuErrchk( cudaPeekAtLastError() );
-	gpuErrchk( cudaDeviceSynchronize() );
+	unsigned long long verification_scalar = 0;
+	for(int i = 0; i < input.lookups; i++ )
+		verification_scalar += SD.verification[i];
 
 	*vhash_result = verification_scalar;
+
+    stop = get_time();
+
+	*elapsed_time = stop - start;
+
+	release_device_memory(GSD);
 }
 
 // In this kernel, we perform a single lookup with each thread. Threads within a warp

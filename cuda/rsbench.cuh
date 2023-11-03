@@ -115,6 +115,8 @@ Pole * generate_poles( Input input, int * n_poles, uint64_t * seed, int * max_nu
 Window * generate_window_params( Input input, int * n_windows, int * n_poles, uint64_t * seed, int * max_num_windows );
 double * generate_pseudo_K0RS( Input input, uint64_t * seed );
 SimulationData move_simulation_data_to_device( Input in, SimulationData SD );
+void release_memory(SimulationData SD);
+void release_device_memory(SimulationData GSD);
 
 // material.c
 int * load_num_nucs(Input input);
@@ -127,7 +129,7 @@ size_t get_mem_estimate( Input input );
 double get_time(void);
 
 // simulation.c
-void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result );
+void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result, double * elapsed_time);
 void run_event_based_simulation_optimization_1(Input in, SimulationData GSD, unsigned long * vhash_result);
 __global__ void xs_lookup_kernel_baseline(Input in, SimulationData GSD );
 __device__ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles );
