@@ -1,10 +1,11 @@
-# No compiled code
 *.o
-*/rsbench
-
-# No batch scripts (system dependent)
-*.sh
-
-# No output files
-*.qdstrm
-*.out
+RSBench
+rsbench
+*.cpp1*
+*.cpp4*
+*.ptx
+*.cubin
+*.cudafe1*
+*.fatbin*
+*.module_id
+[Bb][Uu][Ii][Ll][Dd]*/

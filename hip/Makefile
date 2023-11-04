@@ -6,22 +6,23 @@ COMPILER    = amd
 OPTIMIZE    = yes
 DEBUG       = no
 PROFILE     = no
+OFFLOAD_ARCH ?= gfx90a
 
 #===============================================================================
 # Program name & source code list
 #===============================================================================
 
-program = rsbench
+program = RSBench
 
 source = \
-main.hip \
-simulation.hip\
-io.hip \
-init.hip \
-material.hip \
-utils.hip
+main.cpp \
+simulation.cpp\
+io.cpp \
+init.cpp \
+material.cpp \
+utils.cpp
 
-obj = $(source:.hip=.o)
+obj = $(source:.cpp=.o)
 
 #===============================================================================
 # Sets Flags
@@ -33,7 +34,7 @@ CFLAGS :=
 # AMD
 ifeq ($(COMPILER),amd)
   CC = hipcc
-  CFLAGS += -std=c++14
+  CFLAGS += -std=c++14 --offload-arch=${OFFLOAD_ARCH}
 endif
 
 # Linker Flags
@@ -63,11 +64,11 @@ endif
 $(program): $(obj) rsbench.h Makefile
 	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
 
-%.o: %.hip rsbench.h Makefile
+%.o: %.cpp rsbench.h Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf rsbench $(obj)
+	rm -rf $(program) $(obj)
 
 edit:
 	vim -p $(source) rsbench.h

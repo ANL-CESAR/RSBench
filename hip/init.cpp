@@ -1,8 +1,7 @@
-#include "rsbench.cuh"
+#include "rsbench.h"
 
 // Moves all required data structures to the GPU's memory space
-SimulationData move_simulation_data_to_device( Input in, SimulationData SD )
-{
+SimulationData move_simulation_data_to_device( Input in, SimulationData SD ) {
 	printf("Allocating and moving simulation data to GPU memory space...\n");
 
 	size_t sz;
@@ -13,55 +12,55 @@ SimulationData move_simulation_data_to_device( Input in, SimulationData SD )
 
 	// Move data to GPU memory space
 	sz = GSD.length_num_nucs * sizeof(int);
-	gpuErrchk( cudaMalloc((void **) &GSD.num_nucs, sz) );
-	gpuErrchk( cudaMemcpy(GSD.num_nucs, SD.num_nucs, sz, cudaMemcpyHostToDevice) );
+	gpuErrchk( hipMalloc((void **) &GSD.num_nucs, sz) );
+	gpuErrchk( hipMemcpy(GSD.num_nucs, SD.num_nucs, sz, hipMemcpyHostToDevice) );
 	total_sz += sz;
 
 	sz = GSD.length_concs * sizeof(double);
-	gpuErrchk( cudaMalloc((void **) &GSD.concs, sz) );
-	gpuErrchk( cudaMemcpy(GSD.concs, SD.concs, sz, cudaMemcpyHostToDevice) );
+	gpuErrchk( hipMalloc((void **) &GSD.concs, sz) );
+	gpuErrchk( hipMemcpy(GSD.concs, SD.concs, sz, hipMemcpyHostToDevice) );
 	total_sz += sz;
 
 	sz = GSD.length_mats * sizeof(int);
-	gpuErrchk( cudaMalloc((void **) &GSD.mats, sz) );
-	gpuErrchk( cudaMemcpy(GSD.mats, SD.mats, sz, cudaMemcpyHostToDevice) );
+	gpuErrchk( hipMalloc((void **) &GSD.mats, sz) );
+	gpuErrchk( hipMemcpy(GSD.mats, SD.mats, sz, hipMemcpyHostToDevice) );
 	total_sz += sz;
 
 	sz = GSD.length_n_poles * sizeof(int);
-	gpuErrchk( cudaMalloc((void **) &GSD.n_poles, sz) );
-	gpuErrchk( cudaMemcpy(GSD.n_poles, SD.n_poles, sz, cudaMemcpyHostToDevice) );
+	gpuErrchk( hipMalloc((void **) &GSD.n_poles, sz) );
+	gpuErrchk( hipMemcpy(GSD.n_poles, SD.n_poles, sz, hipMemcpyHostToDevice) );
 	total_sz += sz;
 
 	sz = GSD.length_n_windows * sizeof(int);
-	gpuErrchk( cudaMalloc((void **) &GSD.n_windows, sz) );
-	gpuErrchk( cudaMemcpy(GSD.n_windows, SD.n_windows, sz, cudaMemcpyHostToDevice) );
+	gpuErrchk( hipMalloc((void **) &GSD.n_windows, sz) );
+	gpuErrchk( hipMemcpy(GSD.n_windows, SD.n_windows, sz, hipMemcpyHostToDevice) );
 	total_sz += sz;
 
 	sz = GSD.length_poles * sizeof(Pole);
-	gpuErrchk( cudaMalloc((void **) &GSD.poles, sz) );
-	gpuErrchk( cudaMemcpy(GSD.poles, SD.poles, sz, cudaMemcpyHostToDevice) );
+	gpuErrchk( hipMalloc((void **) &GSD.poles, sz) );
+	gpuErrchk( hipMemcpy(GSD.poles, SD.poles, sz, hipMemcpyHostToDevice) );
 	total_sz += sz;
 
 	sz = GSD.length_windows * sizeof(Window);
-	gpuErrchk( cudaMalloc((void **) &GSD.windows, sz) );
-	gpuErrchk( cudaMemcpy(GSD.windows, SD.windows, sz, cudaMemcpyHostToDevice) );
+	gpuErrchk( hipMalloc((void **) &GSD.windows, sz) );
+	gpuErrchk( hipMemcpy(GSD.windows, SD.windows, sz, hipMemcpyHostToDevice) );
 	total_sz += sz;
 
 	sz = GSD.length_pseudo_K0RS * sizeof(double);
-	gpuErrchk( cudaMalloc((void **) &GSD.pseudo_K0RS, sz) );
-	gpuErrchk( cudaMemcpy(GSD.pseudo_K0RS, SD.pseudo_K0RS, sz, cudaMemcpyHostToDevice) );
+	gpuErrchk( hipMalloc((void **) &GSD.pseudo_K0RS, sz) );
+	gpuErrchk( hipMemcpy(GSD.pseudo_K0RS, SD.pseudo_K0RS, sz, hipMemcpyHostToDevice) );
 	total_sz += sz;
 	
 	// Allocate verification array on device. This structure is not needed on CPU, so we don't
 	// have to copy anything over.
 	sz = in.lookups * sizeof(unsigned long);
-	gpuErrchk( cudaMalloc((void **) &GSD.verification, sz) );
+	gpuErrchk( hipMalloc((void **) &GSD.verification, sz) );
 	total_sz += sz;
 	GSD.length_verification = in.lookups;
 	
 	// Synchronize
-	gpuErrchk( cudaPeekAtLastError() );
-	gpuErrchk( cudaDeviceSynchronize() );
+	gpuErrchk( hipPeekAtLastError() );
+	gpuErrchk( hipDeviceSynchronize() );
 	
 	printf("GPU Intialization complete. Allocated %.0lf MB of data on GPU.\n", total_sz/1024.0/1024.0 );
 
@@ -119,15 +118,15 @@ void release_memory(SimulationData SD) {
 }
 
 void release_device_memory(SimulationData GSD) {
-	cudaFree(GSD.num_nucs);
-	cudaFree(GSD.concs);
-	cudaFree(GSD.mats);
-	cudaFree(GSD.n_poles);
-	cudaFree(GSD.n_windows);
-	cudaFree(GSD.poles);
-	cudaFree(GSD.windows);
-	cudaFree(GSD.pseudo_K0RS);
-	cudaFree(GSD.verification);
+	hipFree(GSD.num_nucs);
+	hipFree(GSD.concs);
+	hipFree(GSD.mats);
+	hipFree(GSD.n_poles);
+	hipFree(GSD.n_windows);
+	hipFree(GSD.poles);
+	hipFree(GSD.windows);
+	hipFree(GSD.pseudo_K0RS);
+	hipFree(GSD.verification);
 }
 
 int * generate_n_poles( Input input, uint64_t * seed )

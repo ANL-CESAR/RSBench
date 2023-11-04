@@ -6,9 +6,11 @@
 #include<stdint.h>
 #include<float.h>
 #include<assert.h>
-#include<cuda.h>
-#include <thrust/reduce.h>
 #include <chrono> 
+
+#include <RAJA/RAJA.hpp>
+#include "umpire/Allocator.hpp"
+#include "umpire/ResourceManager.hpp"
 
 #define PI 3.14159265359
 
@@ -20,16 +22,6 @@ typedef enum __hm{SMALL, LARGE, XL, XXL} HM_size;
 
 #define STARTING_SEED 1070
 #define INITIALIZATION_SEED 42
-
-#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
-inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
-{
-	if (code != cudaSuccess) 
-	{
-		fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
-		if (abort) exit(code);
-	}
-}
 
 typedef struct{
 	double r;
@@ -112,6 +104,8 @@ Pole * generate_poles( Input input, int * n_poles, uint64_t * seed, int * max_nu
 Window * generate_window_params( Input input, int * n_windows, int * n_poles, uint64_t * seed, int * max_num_windows );
 double * generate_pseudo_K0RS( Input input, uint64_t * seed );
 SimulationData move_simulation_data_to_device( Input in, SimulationData SD );
+void release_memory(SimulationData SD);
+void release_device_memory(SimulationData GSD);
 
 // material.c
 int * load_num_nucs(Input input);
@@ -124,22 +118,20 @@ size_t get_mem_estimate( Input input );
 double get_time(void);
 
 // simulation.c
-void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result );
-void run_event_based_simulation_optimization_1(Input in, SimulationData GSD, unsigned long * vhash_result);
-__global__ void xs_lookup_kernel_baseline(Input in, SimulationData GSD );
-__device__ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles );
-__device__ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles);
-__device__ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles );
-__device__ int pick_mat( uint64_t * seed );
-__device__ void calculate_sig_T( int nuc, double E, Input input, double * pseudo_K0RS, RSComplex * sigTfactors );
-__device__ RSComplex fast_nuclear_W( RSComplex Z );
-__host__ __device__ double LCG_random_double(uint64_t * seed);
-__host__ __device__ uint64_t LCG_random_int(uint64_t * seed);
-__device__ uint64_t fast_forward_LCG(uint64_t seed, uint64_t n);
-__device__ RSComplex c_add( RSComplex A, RSComplex B);
-__device__ RSComplex c_sub( RSComplex A, RSComplex B);
-__host__ __device__ RSComplex c_mul( RSComplex A, RSComplex B);
-__device__ RSComplex c_div( RSComplex A, RSComplex B);
-__device__ double c_abs( RSComplex A);
-__device__ double fast_exp(double x);
-__device__ RSComplex fast_cexp( RSComplex z );
+void run_event_based_simulation(Input input, SimulationData SD, unsigned long * vhash_result, double * elapsed_time);
+RAJA_HOST_DEVICE void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles );
+RAJA_HOST_DEVICE void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles);
+RAJA_HOST_DEVICE void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles );
+RAJA_HOST_DEVICE int pick_mat( uint64_t * seed );
+RAJA_HOST_DEVICE void calculate_sig_T( int nuc, double E, Input input, double * pseudo_K0RS, RSComplex * sigTfactors );
+RAJA_HOST_DEVICE RSComplex fast_nuclear_W( RSComplex Z );
+RAJA_HOST_DEVICE double LCG_random_double(uint64_t * seed);
+RAJA_HOST_DEVICE uint64_t LCG_random_int(uint64_t * seed);
+RAJA_HOST_DEVICE uint64_t fast_forward_LCG(uint64_t seed, uint64_t n);
+RAJA_HOST_DEVICE RSComplex c_add( RSComplex A, RSComplex B);
+RAJA_HOST_DEVICE RSComplex c_sub( RSComplex A, RSComplex B);
+RAJA_HOST_DEVICE RSComplex c_mul( RSComplex A, RSComplex B);
+RAJA_HOST_DEVICE RSComplex c_div( RSComplex A, RSComplex B);
+RAJA_HOST_DEVICE double c_abs( RSComplex A);
+RAJA_HOST_DEVICE double fast_exp(double x);
+RAJA_HOST_DEVICE RSComplex fast_cexp( RSComplex z );

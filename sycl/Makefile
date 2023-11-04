@@ -6,12 +6,15 @@ CC        = llvm
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
+TARGET ?=
+SM_VERSION ?= 
+OFFLOAD_ARCH ?=
 
 #===============================================================================
 # Program name & source code list
 #===============================================================================
 
-program = rsbench
+program = RSBench
 
 source = \
 main.cpp \
@@ -28,22 +31,44 @@ obj = $(source:.cpp=.o)
 #===============================================================================
 
 # Standard Flags
-CFLAGS := -std=c++14 -Wall
+CFLAGS := -std=c++17 -Wall 
 
 # Linker Flags
 LDFLAGS = -lm
 
-# Codeplay Compiler
-ifeq ($(CC),codeplay)
-  CC = compute++
-  CFLAGS += -sycl -sycl-driver
-  LDFLAGS += -lComputeCpp
-endif
-
+# LLVM Compiler
 ifeq ($(CC),llvm)
   CC = clang++
   CFLAGS += -fsycl
-  LDFLAGS += -lOpenCL
+endif
+
+# IntelOneAPI Compiler
+ifeq ($(CC),oneapi)
+  CC = icpx
+  CFLAGS += -fsycl
+endif
+
+# AdaptiveCpp
+ifeq ($(CC),adaptivecpp)
+  CC = acpp
+endif
+
+ifeq ($(TARGET),CUDA)
+  ifeq ($(CC),acpp)
+	CFLAGS += --acpp-targets="cuda:sm_${SM_VERSION}"
+  else
+	CFLAGS += -fsycl-targets=nvptx64-nvidia-cuda \
+			  -Xsycl-target-backend --cuda-gpu-arch=sm_${SM_VERSION}
+  endif
+endif
+
+ifeq ($(TARGET),HIP)
+  ifeq ($(CC),acpp)
+	CFLAGS += --acpp-targets="hip:${OFFLOAD_ARCH}"
+  else
+	CFLAGS += -fsycl-targets=amdgcn-amd-amdhsa \
+			  -Xsycl-target-backend --offload-arch=${OFFLOAD_ARCH}
+  endif
 endif
 
 # Debug Flags

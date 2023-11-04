@@ -6,13 +6,13 @@ COMPILER    = nvidia
 OPTIMIZE    = yes
 DEBUG       = no
 PROFILE     = no
-SM_VERSION  = 80
+SM_VERSION  ?= 80
 
 #===============================================================================
 # Program name & source code list
 #===============================================================================
 
-program = rsbench
+program = RSBench
 
 source = \
 main.cu \
@@ -68,7 +68,7 @@ $(program): $(obj) rsbench.cuh Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf rsbench $(obj)
+	rm -rf $(program) $(obj)
 
 edit:
 	vim -p $(source) rsbench.cuh
