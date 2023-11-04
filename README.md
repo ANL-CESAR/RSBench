@@ -44,6 +44,8 @@ This version of RSBench is written in SYCL, and can be used for CPU, GPU, FPGA, 
 5. **RSBench/hip**
 This version of RSBench is written in HIP for use with GPU architectures. This version is derived from CUDA using an automatic conversion tool with only a few small manual changes.
 
+6. **RSBench/RAJA**
+This version of RSBench is written using the RAJA programming model and Umpire to handle memory management. This programming model can be run on either CPU or GPU depending on how RAJA is configured. You will likely need to edit the makefile if RAJA is installed with multiple backends.
 ## Compilation
 
 To compile RSBench with default settings, navigate to your selected source directory and use the following command:
