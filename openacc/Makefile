@@ -2,13 +2,12 @@
 # User Options
 #===============================================================================
 
-CC        = llvm
+COMPILER  = nvidia
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
-TARGET ?=
-SM_VERSION ?= 
-OFFLOAD_ARCH ?=
+SM_VERSION ?= 80
+AMD_TARGET ?= gfx908
 
 #===============================================================================
 # Program name & source code list
@@ -17,64 +16,66 @@ OFFLOAD_ARCH ?=
 program = RSBench
 
 source = \
-main.cpp \
-simulation.cpp\
-io.cpp \
-init.cpp \
-material.cpp \
-utils.cpp
+main.c \
+simulation.c\
+io.c \
+init.c \
+material.c \
+utils.c
 
-obj = $(source:.cpp=.o)
+obj = $(source:.c=.o)
 
 #===============================================================================
 # Sets Flags
 #===============================================================================
 
 # Standard Flags
-CFLAGS := -std=c++17 -Wall 
+CFLAGS := -std=gnu99 -Wall
 
 # Linker Flags
 LDFLAGS = -lm
 
-# LLVM Compiler
-ifeq ($(CC),llvm)
-  CC = clang++
-  CFLAGS += -fsycl
+# Intel Compiler
+ifeq ($(COMPILER),intel)
+  CC = icx 
+  CFLAGS += -fopenacc -fiopenmp -fopenmp-targets=spir64 -D__STRICT_ANSI__ 
 endif
 
-# IntelOneAPI Compiler
-ifeq ($(CC),oneapi)
-  CC = icpx
-  CFLAGS += -fsycl
+# GCC Compiler Targeting A100 -- Change SM Level to Target Other GPUs
+ifeq ($(COMPILER),gcc)
+  CC = gcc
+  CFLAGS += -fopenacc
+	export ACC_DEVICE_TYPE=nvidia
 endif
 
-# AdaptiveCpp
-ifeq ($(CC),adaptivecpp)
-  CC = acpp
+# LLVM Compiler Targeting A100 -- Change SM Level to Target Other GPUs
+ifeq ($(COMPILER),llvm)
+  CC = clang
+  CFLAGS += -fopenacc -fopenmp -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_$(SM_VERSION)
 endif
 
-ifeq ($(TARGET),CUDA)
-  ifeq ($(CC),acpp)
-	CFLAGS += --acpp-targets="cuda:sm_${SM_VERSION}"
-  else
-	CFLAGS += -fsycl-targets=nvptx64-nvidia-cuda \
-			  -Xsycl-target-backend --cuda-gpu-arch=sm_${SM_VERSION}
-  endif
+# IBM XL Compiler
+ifeq ($(COMPILER),ibm)
+  CC = xlc_r
+  CFLAGS += -qsmp=omp -qoffload
 endif
 
-ifeq ($(TARGET),HIP)
-  ifeq ($(CC),acpp)
-	CFLAGS += --acpp-targets="hip:${OFFLOAD_ARCH}"
-  else
-	CFLAGS += -fsycl-targets=amdgcn-amd-amdhsa \
-			  -Xsycl-target-backend --offload-arch=${OFFLOAD_ARCH}
-  endif
+# NVIDIA Compiler Targeting A100 -- Change SM Level to Target Other GPUs
+ifeq ($(COMPILER),nvidia)
+  CC = nvc
+	CFLAGS += -acc -Minfo=accel -gpu=cc$(SM_VERSION) -openmp
+endif
+
+# AOMP Targeting MI100 -- Change march to Target Other GPUs
+ifeq ($(COMPILER),amd)
+  CC = clang
+  CFLAGS += -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=$(AMD_TARGET)
 endif
 
 # Debug Flags
 ifeq ($(DEBUG),yes)
   CFLAGS += -g
-  LDFLAGS  += -g
+  LDFLAGS += -g
 endif
 
 # Profiling Flags
@@ -95,7 +96,7 @@ endif
 $(program): $(obj) rsbench.h Makefile
 	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
 
-%.o: %.cpp rsbench.h Makefile
+%.o: %.c rsbench.h Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

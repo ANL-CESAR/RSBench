@@ -12,120 +12,92 @@
 // line argument.
 ////////////////////////////////////////////////////////////////////////////////////
 
-void run_event_based_simulation(Input in, SimulationData SD, unsigned long * vhash_result, double * kernel_init_time ) {
-	
-	// Let's create an extra verification array to reduce manually later on
-	printf("Allocating an additional %.1lf MB of memory for verification arrays...\n", in.lookups * sizeof(int) /1024.0/1024.0);
-	int * verification_host = (int *) malloc(in.lookups * sizeof(int));
-	
-	// Timers
-	double start = get_time();
-	double stop = 0.0;
+void run_event_based_simulation(Input input, SimulationData data, unsigned long * vhash_result )
+{
+	printf("Beginning baseline event based simulation on device...\n");
+	unsigned long long * verification = (unsigned long long *) malloc(input.lookups * sizeof(unsigned long long));
 
-	sycl::queue sycl_q{sycl::default_selector_v};
-	printf("Running on: %s\n", sycl_q.get_device().get_info<sycl::info::device::name>().c_str());
-	
-	////////////////////////////////////////////////////////////////////////////////
-	// Create Device Buffers
-	////////////////////////////////////////////////////////////////////////////////
+	int offloaded_to_device = 0;
 
-	// assign SYCL buffer to existing memory
-	printf("Initializing device buffers and JIT compiling kernel...\n");
-	sycl::buffer<int> num_nucs_d {SD.num_nucs,SD.length_num_nucs};
-	sycl::buffer<double> concs_d {SD.concs, SD.length_concs};
-	sycl::buffer<int> mats_d {SD.mats, SD.length_mats};
-	sycl::buffer<int> n_windows_d {SD.n_windows, SD.length_n_windows};
-	sycl::buffer<Pole> poles_d {SD.poles, SD.length_poles};
-	sycl::buffer<Window> windows_d {SD.windows, SD.length_windows};
-	sycl::buffer<double> pseudo_K0RS_d {SD.pseudo_K0RS, SD.length_pseudo_K0RS};
-	sycl::buffer<int> verification_d {verification_host, in.lookups};
+	// Main simulation loop over macroscopic cross section lookups
+  #pragma acc parallel loop gang \
+  copyin(data)\
+	copyin(data.n_poles[:data.length_n_poles])\
+	copyin(data.n_windows[:data.length_n_windows])\
+	copyin(data.poles[:data.length_poles])\
+	copyin(data.windows[:data.length_windows])\
+	copyin(data.pseudo_K0RS[:data.length_pseudo_K0RS])\
+	copyin(data.num_nucs[:data.length_num_nucs])\
+	copyin(data.mats[:data.length_mats])\
+	copyin(data.concs[:data.length_concs])\
+	copyin(data.max_num_nucs)\
+	copyin(data.max_num_poles)\
+	copyin(data.max_num_windows)\
+	copy(offloaded_to_device)\
+  copyout(verification[:input.lookups])
+	for( int i = 0; i < input.lookups; i++ )
+	{
+		// Set the initial seed value
+		uint64_t seed = STARTING_SEED;	
 
-	////////////////////////////////////////////////////////////////////////////////
-	// Define Device Kernel
-	////////////////////////////////////////////////////////////////////////////////
+		// Forward seed to lookup index (we need 2 samples per lookup)
+		seed = fast_forward_LCG(seed, 2*i);
 
-	printf("Beginning event based simulation...\n");
+		// Randomly pick an energy and material for the particle
+		double E = LCG_random_double(&seed);
+		int mat  = pick_mat(&seed);
 
-	// queue a kernel to be run, as a lambda
-	sycl_q.submit([&](sycl::handler &cgh) {
-		////////////////////////////////////////////////////////////////////////////////
-		// Create Device Accessors for Device Buffers
-		////////////////////////////////////////////////////////////////////////////////
-		sycl::accessor num_nucs {num_nucs_d, cgh, sycl::read_only};
-		sycl::accessor concs {concs_d, cgh, sycl::read_only};
-		sycl::accessor mats {mats_d, cgh, sycl::read_only};
-		sycl::accessor n_windows {n_windows_d, cgh, sycl::read_only};
-		sycl::accessor poles {poles_d, cgh, sycl::read_only};
-		sycl::accessor windows {windows_d, cgh, sycl::read_only};
-		sycl::accessor pseudo_K0RS {pseudo_K0RS_d, cgh, sycl::read_only};
-		sycl::accessor verification {verification_d, cgh, sycl::write_only, sycl::no_init};
-		
-		////////////////////////////////////////////////////////////////////////////////
-		// XS Lookup Simulation Loop
-		////////////////////////////////////////////////////////////////////////////////
+		double macro_xs[4] = {0};
 
-		cgh.parallel_for<sycl::kernel>(sycl::range<1>(in.lookups), [=](sycl::id<1> idx) {
-			// get the index to operate on, first dimemsion
-			size_t i = idx[0];
+		calculate_macro_xs( macro_xs, mat, E, input, data.num_nucs, data.mats, data.max_num_nucs, data.concs, data.n_windows, data.pseudo_K0RS, data.windows, data.poles, data.max_num_windows, data.max_num_poles );
 
-			// Set the initial seed value
-			uint64_t seed = STARTING_SEED;	
-
-			// Forward seed to lookup index (we need 2 samples per lookup)
-			seed = fast_forward_LCG(seed, 2*i);
-
-			// Randomly pick an energy and material for the particle
-			double p_energy = LCG_random_double(&seed);
-			int mat = pick_mat(&seed); 
-
-			double macro_xs_vector[4] = {0};
-
-			// Perform macroscopic Cross Section Lookup
-			calculate_macro_xs( macro_xs_vector, mat, p_energy, in, num_nucs, mats, SD.max_num_nucs, concs, n_windows, pseudo_K0RS, windows, poles, SD.max_num_windows, SD.max_num_poles );
-
-			// For verification, and to prevent the compiler from optimizing
-			// all work out, we interrogate the returned macro_xs_vector array
-			// to find its maximum value index, then increment the verification
-			// value by that index. In this implementation, we store to a global
-			// array that will get tranferred back and reduced on the host.
-			double max = -DBL_MAX;
-			int max_idx = 0;
-			for(int j = 0; j < 4; j++ ) {
-				if(macro_xs_vector[j] > max) {
-					max = macro_xs_vector[j];
-					max_idx = j;
-				}
+		// For verification, and to prevent the compiler from optimizing
+		// all work out, we interrogate the returned macro_xs_vector array
+		// to find its maximum value index, then increment the verification
+		// value by that index. In this implementation, we prevent thread
+		// contention by using an OMP reduction on it. For other accelerators,
+		// a different approach might be required (e.g., atomics, reduction
+		// of thread-specific values in large array via CUDA thrust, etc)
+		double max = -DBL_MAX;
+		int max_idx = 0;
+		for(int x = 0; x < 4; x++ )
+		{
+			if( macro_xs[x] > max )
+			{
+				max = macro_xs[x];
+				max_idx = x;
 			}
-			verification[i] = max_idx+1;
-		});
-	});
+		}
+		verification[i] = max_idx+1;
 
+		// Check if we are currently running on the device or not
+		if( i == 0 ) {
+      offloaded_to_device = !acc_on_device(acc_device_host);
+    }
+	}
+  
+  // Reduce validation hash on the host
+  unsigned long long validation_hash = 0;
+	for( int i = 0; i < input.lookups; i++ )
+    validation_hash += verification[i];
 
-	stop = get_time();
-    
-	printf("Kernel initialization, compilation, and launch took %.2lf seconds.\n", stop-start);
+	// Print if kernel actually ran on the device
+	if( offloaded_to_device )
+		printf( "Kernel ran accelerator device.\n" );
+	else
+		printf( "NOTE - Kernel ran on the host!\n" );
 
-	verification_d.get_host_access();
-
-	// Host reduces the verification array
-	unsigned long long verification_scalar = 0;
-	for( int i = 0; i < in.lookups; i++ )
-		verification_scalar += verification_host[i];
-
-	stop = get_time();
-
-	*vhash_result = verification_scalar;
-	*kernel_init_time = stop-start;
+	*vhash_result = validation_hash;
 }
 
-template <class INT_T, class DOUBLE_T, class WINDOW_T, class POLE_T >
-void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, INT_T num_nucs, INT_T mats, int max_num_nucs, DOUBLE_T concs, INT_T n_windows, DOUBLE_T pseudo_K0Rs, WINDOW_T windows, POLE_T poles, int max_num_windows, int max_num_poles ) 
+void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, int * num_nucs, int * mats, int max_num_nucs, double * concs, int * n_windows, double * pseudo_K0Rs, Window * windows, Pole * poles, int max_num_windows, int max_num_poles ) 
 {
 	// zero out macro vector
 	for( int i = 0; i < 4; i++ )
 		macro_xs[i] = 0;
 
 	// for nuclide in mat
+#pragma acc loop worker
 	for( int i = 0; i < num_nucs[mat]; i++ )
 	{
 		double micro_xs[4];
@@ -155,8 +127,7 @@ void calculate_macro_xs( double * macro_xs, int mat, double E, Input input, INT_
 }
 
 // No Temperature dependence (i.e., 0K evaluation)
-template <class INT_T, class DOUBLE_T, class WINDOW_T, class POLE_T >
-void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, INT_T n_windows, DOUBLE_T pseudo_K0RS, WINDOW_T windows, POLE_T poles, int max_num_windows, int max_num_poles)
+void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles)
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -181,13 +152,14 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, INT_
 	sigF = E * w.F;
 
 	// Loop over Poles within window, add contributions
+#pragma acc loop vector
 	for( int i = w.start; i < w.end; i++ )
 	{
 		RSComplex PSIIKI;
 		RSComplex CDUM;
 		Pole pole = poles[nuc * max_num_poles + i];
 		RSComplex t1 = {0, 1};
-		RSComplex t2 = {sycl::sqrt(E), 0 };
+		RSComplex t2 = {sqrt(E), 0 };
 		PSIIKI = c_div( t1 , c_sub(pole.MP_EA,t2) );
 		RSComplex E_c = {E, 0};
 		CDUM = c_div(PSIIKI, E_c);
@@ -207,8 +179,7 @@ void calculate_micro_xs( double * micro_xs, int nuc, double E, Input input, INT_
 // Temperature Dependent Variation of Kernel
 // (This involves using the Complex Faddeeva function to
 // Doppler broaden the poles within the window)
-template <class INT_T, class DOUBLE_T, class WINDOW_T, class POLE_T >
-void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, INT_T n_windows, DOUBLE_T pseudo_K0RS, WINDOW_T windows, POLE_T poles, int max_num_windows, int max_num_poles )
+void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input input, int * n_windows, double * pseudo_K0RS, Window * windows, Pole * poles, int max_num_windows, int max_num_poles )
 {
 	// MicroScopic XS's to Calculate
 	double sigT;
@@ -235,6 +206,7 @@ void calculate_micro_xs_doppler( double * micro_xs, int nuc, double E, Input inp
 	double dopp = 0.5;
 
 	// Loop over Poles within window, add contributions
+#pragma acc loop vector
 	for( int i = w.start; i < w.end; i++ )
 	{
 		Pole pole = poles[nuc * max_num_poles + i];
@@ -298,26 +270,25 @@ int pick_mat( uint64_t * seed )
 	return 0;
 }
 
-template <class DOUBLE_T>
-void calculate_sig_T( int nuc, double E, Input input, DOUBLE_T pseudo_K0RS, RSComplex * sigTfactors )
+void calculate_sig_T( int nuc, double E, Input input, double * pseudo_K0RS, RSComplex * sigTfactors )
 {
 	double phi;
 
 	for( int i = 0; i < 4; i++ )
 	{
-		phi = pseudo_K0RS[nuc * input.numL + i] * sycl::sqrt(E);
+		phi = pseudo_K0RS[nuc * input.numL + i] * sqrt(E);
 
 		if( i == 1 )
-			phi -= - sycl::atan( phi );
+			phi -= - atan( phi );
 		else if( i == 2 )
-			phi -= sycl::atan( 3.0 * phi / (3.0 - phi*phi));
+			phi -= atan( 3.0 * phi / (3.0 - phi*phi));
 		else if( i == 3 )
-			phi -= sycl::atan(phi*(15.0-phi*phi)/(15.0-6.0*phi*phi));
+			phi -= atan(phi*(15.0-phi*phi)/(15.0-6.0*phi*phi));
 
 		phi *= 2.0;
 
-		sigTfactors[i].r = sycl::cos(phi);
-		sigTfactors[i].i = -sycl::sin(phi);
+		sigTfactors[i].r = cos(phi);
+		sigTfactors[i].i = -sin(phi);
 	}
 }
 
@@ -497,7 +468,7 @@ RSComplex c_div( RSComplex A, RSComplex B)
 
 double c_abs( RSComplex A)
 {
-	return sycl::sqrt(A.r*A.r + A.i * A.i);
+	return sqrt(A.r*A.r + A.i * A.i);
 }
 
 
@@ -528,8 +499,8 @@ RSComplex fast_cexp( RSComplex z )
 	// will use our own exponetial implementation
 	//double t1 = exp(x);
 	double t1 = fast_exp(x);
-	double t2 = sycl::cos(y);
-	double t3 = sycl::sin(y);
+	double t2 = cos(y);
+	double t3 = sin(y);
 	RSComplex t4 = {t2, t3};
 	RSComplex t5 = {t1, 0};
 	RSComplex result = c_mul(t5, (t4));

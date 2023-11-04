@@ -1,0 +1,11 @@
+*.o
+RSBench
+rsbench
+*.cpp1*
+*.cpp4*
+*.ptx
+*.cubin
+*.cudafe1*
+*.fatbin*
+*.module_id
+[Bb][Uu][Ii][Ll][Dd]*/

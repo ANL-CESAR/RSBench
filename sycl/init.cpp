@@ -36,6 +36,17 @@ SimulationData initialize_simulation( Input input )
 	return SD;
 }
 
+void release_memory(SimulationData SD) {
+	free(SD.num_nucs);
+	free(SD.concs);
+	free(SD.mats);
+	free(SD.n_poles);
+	free(SD.n_windows);
+	free(SD.poles);
+	free(SD.windows);
+	free(SD.pseudo_K0RS);
+}
+
 int * generate_n_poles( Input input, uint64_t * seed )
 {
 	int total_resonances = input.avg_n_poles * input.n_nuclides;
