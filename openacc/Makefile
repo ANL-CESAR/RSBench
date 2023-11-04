@@ -6,12 +6,14 @@ COMPILER  = nvidia
 OPTIMIZE  = yes
 DEBUG     = no
 PROFILE   = no
+SM_VERSION ?= 80
+AMD_TARGET ?= gfx908
 
 #===============================================================================
 # Program name & source code list
 #===============================================================================
 
-program = rsbench
+program = RSBench
 
 source = \
 main.c \
@@ -49,7 +51,7 @@ endif
 # LLVM Compiler Targeting A100 -- Change SM Level to Target Other GPUs
 ifeq ($(COMPILER),llvm)
   CC = clang
-  CFLAGS += -fopenacc -fopenmp -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_80
+  CFLAGS += -fopenacc -fopenmp -fopenmp-targets=nvptx64-nvidia-cuda -Xopenmp-target -march=sm_$(SM_VERSION)
 endif
 
 # IBM XL Compiler
@@ -61,13 +63,13 @@ endif
 # NVIDIA Compiler Targeting A100 -- Change SM Level to Target Other GPUs
 ifeq ($(COMPILER),nvidia)
   CC = nvc
-	CFLAGS += -acc -Minfo=accel -gpu=cc80 -openmp
+	CFLAGS += -acc -Minfo=accel -gpu=cc$(SM_VERSION) -openmp
 endif
 
 # AOMP Targeting MI100 -- Change march to Target Other GPUs
 ifeq ($(COMPILER),amd)
   CC = clang
-  CFLAGS += -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=gfx908
+  CFLAGS += -fopenmp -fopenmp-targets=amdgcn-amd-amdhsa -Xopenmp-target=amdgcn-amd-amdhsa -march=$(AMD_TARGET)
 endif
 
 # Debug Flags
