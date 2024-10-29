@@ -33,8 +33,10 @@ void run_event_based_simulation(Input input, SimulationData data, unsigned long 
 	map(to:data.max_num_nucs)\
 	map(to:data.max_num_poles)\
 	map(to:data.max_num_windows)\
+        map(to:input)\
 	map(tofrom:offloaded_to_device)\
-  map(from:verification[:input.lookups])
+        map(from:verification[:input.lookups])\
+        defaultmap(none)
 	for( int i = 0; i < input.lookups; i++ )
 	{
 		// Set the initial seed value
