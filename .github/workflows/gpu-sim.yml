@@ -1,0 +1,71 @@
+name: GPU Simulator
+
+# Optional, non-required check. The hosted runners have no GPU, so this builds
+# the HIP version and runs it on a simulated AMD Instinct MI300X (gfx942) with
+# https://github.com/pantheongpu/pantheonsim, then compares its verification
+# checksum with the one from the OpenMP threading build run on the CPU with the
+# same arguments. A simulator cannot reproduce hardware-specific behavior or
+# timing, so it complements real-GPU testing and does not replace it.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - "hip/**"
+      - "openmp-threading/**"
+      - ".github/workflows/gpu-sim.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  hip:
+    name: HIP event (ROCm 7.1 and simulated MI300X)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      # Small problem size: the checksum only has to agree between the CPU and
+      # HIP builds, not with the value hardcoded for the default size. The HIP
+      # version only implements the event-based method.
+      RSBENCH_ARGS: -s small -m event -l 34000
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+
+      - name: Set up the simulated GPU and ROCm
+        uses: pantheongpu/setup-pantheonsim@ca87fe3143b29166822b923d6050945c5179408c # v0.1.5
+        with:
+          gpu: amd/mi300x
+          cuda-toolkit: none
+          rocm: "7.1"
+
+      # The Makefile hardcodes its flags and has no GPU architecture option,
+      # so they are passed on the command line (same -std and -O3 as the
+      # Makefile, plus the MI300X target).
+      - name: Build the HIP version
+        working-directory: hip
+        run: make -j3 CFLAGS="-std=c++14 -O3 --offload-arch=gfx942"
+
+      - name: Build the OpenMP threading version (CPU reference)
+        working-directory: openmp-threading
+        run: make -j3
+
+      - name: Compare verification checksums
+        run: |
+          set -u
+          # The programs exit nonzero when the checksum differs from the one
+          # hardcoded for the default size, which is expected at these sizes.
+          (cd openmp-threading && ./rsbench ${RSBENCH_ARGS} -t 4) | tee cpu.log || true
+          (cd hip && vgpu run ./rsbench ${RSBENCH_ARGS}) | tee hip.log || true
+          cpu=$(sed -n 's/^Verification checksum: \([0-9]*\).*/\1/p' cpu.log)
+          gpu=$(sed -n 's/^Verification checksum: \([0-9]*\).*/\1/p' hip.log)
+          echo "CPU checksum: '${cpu}', simulated MI300X checksum: '${gpu}'"
+          test -n "${cpu}"
+          test "${cpu}" = "${gpu}"
